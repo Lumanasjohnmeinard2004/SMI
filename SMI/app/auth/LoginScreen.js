@@ -1,5 +1,4 @@
-Testing// app/auth/LoginScreen.js
-
+// app/auth/LoginScreen.js
 import React, { useState } from "react";
 import {
   View,
