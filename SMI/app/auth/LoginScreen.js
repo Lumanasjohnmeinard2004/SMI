@@ -88,18 +88,17 @@ export default function LoginScreen() {
             secureTextEntry={!showPassword}
           />
 
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
-              size={22}
-              color="#9aa8a1"
-            />
-          </TouchableOpacity>
+          <TouchableOpacity
+  style={styles.signInButton}
+  onPress={() => router.push("/member/HomeScreen")}
+>
+  <Text style={styles.signInText}>Sign In</Text>
+</TouchableOpacity>
         </View>
 
         <TouchableOpacity
   style={styles.signInButton}
-  onPress={() => router.push("/member/LoansScreen")}
+  onPress={() => router.push("/member/HomeScreen")}
 >
   <Text style={styles.signInText}>Sign In</Text>
 </TouchableOpacity>
