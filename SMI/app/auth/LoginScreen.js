@@ -1,4 +1,5 @@
 // app/auth/LoginScreen.js
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   View,
@@ -12,10 +13,11 @@ import {
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
+  const router = useRouter();
+
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#07956b" />
@@ -95,9 +97,12 @@ export default function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.signInButton}>
-          <Text style={styles.signInText}>Sign In</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+  style={styles.signInButton}
+  onPress={() => router.push("/member/LoansScreen")}
+>
+  <Text style={styles.signInText}>Sign In</Text>
+</TouchableOpacity>
 
         <View style={styles.bottomLine} />
       </View>
