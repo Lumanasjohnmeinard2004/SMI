@@ -1,4 +1,4 @@
-// app/member/DividendsScreen.js
+// app/member/SavingsScreen.js
 
 import React from "react";
 import {
@@ -11,7 +11,7 @@ import {
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-export default function DividendsScreen() {
+export default function SavingsScreen() {
   const router = useRouter();
 
   return (
@@ -61,18 +61,18 @@ export default function DividendsScreen() {
             <Text style={styles.navText}>Loans</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.navItem, styles.navActive]}>
-            <Feather name="trending-up" size={20} color="#ffffff" />
-            <Text style={styles.navActiveText}>Dividends</Text>
+          <TouchableOpacity
+            style={styles.navItem}
+            onPress={() => router.push("/member/DividendsScreen")}
+          >
+            <Feather name="trending-up" size={20} color="#708174" />
+            <Text style={styles.navText}>Dividends</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-  style={styles.navItem}
-  onPress={() => router.push("/member/SavingsScreen")}
->
-  <MaterialCommunityIcons name="piggy-bank-outline" size={20} color="#708174" />
-  <Text style={styles.navText}>Savings</Text>
-</TouchableOpacity>
+          <TouchableOpacity style={[styles.navItem, styles.navActive]}>
+            <MaterialCommunityIcons name="piggy-bank-outline" size={20} color="#ffffff" />
+            <Text style={styles.navActiveText}>Savings</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.sidebarBottom}>
@@ -90,7 +90,7 @@ export default function DividendsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.topBar}>
-          <Text style={styles.topLabel}>DIVIDENDS</Text>
+          <Text style={styles.topLabel}>SAVINGS</Text>
 
           <View style={styles.bellWrap}>
             <Feather name="bell" size={20} color="#697869" />
@@ -99,85 +99,80 @@ export default function DividendsScreen() {
         </View>
 
         <View style={styles.header}>
-          <Text style={styles.title}>Dividends</Text>
-          <Text style={styles.subtitle}>Interest on Share Capital</Text>
+          <Text style={styles.title}>Share Capital</Text>
+          <Text style={styles.subtitle}>Compulsory & Voluntary Savings</Text>
         </View>
 
-        <View style={styles.pendingNotice}>
-          <Ionicons name="time-outline" size={17} color="#e86f00" />
-          <View>
-            <Text style={styles.pendingTitle}>FY 2024 dividend pending</Text>
-            <Text style={styles.pendingSub}>Projected rate: ~13% · Est. Feb 2025</Text>
+        <View style={styles.balanceCard}>
+          <Text style={styles.cardLabel}>CURRENT BALANCE</Text>
+          <Text style={styles.balanceAmount}>₱48,750.00</Text>
+
+          <View style={styles.balanceRow}>
+            <View>
+              <Text style={styles.smallLabel}>COMPULSORY</Text>
+              <Text style={styles.smallAmount}>₱36,000.00</Text>
+            </View>
+
+            <View>
+              <Text style={styles.smallLabel}>VOLUNTARY</Text>
+              <Text style={styles.smallAmount}>₱12,750.00</Text>
+            </View>
           </View>
         </View>
 
-        <View style={styles.totalCard}>
-          <Text style={styles.totalLabel}>TOTAL DIVIDENDS EARNED</Text>
-          <Text style={styles.totalAmount}>₱15,050.00</Text>
-          <Text style={styles.totalSub}>Since 2018</Text>
+        <View style={styles.historyCard}>
+          <Text style={styles.historyTitle}>Monthly History</Text>
+
+          <HistoryItem
+            month="Jun 2024"
+            details="Comp ₱36,000.00 + Vol ₱12,750.00"
+            amount="₱48,750.00"
+          />
+
+          <HistoryItem
+            month="May 2024"
+            details="Comp ₱39,000.00 + Vol ₱7,200.00"
+            amount="₱46,200.00"
+          />
+
+          <HistoryItem
+            month="Apr 2024"
+            details="Comp ₱39,000.00 + Vol ₱6,000.00"
+            amount="₱45,000.00"
+          />
+
+          <HistoryItem
+            month="Mar 2024"
+            details="Comp ₱37,500.00 + Vol ₱6,000.00"
+            amount="₱43,500.00"
+          />
+
+          <HistoryItem
+            month="Feb 2024"
+            details="Comp ₱37,500.00 + Vol ₱6,000.00"
+            amount="₱43,500.00"
+          />
+
+          <HistoryItem
+            month="Jan 2024"
+            details="Comp ₱36,000.00 + Vol ₱6,000.00"
+            amount="₱42,000.00"
+          />
         </View>
-
-        <DividendItem
-          year="FY 2024"
-          status="Pending"
-          statusType="pending"
-          details="Rate: ~13% · Est. Feb 2025"
-          amount="—"
-        />
-
-        <DividendItem
-          year="FY 2021"
-          status="Paid"
-          statusType="paid"
-          details="Rate: 11% · Feb 20, 2022"
-          amount="₱4,400.00"
-        />
-
-        <DividendItem
-          year="FY 2022"
-          status="Paid"
-          statusType="paid"
-          details="Rate: 10% · Mar 15, 2023"
-          amount="₱4,800.00"
-        />
-
-        <DividendItem
-          year="FY 2023"
-          status="Paid"
-          statusType="paid"
-          details="Rate: 12% · Feb 28, 2024"
-          amount="₱5,850.00"
-        />
       </ScrollView>
     </View>
   );
 }
 
-function DividendItem({ year, status, statusType, details, amount }) {
-  const isPaid = statusType === "paid";
-
+function HistoryItem({ month, details, amount }) {
   return (
-    <View style={styles.dividendCard}>
+    <View style={styles.historyItem}>
       <View>
-        <View style={styles.dividendTopRow}>
-          <Text style={styles.dividendYear}>{year}</Text>
-
-          <View style={isPaid ? styles.paidBadge : styles.pendingBadge}>
-            <Ionicons
-              name={isPaid ? "checkmark-circle-outline" : "time-outline"}
-              size={13}
-              color={isPaid ? "#00a86b" : "#e86f00"}
-            />
-            <Text style={isPaid ? styles.paidText : styles.pendingBadgeText}>
-              {status}
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.dividendDetails}>{details}</Text>
+        <Text style={styles.monthText}>{month}</Text>
+        <Text style={styles.detailsText}>{details}</Text>
       </View>
 
-      <Text style={styles.dividendAmount}>{amount}</Text>
+      <Text style={styles.historyAmount}>{amount}</Text>
     </View>
   );
 }
@@ -336,7 +331,7 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
-    paddingHorizontal: 390,
+    paddingHorizontal: 385,
   },
 
   topBar: {
@@ -370,7 +365,7 @@ const styles = StyleSheet.create({
 
   header: {
     marginTop: 20,
-    marginBottom: 22,
+    marginBottom: 24,
   },
 
   title: {
@@ -381,138 +376,95 @@ const styles = StyleSheet.create({
   },
 
   subtitle: {
-    fontSize: 13,
     color: "#174a33",
+    fontSize: 13,
     marginTop: 5,
   },
 
-  pendingNotice: {
-    minHeight: 60,
-    borderWidth: 1,
-    borderColor: "#f2c94c",
-    backgroundColor: "#fff9e8",
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 18,
+  balanceCard: {
+    height: 147,
+    backgroundColor: "#245f40",
+    borderRadius: 14,
+    paddingHorizontal: 22,
+    paddingVertical: 22,
     marginBottom: 22,
   },
 
-  pendingTitle: {
-    color: "#c45f00",
+  cardLabel: {
+    color: "#9eb5a5",
+    fontSize: 10,
+    letterSpacing: 1.6,
+    fontWeight: "800",
+  },
+
+  balanceAmount: {
+    color: "#fff8e8",
+    fontSize: 39,
+    fontWeight: "800",
+    marginTop: 12,
+    fontFamily: "serif",
+  },
+
+  balanceRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "64%",
+    marginTop: 16,
+  },
+
+  smallLabel: {
+    color: "#9eb5a5",
+    fontSize: 9,
+    letterSpacing: 1,
+    fontWeight: "800",
+  },
+
+  smallAmount: {
+    color: "#ffffff",
     fontSize: 13,
     fontWeight: "800",
-    marginLeft: 12,
+    marginTop: 7,
   },
 
-  pendingSub: {
-    color: "#9b4d00",
-    fontSize: 11,
-    marginLeft: 12,
-    marginTop: 5,
-  },
-
-  totalCard: {
-    height: 106,
-    backgroundColor: "#174a33",
-    borderRadius: 12,
-    paddingHorizontal: 18,
-    paddingVertical: 20,
-    marginBottom: 20,
-  },
-
-  totalLabel: {
-    color: "#93aa99",
-    fontSize: 10,
-    letterSpacing: 1.5,
-    fontWeight: "800",
-  },
-
-  totalAmount: {
-    color: "#ffffff",
-    fontSize: 31,
-    fontWeight: "800",
-    marginTop: 14,
-    fontFamily: "serif",
-  },
-
-  totalSub: {
-    color: "#b7cbbb",
-    fontSize: 11,
-    marginTop: 5,
-  },
-
-  dividendCard: {
-    height: 64,
+  historyCard: {
     backgroundColor: "#fbfaf6",
-    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#ddd8cf",
-    paddingHorizontal: 17,
-    marginBottom: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    borderRadius: 13,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    marginBottom: 40,
   },
 
-  dividendTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  dividendYear: {
-    fontSize: 15,
+  historyTitle: {
+    fontSize: 14,
     fontWeight: "700",
     color: "#001c13",
-    fontFamily: "serif",
-    marginRight: 12,
+    marginBottom: 15,
   },
 
-  paidBadge: {
+  historyItem: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#eafff4",
-    borderWidth: 1,
-    borderColor: "#83e8b9",
-    borderRadius: 12,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
+    marginBottom: 17,
   },
 
-  paidText: {
-    color: "#00a86b",
-    fontSize: 11,
+  monthText: {
+    fontSize: 14,
     fontWeight: "700",
-    marginLeft: 4,
+    color: "#001c13",
   },
 
-  pendingBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff4df",
-    borderWidth: 1,
-    borderColor: "#ffc46b",
-    borderRadius: 12,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-  },
-
-  pendingBadgeText: {
-    color: "#e86f00",
-    fontSize: 11,
-    fontWeight: "700",
-    marginLeft: 4,
-  },
-
-  dividendDetails: {
-    color: "#174a33",
+  detailsText: {
     fontSize: 10,
+    color: "#174a33",
     marginTop: 5,
   },
 
-  dividendAmount: {
-    color: "#001c13",
-    fontSize: 15,
+  historyAmount: {
+    color: "#009060",
+    fontSize: 13,
     fontWeight: "800",
   },
 });

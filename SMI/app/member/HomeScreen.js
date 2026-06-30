@@ -66,10 +66,13 @@ export default function HomeScreen() {
             <Text style={styles.navText}>Dividends</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
-            <MaterialCommunityIcons name="piggy-bank-outline" size={20} color="#708174" />
-            <Text style={styles.navText}>Savings</Text>
-          </TouchableOpacity>
+          <TouchableOpacity
+  style={styles.navItem}
+  onPress={() => router.push("/member/SavingsScreen")}
+>
+  <MaterialCommunityIcons name="piggy-bank-outline" size={20} color="#708174" />
+  <Text style={styles.navText}>Savings</Text>
+</TouchableOpacity>
 
           <TouchableOpacity style={styles.navItem}>
             <Feather name="users" size={20} color="#708174" />

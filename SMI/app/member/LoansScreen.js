@@ -63,10 +63,13 @@ export default function LoansScreen() {
   <Text style={styles.navText}>Dividends</Text>
 </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
-            <MaterialCommunityIcons name="piggy-bank-outline" size={20} color="#708174" />
-            <Text style={styles.navText}>Savings</Text>
-          </TouchableOpacity>
+          <TouchableOpacity
+  style={styles.navItem}
+  onPress={() => router.push("/member/SavingsScreen")}
+>
+  <MaterialCommunityIcons name="piggy-bank-outline" size={20} color="#708174" />
+  <Text style={styles.navText}>Savings</Text>
+</TouchableOpacity>
         </View>
 
         <View style={styles.sidebarBottom}>
