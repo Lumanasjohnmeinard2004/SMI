@@ -1,4 +1,5 @@
 // app/auth/LoginScreen.js
+
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -18,6 +19,7 @@ export default function LoginScreen() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#07956b" />
@@ -88,20 +90,28 @@ export default function LoginScreen() {
             secureTextEntry={!showPassword}
           />
 
-          <TouchableOpacity
-  style={styles.signInButton}
-  onPress={() => router.push("/member/HomeScreen")}
->
-  <Text style={styles.signInText}>Sign In</Text>
-</TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={22}
+              color="#9aa8a1"
+            />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
-  style={styles.signInButton}
-  onPress={() => router.push("/member/HomeScreen")}
->
-  <Text style={styles.signInText}>Sign In</Text>
-</TouchableOpacity>
+          style={styles.signInButton}
+          onPress={() => router.push("/member/HomeScreen")}
+        >
+          <Text style={styles.signInText}>Sign In</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.adminButton}
+          onPress={() => router.push("/admin/AdminDashboardScreen")}
+        >
+          <Text style={styles.adminButtonText}>Login as Admin</Text>
+        </TouchableOpacity>
 
         <View style={styles.bottomLine} />
       </View>
@@ -294,6 +304,23 @@ const styles = StyleSheet.create({
   signInText: {
     color: "#ffffff",
     fontSize: 15,
+    fontWeight: "800",
+  },
+
+  adminButton: {
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#166534",
+    backgroundColor: "#f0fbf6",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  adminButtonText: {
+    color: "#166534",
+    fontSize: 14,
     fontWeight: "800",
   },
 
