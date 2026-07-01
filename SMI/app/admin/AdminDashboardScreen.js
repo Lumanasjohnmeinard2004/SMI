@@ -44,7 +44,7 @@ export default function AdminDashboardScreen() {
 
                   <TouchableOpacity
                     style={styles.iconButton}
-                    onPress={() => setActiveTab("upload")}
+                    onPress={() => router.push("/admin/AdminUploadCSVScreen")}
                   >
                     <Feather name="upload-cloud" size={18} color="#80d6b1" />
                     <View style={styles.dot} />
@@ -63,13 +63,6 @@ export default function AdminDashboardScreen() {
                 <Feather name="search" size={16} color="#8bb8a2" />
                 <Text style={styles.searchText}>Search by name, ID, or username...</Text>
               </View>
-            </>
-          )}
-
-          {activeTab === "upload" && (
-            <>
-              <Text style={styles.pageTitle}>Upload Records</Text>
-              <Text style={styles.pageSub}>Import CSV or Excel member data</Text>
             </>
           )}
 
@@ -93,7 +86,6 @@ export default function AdminDashboardScreen() {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {activeTab === "overview" && <OverviewContent />}
           {activeTab === "members" && <MembersContent />}
-          {activeTab === "upload" && <UploadContent router={router} />}
           {activeTab === "appointments" && <AppointmentsContent />}
           {activeTab === "profile" && <ProfileContent router={router} />}
         </ScrollView>
@@ -116,8 +108,8 @@ export default function AdminDashboardScreen() {
           <BottomTab
             icon="upload-cloud"
             label="Upload"
-            active={activeTab === "upload"}
-            onPress={() => setActiveTab("upload")}
+            active={false}
+            onPress={() => router.push("/admin/AdminUploadCSVScreen")}
           />
 
           <BottomTab
@@ -261,40 +253,6 @@ function MembersContent() {
   );
 }
 
-function UploadContent({ router }) {
-  return (
-    <View style={styles.uploadTabWrapper}>
-      <View style={styles.uploadTabCard}>
-        <View style={styles.uploadTabIcon}>
-          <Feather name="upload-cloud" size={38} color="#009060" />
-        </View>
-
-        <Text style={styles.uploadTabTitle}>Upload CSV File</Text>
-        <Text style={styles.uploadTabSub}>
-          Import member savings, loans, dividends, and share capital records.
-        </Text>
-
-        <TouchableOpacity
-          style={styles.uploadTabButton}
-          onPress={() => router.push("/admin/AdminUploadCSVScreen")}
-        >
-          <Feather name="file-plus" size={18} color="#ffffff" />
-          <Text style={styles.uploadTabButtonText}>Open Upload Page</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.uploadGuideCard}>
-        <Text style={styles.uploadGuideTitle}>Accepted Data</Text>
-
-        <UploadGuide text="Member ID and full name" />
-        <UploadGuide text="Savings and share capital" />
-        <UploadGuide text="Loan balance and dividends" />
-        <UploadGuide text="Member status and remarks" />
-      </View>
-    </View>
-  );
-}
-
 function AppointmentsContent() {
   return (
     <View style={styles.appointmentWrapper}>
@@ -414,7 +372,7 @@ function ProfileContent({ router }) {
         onPress={() => router.push("/admin/AdminUploadCSVScreen")}
       >
         <Feather name="upload-cloud" size={18} color="#009060" />
-        <Text style={styles.profileUploadText}>Upload CSV File</Text>
+        <Text style={styles.profileUploadText}>Upload CSV / Manual Input</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.profileSignOut} onPress={() => router.push("/")}>
@@ -610,15 +568,6 @@ function ProfileRow({ label, value }) {
   );
 }
 
-function UploadGuide({ text }) {
-  return (
-    <View style={styles.uploadGuideRow}>
-      <Ionicons name="checkmark-circle-outline" size={16} color="#009060" />
-      <Text style={styles.uploadGuideText}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   page: {
     flex: 1,
@@ -794,10 +743,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginBottom: 12,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
   },
 
   statIconBox: {
@@ -1460,85 +1405,6 @@ const styles = StyleSheet.create({
     color: "#e23b3b",
     fontSize: 14,
     fontWeight: "900",
-    marginLeft: 8,
-  },
-
-  uploadTabWrapper: {
-    padding: 20,
-    paddingBottom: 90,
-  },
-
-  uploadTabCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  uploadTabIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    backgroundColor: "#e6fff2",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  uploadTabTitle: {
-    color: "#002c1d",
-    fontSize: 20,
-    fontWeight: "900",
-  },
-
-  uploadTabSub: {
-    color: "#7f8790",
-    fontSize: 13,
-    textAlign: "center",
-    lineHeight: 20,
-    marginTop: 8,
-    marginBottom: 18,
-  },
-
-  uploadTabButton: {
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "#009060",
-    paddingHorizontal: 22,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  uploadTabButtonText: {
-    color: "#ffffff",
-    fontSize: 14,
-    fontWeight: "900",
-    marginLeft: 8,
-  },
-
-  uploadGuideCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    padding: 18,
-  },
-
-  uploadGuideTitle: {
-    color: "#002c1d",
-    fontSize: 15,
-    fontWeight: "900",
-    marginBottom: 12,
-  },
-
-  uploadGuideRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  uploadGuideText: {
-    color: "#344d41",
-    fontSize: 13,
     marginLeft: 8,
   },
 
