@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import {
   MemberScreen,
   PrimaryCard,
@@ -10,6 +11,7 @@ import {
 } from "../../components/MemberUI";
 
 export default function RequestsScreen() {
+  const router = useRouter();
   const [filter, setFilter] = useState("All");
 
   return (
@@ -18,6 +20,14 @@ export default function RequestsScreen() {
       title="My Requests"
       subtitle="Track your loan and service requests."
     >
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => router.push("/member/CreateRequestScreen")}
+      >
+        <Feather name="plus-circle" size={18} color="#ffffff" />
+        <Text style={styles.createButtonText}>Create Request</Text>
+      </TouchableOpacity>
+
       <View style={styles.filterRow}>
         <FilterChip
           label="All"
@@ -164,6 +174,23 @@ function DetailRow({ label, value }) {
 }
 
 const styles = StyleSheet.create({
+  createButton: {
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: theme.green,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+
+  createButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+
   filterRow: {
     flexDirection: "row",
     marginBottom: 16,
