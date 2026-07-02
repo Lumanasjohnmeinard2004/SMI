@@ -19,14 +19,6 @@ export default function AdminDashboardScreen() {
     <View style={styles.page}>
       <View style={styles.phone}>
         <View style={styles.header}>
-          <View style={styles.statusRow}>
-            <Text style={styles.time}>9:41</Text>
-            <View style={styles.batteryWrap}>
-              <View style={styles.battery} />
-              <View style={styles.batterySmall} />
-            </View>
-          </View>
-
           {activeTab === "overview" && (
             <>
               <View style={styles.portalRow}>
@@ -66,19 +58,7 @@ export default function AdminDashboardScreen() {
             </>
           )}
 
-          {activeTab === "appointments" && (
-            <>
-              <Text style={styles.pageTitle}>Appointments</Text>
-              <Text style={styles.pageSub}>1 pending · 2 total</Text>
-
-              <View style={styles.filterRow}>
-                <FilterChip label="All" active />
-                <FilterChip label="Pending" />
-                <FilterChip label="Confirmed" />
-                <FilterChip label="Cancelled" />
-              </View>
-            </>
-          )}
+          {activeTab === "requests" && <RequestsHeader />}
 
           {activeTab === "profile" && <AdminProfileHeader />}
         </View>
@@ -86,7 +66,7 @@ export default function AdminDashboardScreen() {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {activeTab === "overview" && <OverviewContent />}
           {activeTab === "members" && <MembersContent />}
-          {activeTab === "appointments" && <AppointmentsContent />}
+          {activeTab === "requests" && <RequestsContent />}
           {activeTab === "profile" && <ProfileContent router={router} />}
         </ScrollView>
 
@@ -113,11 +93,11 @@ export default function AdminDashboardScreen() {
           />
 
           <BottomTab
-            icon="calendar"
-            label="Appts"
-            active={activeTab === "appointments"}
+            icon="clipboard"
+            label="Reqs"
+            active={activeTab === "requests"}
             badge="1"
-            onPress={() => setActiveTab("appointments")}
+            onPress={() => setActiveTab("requests")}
           />
 
           <BottomTab
@@ -253,51 +233,203 @@ function MembersContent() {
   );
 }
 
-function AppointmentsContent() {
+function RequestsHeader() {
+  const [selectedLoanType, setSelectedLoanType] = useState("All Loan Types");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const loanTypes = [
+    "All Loan Types",
+    "Regular Loan",
+    "Regular Loan - Diminishing",
+    "Educational Loan",
+    "Educational Loan - Diminishing",
+    "Short-term Loan",
+    "Short-term Loan - Diminishing",
+    "Appliance Loan",
+    "Appliance Loan - Diminishing",
+    "Medical Loan",
+    "Medical Loan - Diminishing",
+    "Petty Cash Loan",
+    "Vehicle Loan",
+    "Inter-Trading Loan",
+  ];
+
   return (
-    <View style={styles.appointmentWrapper}>
-      <View style={styles.appointmentCard}>
-        <View style={styles.appointmentHeader}>
-          <View>
-            <Text style={styles.appointmentName}>Maria Santos</Text>
-            <Text style={styles.appointmentType}>Loan Application</Text>
-          </View>
+    <>
+      <Text style={styles.requestsTitle}>Requests</Text>
+      <Text style={styles.requestsSub}>1 pending · 2 total</Text>
 
-          <View style={styles.confirmedBadge}>
-            <Text style={styles.confirmedText}>Confirmed</Text>
-          </View>
+      <TouchableOpacity
+        style={styles.loanDropdownButton}
+        onPress={() => setShowDropdown(!showDropdown)}
+      >
+        <Feather name="credit-card" size={17} color="#37e6a3" />
+        <Text style={styles.loanDropdownText}>{selectedLoanType}</Text>
+        <Feather
+          name={showDropdown ? "chevron-up" : "chevron-down"}
+          size={19}
+          color="#d9fff0"
+        />
+      </TouchableOpacity>
+
+      {showDropdown && (
+        <View style={styles.loanDropdownMenu}>
+          <ScrollView style={styles.loanDropdownScroll} nestedScrollEnabled>
+            {loanTypes.map((loanType) => (
+              <TouchableOpacity
+                key={loanType}
+                style={
+                  selectedLoanType === loanType
+                    ? styles.loanDropdownItemActive
+                    : styles.loanDropdownItem
+                }
+                onPress={() => {
+                  setSelectedLoanType(loanType);
+                  setShowDropdown(false);
+                }}
+              >
+                <Text
+                  style={
+                    selectedLoanType === loanType
+                      ? styles.loanDropdownItemTextActive
+                      : styles.loanDropdownItemText
+                  }
+                >
+                  {loanType}
+                </Text>
+
+                {selectedLoanType === loanType && (
+                  <Ionicons name="checkmark-circle" size={16} color="#37e6a3" />
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      <View style={styles.requestFilterRow}>
+        <RequestFilterChip
+          label="All"
+          active={statusFilter === "All"}
+          onPress={() => setStatusFilter("All")}
+        />
+
+        <RequestFilterChip
+          label="Pending"
+          active={statusFilter === "Pending"}
+          onPress={() => setStatusFilter("Pending")}
+        />
+
+        <RequestFilterChip
+          label="Approved"
+          active={statusFilter === "Approved"}
+          onPress={() => setStatusFilter("Approved")}
+        />
+
+        <RequestFilterChip
+          label="Rejected"
+          active={statusFilter === "Rejected"}
+          onPress={() => setStatusFilter("Rejected")}
+        />
+      </View>
+    </>
+  );
+}
+
+function RequestsContent() {
+  return (
+    <View style={styles.requestsWrapper}>
+      <RequestCard
+        name="Maria Santos"
+        loanType="Regular Loan"
+        amount="₱25,000.00"
+        date="Mar 20, 2025 · 10:00 AM"
+        purpose="Business expansion"
+        status="Approved"
+      />
+
+      <RequestCard
+        name="Juan dela Cruz"
+        loanType="Educational Loan"
+        amount="₱15,000.00"
+        date="Mar 18, 2025 · 2:00 PM"
+        purpose="Tuition payment"
+        status="Pending"
+        showActions
+      />
+    </View>
+  );
+}
+
+function RequestCard({
+  name,
+  loanType,
+  amount,
+  date,
+  purpose,
+  status,
+  showActions,
+}) {
+  return (
+    <View style={styles.requestCard}>
+      <View style={styles.requestCardHeader}>
+        <View>
+          <Text style={styles.requestName}>{name}</Text>
+          <Text style={styles.requestLoanType}>{loanType}</Text>
         </View>
 
-        <Text style={styles.appointmentDetails}>Main Branch · Mar 20, 2025 10:00 AM</Text>
-        <Text style={styles.appointmentNote}>Please bring co-maker</Text>
+        <View
+          style={
+            status === "Approved"
+              ? styles.approvedBadge
+              : status === "Rejected"
+              ? styles.rejectedBadge
+              : styles.pendingRequestBadge
+          }
+        >
+          <Text
+            style={
+              status === "Approved"
+                ? styles.approvedText
+                : status === "Rejected"
+                ? styles.rejectedText
+                : styles.pendingRequestText
+            }
+          >
+            {status}
+          </Text>
+        </View>
       </View>
 
-      <View style={styles.appointmentCard}>
-        <View style={styles.appointmentHeader}>
-          <View>
-            <Text style={styles.appointmentName}>Juan dela Cruz</Text>
-            <Text style={styles.appointmentType}>Account Inquiry</Text>
-          </View>
-
-          <View style={styles.pendingBadge}>
-            <Text style={styles.pendingText}>Pending</Text>
-          </View>
-        </View>
-
-        <Text style={styles.appointmentDetails}>North Branch · Mar 18, 2025 2:00 PM</Text>
-
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.confirmButton}>
-            <Feather name="check-square" size={14} color="#009060" />
-            <Text style={styles.confirmButtonText}>Confirm</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.cancelButton}>
-            <Feather name="x-circle" size={14} color="#e23b3b" />
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.requestInfoBlock}>
+        <Text style={styles.requestLabel}>Amount Requested</Text>
+        <Text style={styles.requestAmount}>{amount}</Text>
       </View>
+
+      <View style={styles.requestInfoBlock}>
+        <Text style={styles.requestLabel}>Date Requested</Text>
+        <Text style={styles.requestValue}>{date}</Text>
+      </View>
+
+      <View style={styles.requestInfoBlock}>
+        <Text style={styles.requestLabel}>Purpose</Text>
+        <Text style={styles.requestValue}>{purpose}</Text>
+      </View>
+
+      {showActions && (
+        <View style={styles.requestActionRow}>
+          <TouchableOpacity style={styles.approveButton}>
+            <Feather name="check-square" size={16} color="#009060" />
+            <Text style={styles.approveButtonText}>Approve</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.rejectButton}>
+            <Feather name="x-circle" size={16} color="#ff4b4b" />
+            <Text style={styles.rejectButtonText}>Reject</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -347,24 +479,7 @@ function ProfileContent({ router }) {
         <ProfileRow label="Role" value="System Administrator" />
         <ProfileRow label="Access Level" value="Full — All Modules" />
         <ProfileRow label="Cooperative" value="SMIMC" />
-        <ProfileRow label="Last Login" value="Today, 9:41 AM" />
-      </View>
-
-      <Text style={styles.profileSectionTitle}>Appearance</Text>
-
-      <View style={styles.appearanceCard}>
-        <View style={styles.appearanceIcon}>
-          <Ionicons name="sunny-outline" size={22} color="#009060" />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={styles.darkModeTitle}>Dark Mode</Text>
-          <Text style={styles.darkModeSub}>Currently off</Text>
-        </View>
-
-        <View style={styles.togglePill}>
-          <Ionicons name="sunny-outline" size={14} color="#ffffff" />
-        </View>
+        <ProfileRow label="Last Login" value="Today" />
       </View>
 
       <TouchableOpacity
@@ -472,17 +587,6 @@ function MemberRecord({
               : styles.cautionBadge
           }
         >
-          <Ionicons
-            name="shield-checkmark-outline"
-            size={12}
-            color={
-              status === "Excellent"
-                ? "#009060"
-                : status === "Suspended"
-                ? "#e23b3b"
-                : "#ff6b1a"
-            }
-          />
           <Text
             style={
               status === "Excellent"
@@ -495,8 +599,6 @@ function MemberRecord({
             {status}
           </Text>
         </View>
-
-        <Feather name="chevron-right" size={18} color="#9aa8a1" />
       </View>
 
       <View style={styles.recordStats}>
@@ -527,12 +629,14 @@ function BottomTab({ icon, label, active, badge, onPress }) {
     <TouchableOpacity style={styles.bottomTab} onPress={onPress}>
       <View style={styles.bottomIconWrap}>
         <Feather name={icon} size={20} color={active ? "#37e6a3" : "#50906e"} />
+
         {badge && (
           <View style={styles.bottomBadge}>
             <Text style={styles.bottomBadgeText}>{badge}</Text>
           </View>
         )}
       </View>
+
       <Text style={active ? styles.bottomTabActiveText : styles.bottomTabText}>
         {label}
       </Text>
@@ -540,13 +644,16 @@ function BottomTab({ icon, label, active, badge, onPress }) {
   );
 }
 
-function FilterChip({ label, active }) {
+function RequestFilterChip({ label, active, onPress }) {
   return (
-    <View style={active ? styles.filterChipActive : styles.filterChip}>
-      <Text style={active ? styles.filterChipActiveText : styles.filterChipText}>
+    <TouchableOpacity
+      style={active ? styles.requestFilterChipActive : styles.requestFilterChip}
+      onPress={onPress}
+    >
+      <Text style={active ? styles.requestFilterChipActiveText : styles.requestFilterChipText}>
         {label}
       </Text>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -588,41 +695,9 @@ const styles = StyleSheet.create({
 
   header: {
     backgroundColor: "#06472f",
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 18,
-  },
-
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  time: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-
-  batteryWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  battery: {
-    width: 16,
-    height: 9,
-    backgroundColor: "#ffffff",
-    borderRadius: 2,
-  },
-
-  batterySmall: {
-    width: 3,
-    height: 7,
-    backgroundColor: "#ffffff",
-    borderRadius: 1,
-    marginLeft: 2,
+    paddingHorizontal: 18,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
 
   portalRow: {
@@ -717,6 +792,123 @@ const styles = StyleSheet.create({
     color: "#9fc9b5",
     fontSize: 13,
     marginLeft: 9,
+  },
+
+  requestsTitle: {
+    color: "#ffffff",
+    fontSize: 23,
+    fontWeight: "900",
+    marginTop: 4,
+  },
+
+  requestsSub: {
+    color: "#37e6a3",
+    fontSize: 14,
+    marginTop: 5,
+    marginBottom: 14,
+  },
+
+  loanDropdownButton: {
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#1c8c62",
+    backgroundColor: "#075b3c",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 13,
+  },
+
+  loanDropdownText: {
+    flex: 1,
+    color: "#d9fff0",
+    fontSize: 14,
+    fontWeight: "700",
+    marginLeft: 10,
+  },
+
+  loanDropdownMenu: {
+    maxHeight: 190,
+    borderRadius: 12,
+    backgroundColor: "#075b3c",
+    borderWidth: 1,
+    borderColor: "#1c8c62",
+    marginTop: 6,
+    overflow: "hidden",
+  },
+
+  loanDropdownScroll: {
+    maxHeight: 190,
+  },
+
+  loanDropdownItem: {
+    height: 36,
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  loanDropdownItemActive: {
+    height: 36,
+    paddingHorizontal: 13,
+    backgroundColor: "#0a704a",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  loanDropdownItemText: {
+    color: "#d9fff0",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+
+  loanDropdownItemTextActive: {
+    color: "#37e6a3",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  requestFilterRow: {
+    flexDirection: "row",
+    marginTop: 14,
+  },
+
+  requestFilterChip: {
+    height: 32,
+    minWidth: 62,
+    borderRadius: 11,
+    backgroundColor: "#0b6a47",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    paddingHorizontal: 12,
+  },
+
+  requestFilterChipActive: {
+    height: 32,
+    minWidth: 50,
+    borderRadius: 11,
+    backgroundColor: "#0c8559",
+    borderWidth: 1,
+    borderColor: "#24e4a0",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+    paddingHorizontal: 12,
+  },
+
+  requestFilterChipText: {
+    color: "#b9e8d2",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  requestFilterChipActiveText: {
+    color: "#37e6a3",
+    fontSize: 12,
+    fontWeight: "900",
   },
 
   content: {
@@ -970,8 +1162,6 @@ const styles = StyleSheet.create({
   },
 
   excellentBadge: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#e6fff2",
     borderRadius: 11,
     paddingHorizontal: 8,
@@ -982,12 +1172,9 @@ const styles = StyleSheet.create({
     color: "#009060",
     fontSize: 10,
     fontWeight: "800",
-    marginLeft: 3,
   },
 
   suspendedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
     backgroundColor: "#ffe9e9",
     borderRadius: 11,
     paddingHorizontal: 8,
@@ -998,7 +1185,6 @@ const styles = StyleSheet.create({
     color: "#e23b3b",
     fontSize: 10,
     fontWeight: "800",
-    marginLeft: 3,
   },
 
   recordStats: {
@@ -1039,152 +1225,146 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  appointmentWrapper: {
-    padding: 20,
+  requestsWrapper: {
+    padding: 18,
+    paddingBottom: 92,
   },
 
-  filterRow: {
-    flexDirection: "row",
-    marginTop: 14,
-  },
-
-  filterChip: {
-    backgroundColor: "#1b6646",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginRight: 8,
-  },
-
-  filterChipActive: {
-    backgroundColor: "#1b6646",
-    borderWidth: 1,
-    borderColor: "#20d291",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    marginRight: 8,
-  },
-
-  filterChipText: {
-    color: "#8bd4b4",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  filterChipActiveText: {
-    color: "#20d291",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  appointmentCard: {
+  requestCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 14,
-    padding: 15,
+    borderRadius: 15,
+    padding: 16,
     marginBottom: 14,
   },
 
-  appointmentHeader: {
+  requestCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 18,
   },
 
-  appointmentName: {
+  requestName: {
     color: "#002c1d",
     fontSize: 14,
     fontWeight: "900",
   },
 
-  appointmentType: {
-    color: "#8e91a4",
+  requestLoanType: {
+    color: "#7f8790",
     fontSize: 12,
-    marginTop: 5,
+    marginTop: 4,
   },
 
-  appointmentDetails: {
+  approvedBadge: {
+    backgroundColor: "#e6fff2",
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+
+  approvedText: {
+    color: "#009060",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  pendingRequestBadge: {
+    backgroundColor: "#fff1dd",
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+
+  pendingRequestText: {
+    color: "#ff9800",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  rejectedBadge: {
+    backgroundColor: "#ffe9e9",
+    borderRadius: 9,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+
+  rejectedText: {
+    color: "#ff4b4b",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  requestInfoBlock: {
+    marginBottom: 14,
+  },
+
+  requestLabel: {
+    color: "#596c63",
+    fontSize: 12,
+    fontWeight: "800",
+    marginBottom: 4,
+  },
+
+  requestAmount: {
+    color: "#009060",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+
+  requestValue: {
     color: "#243a30",
     fontSize: 13,
-    marginTop: 14,
+    lineHeight: 18,
   },
 
-  appointmentNote: {
-    color: "#9fa5b4",
-    fontSize: 12,
-    marginTop: 8,
-  },
-
-  confirmedBadge: {
-    backgroundColor: "#e6fff2",
-    borderRadius: 10,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-
-  confirmedText: {
-    color: "#009060",
-    fontSize: 10,
-    fontWeight: "800",
-  },
-
-  pendingBadge: {
-    backgroundColor: "#fff1e6",
-    borderRadius: 10,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-  },
-
-  pendingText: {
-    color: "#ff6b1a",
-    fontSize: 10,
-    fontWeight: "800",
-  },
-
-  actionRow: {
+  requestActionRow: {
     flexDirection: "row",
-    marginTop: 14,
+    marginTop: 4,
   },
 
-  confirmButton: {
+  approveButton: {
     flex: 1,
-    height: 35,
-    backgroundColor: "#e3f8ef",
-    borderWidth: 1,
-    borderColor: "#80d6b1",
+    height: 34,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#38d39f",
+    backgroundColor: "#e8fff5",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
-    marginRight: 8,
+    marginRight: 12,
   },
 
-  confirmButtonText: {
+  approveButtonText: {
     color: "#009060",
-    fontWeight: "800",
-    marginLeft: 5,
+    fontSize: 13,
+    fontWeight: "900",
+    marginLeft: 7,
   },
 
-  cancelButton: {
+  rejectButton: {
     flex: 1,
-    height: 35,
-    backgroundColor: "#fff2f2",
-    borderWidth: 1,
-    borderColor: "#ffb6b6",
+    height: 34,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ff5f5f",
+    backgroundColor: "#fff7f7",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
   },
 
-  cancelButtonText: {
-    color: "#e23b3b",
-    fontWeight: "800",
-    marginLeft: 5,
+  rejectButtonText: {
+    color: "#ff4b4b",
+    fontSize: 13,
+    fontWeight: "900",
+    marginLeft: 7,
   },
 
   adminProfileHeader: {
     alignItems: "center",
-    paddingTop: 25,
+    paddingTop: 10,
   },
 
   bigAvatar: {
@@ -1328,47 +1508,6 @@ const styles = StyleSheet.create({
     color: "#002c1d",
     fontSize: 13,
     fontWeight: "800",
-  },
-
-  appearanceCard: {
-    height: 58,
-    backgroundColor: "#ffffff",
-    borderRadius: 13,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    marginBottom: 14,
-  },
-
-  appearanceIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
-    backgroundColor: "#e6fff2",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-
-  darkModeTitle: {
-    color: "#002c1d",
-    fontWeight: "900",
-    fontSize: 13,
-  },
-
-  darkModeSub: {
-    color: "#9b8ead",
-    fontSize: 11,
-    marginTop: 3,
-  },
-
-  togglePill: {
-    width: 45,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#9df2c9",
-    justifyContent: "center",
-    alignItems: "center",
   },
 
   profileUploadButton: {
