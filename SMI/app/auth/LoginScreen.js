@@ -13,16 +13,77 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import SmiLogo from "../../components/SmiLogo";
+import { apiRequest } from "../../config/api";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { height } = useWindowDimensions();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loadingMember, setLoadingMember] = useState(false);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const topHeight = Math.max(410, Math.min(470, height * 0.49));
+
+  const handleMemberLogin = async () => {
+    try {
+      setErrorMessage("");
+
+      if (!username.trim() || !password.trim()) {
+        setErrorMessage("Please enter your username and password.");
+        return;
+      }
+
+      setLoadingMember(true);
+
+      const data = await apiRequest("/auth/login-member", "POST", {
+        username: username.trim(),
+        password: password.trim(),
+      });
+
+      console.log("Member login success:", data);
+
+      router.push("/member/HomeScreen");
+    } catch (error) {
+      setErrorMessage(error.message || "Member login failed.");
+    } finally {
+      setLoadingMember(false);
+    }
+  };
+
+  const handleAdminLogin = async () => {
+    try {
+      setErrorMessage("");
+
+      if (!username.trim() || !password.trim()) {
+        setErrorMessage("Please enter your admin username and password.");
+        return;
+      }
+
+      setLoadingAdmin(true);
+
+      const data = await apiRequest("/auth/login-admin", "POST", {
+        username: username.trim(),
+        password: password.trim(),
+      });
+
+      console.log("Admin login success:", data);
+
+      router.push("/admin/AdminDashboardScreen");
+    } catch (error) {
+      setErrorMessage(error.message || "Admin login failed.");
+    } finally {
+      setLoadingAdmin(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -38,7 +99,7 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.topSection}>
+          <View style={[styles.topSection, { height: topHeight }]}>
             <View style={styles.bgCircleLeftOne} />
             <View style={styles.bgCircleLeftTwo} />
             <View style={styles.bgCircleLeftThree} />
@@ -87,6 +148,13 @@ export default function LoginScreen() {
               Enter your credentials to continue
             </Text>
 
+            {errorMessage ? (
+              <View style={styles.errorBox}>
+                <Feather name="alert-circle" size={16} color="#991b1b" />
+                <Text style={styles.errorText}>{errorMessage}</Text>
+              </View>
+            ) : null}
+
             <Text style={styles.label}>Username</Text>
             <View style={styles.inputBox}>
               <Feather name="user" size={20} color="#b07a00" />
@@ -97,6 +165,7 @@ export default function LoginScreen() {
                 placeholderTextColor="#79808e"
                 value={username}
                 onChangeText={setUsername}
+                autoCapitalize="none"
               />
             </View>
 
@@ -111,6 +180,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                autoCapitalize="none"
               />
 
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
@@ -123,17 +193,33 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity
-              style={styles.signInButton}
-              onPress={() => router.push("/member/HomeScreen")}
+              style={[
+                styles.signInButton,
+                loadingMember || loadingAdmin ? styles.disabledButton : null,
+              ]}
+              onPress={handleMemberLogin}
+              disabled={loadingMember || loadingAdmin}
             >
-              <Text style={styles.signInText}>Sign In</Text>
+              {loadingMember ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.signInText}>Sign In</Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.adminButton}
-              onPress={() => router.push("/admin/AdminDashboardScreen")}
+              style={[
+                styles.adminButton,
+                loadingMember || loadingAdmin ? styles.disabledAdminButton : null,
+              ]}
+              onPress={handleAdminLogin}
+              disabled={loadingMember || loadingAdmin}
             >
-              <Text style={styles.adminButtonText}>Login as Admin</Text>
+              {loadingAdmin ? (
+                <ActivityIndicator color="#06472f" />
+              ) : (
+                <Text style={styles.adminButtonText}>Login as Admin</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -162,18 +248,17 @@ const styles = StyleSheet.create({
   },
 
   topSection: {
-    height: 360,
     backgroundColor: "#004b2b",
     alignItems: "center",
     position: "relative",
     overflow: "hidden",
-    paddingTop: 24,
+    paddingTop: 42,
   },
 
   bgCircleLeftOne: {
     position: "absolute",
     left: -210,
-    top: 115,
+    top: 150,
     width: 380,
     height: 380,
     borderRadius: 190,
@@ -184,7 +269,7 @@ const styles = StyleSheet.create({
   bgCircleLeftTwo: {
     position: "absolute",
     left: -240,
-    top: 140,
+    top: 175,
     width: 430,
     height: 430,
     borderRadius: 215,
@@ -195,7 +280,7 @@ const styles = StyleSheet.create({
   bgCircleLeftThree: {
     position: "absolute",
     left: -265,
-    top: 165,
+    top: 200,
     width: 480,
     height: 480,
     borderRadius: 240,
@@ -206,7 +291,7 @@ const styles = StyleSheet.create({
   bgCircleRightOne: {
     position: "absolute",
     right: -215,
-    top: 125,
+    top: 160,
     width: 390,
     height: 390,
     borderRadius: 195,
@@ -217,7 +302,7 @@ const styles = StyleSheet.create({
   bgCircleRightTwo: {
     position: "absolute",
     right: -250,
-    top: 155,
+    top: 190,
     width: 450,
     height: 450,
     borderRadius: 225,
@@ -228,7 +313,7 @@ const styles = StyleSheet.create({
   goldGlowLeft: {
     position: "absolute",
     left: -18,
-    top: 170,
+    top: 210,
     width: 90,
     height: 90,
     borderRadius: 45,
@@ -238,7 +323,7 @@ const styles = StyleSheet.create({
   goldGlowRight: {
     position: "absolute",
     right: -20,
-    top: 185,
+    top: 220,
     width: 100,
     height: 100,
     borderRadius: 50,
@@ -270,7 +355,7 @@ const styles = StyleSheet.create({
   },
 
   logoShadow: {
-    marginTop: 40,
+    marginTop: 54,
     borderRadius: 70,
     backgroundColor: "#ffffff",
     shadowColor: "#000",
@@ -283,7 +368,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 34,
     fontWeight: "900",
-    marginTop: 18,
+    marginTop: 22,
     textShadowColor: "rgba(0,0,0,0.22)",
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 3,
@@ -299,7 +384,7 @@ const styles = StyleSheet.create({
 
   badgeRow: {
     flexDirection: "row",
-    marginTop: 18,
+    marginTop: 22,
     paddingHorizontal: 12,
   },
 
@@ -324,13 +409,13 @@ const styles = StyleSheet.create({
 
   formCard: {
     flex: 1,
-    minHeight: 450,
+    minHeight: 460,
     backgroundColor: "#fbfcfb",
     borderTopLeftRadius: 58,
     borderTopRightRadius: 58,
     paddingHorizontal: 28,
-    paddingTop: 30,
-    paddingBottom: 30,
+    paddingTop: 42,
+    paddingBottom: 34,
     marginTop: -1,
   },
 
@@ -349,6 +434,26 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
+  errorBox: {
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    marginBottom: 18,
+  },
+
+  errorText: {
+    flex: 1,
+    color: "#991b1b",
+    fontSize: 13,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+
   label: {
     color: "#06361f",
     fontSize: 15,
@@ -365,7 +470,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: 18,
   },
 
   input: {
@@ -383,7 +488,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#005b35",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 4,
+    marginTop: 8,
+  },
+
+  disabledButton: {
+    opacity: 0.75,
   },
 
   signInText: {
@@ -400,7 +509,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 16,
+  },
+
+  disabledAdminButton: {
+    opacity: 0.75,
   },
 
   adminButtonText: {
