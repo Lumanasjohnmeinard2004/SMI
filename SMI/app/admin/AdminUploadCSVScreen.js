@@ -19,7 +19,7 @@ export default function AdminUploadCSVScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
 
-  const isDesktopWeb = Platform.OS === "web" && width >= 768;
+  const isDesktopWeb = Platform.OS === "web" && width >= 900;
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [mode, setMode] = useState("upload");
@@ -113,337 +113,470 @@ export default function AdminUploadCSVScreen() {
     <View style={styles.page}>
       <View
         style={[
-          styles.phone,
+          styles.shell,
           isDesktopWeb
-            ? [styles.phoneWeb, { height: Math.min(height - 32, 900) }]
-            : styles.phoneMobile,
+            ? [styles.shellDesktop, { minHeight: Math.max(height, 720) }]
+            : styles.shellMobile,
         ]}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Upload Records</Text>
-          <Text style={styles.subtitle}>Import or manually encode member data</Text>
-        </View>
+        {isDesktopWeb && <Sidebar router={router} />}
 
-        <View style={styles.modeTabs}>
-          <TouchableOpacity
-            style={mode === "upload" ? styles.modeTabActive : styles.modeTab}
-            onPress={() => setMode("upload")}
+        <View style={styles.mainArea}>
+          <TopHeader router={router} isDesktopWeb={isDesktopWeb} />
+
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={[
+              styles.contentInner,
+              isDesktopWeb && styles.contentInnerDesktop,
+            ]}
+            showsVerticalScrollIndicator={false}
           >
-            <Feather
-              name="upload-cloud"
-              size={16}
-              color={mode === "upload" ? "#ffffff" : "#009060"}
-            />
-            <Text style={mode === "upload" ? styles.modeTextActive : styles.modeText}>
-              CSV Upload
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.modeTabs}>
+              <TouchableOpacity
+                style={mode === "upload" ? styles.modeTabActive : styles.modeTab}
+                onPress={() => setMode("upload")}
+              >
+                <Feather
+                  name="upload-cloud"
+                  size={16}
+                  color={mode === "upload" ? "#ffffff" : "#009060"}
+                />
+                <Text style={mode === "upload" ? styles.modeTextActive : styles.modeText}>
+                  CSV Upload
+                </Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={mode === "manual" ? styles.modeTabActive : styles.modeTab}
-            onPress={() => setMode("manual")}
-          >
-            <Feather
-              name="edit-3"
-              size={16}
-              color={mode === "manual" ? "#ffffff" : "#009060"}
-            />
-            <Text style={mode === "manual" ? styles.modeTextActive : styles.modeText}>
-              Manual Input
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {mode === "upload" ? (
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            <View style={styles.uploadCard}>
-              <View style={styles.uploadIcon}>
-                <Feather name="upload-cloud" size={38} color="#00a86b" />
-              </View>
-
-              <Text style={styles.uploadTitle}>Select CSV or Excel File</Text>
-              <Text style={styles.uploadSub}>
-                Upload member records, savings, share capital, special savings, and loan balances.
-              </Text>
-
-              <TouchableOpacity style={styles.chooseButton} onPress={pickCSVFile}>
-                <Feather name="file-plus" size={18} color="#ffffff" />
-                <Text style={styles.chooseText}>Choose File</Text>
+              <TouchableOpacity
+                style={mode === "manual" ? styles.modeTabActive : styles.modeTab}
+                onPress={() => setMode("manual")}
+              >
+                <Feather
+                  name="edit-3"
+                  size={16}
+                  color={mode === "manual" ? "#ffffff" : "#009060"}
+                />
+                <Text style={mode === "manual" ? styles.modeTextActive : styles.modeText}>
+                  Manual Input
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {selectedFile && (
-              <View style={styles.fileCard}>
-                <View style={styles.fileIconBox}>
-                  <Feather name="file-text" size={26} color="#00a86b" />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.fileName}>{selectedFile.name}</Text>
-                  <Text style={styles.fileSize}>
-                    {selectedFile.size
-                      ? `${(selectedFile.size / 1024).toFixed(2)} KB`
-                      : "File selected"}
-                  </Text>
-                </View>
-
-                <Ionicons name="checkmark-circle" size={24} color="#00a86b" />
-              </View>
+            {mode === "upload" ? (
+              <UploadContent
+                selectedFile={selectedFile}
+                pickCSVFile={pickCSVFile}
+                isDesktopWeb={isDesktopWeb}
+              />
+            ) : (
+              <ManualContent
+                formData={formData}
+                updateField={updateField}
+                clearManualForm={clearManualForm}
+                totalLoanBalance={totalLoanBalance}
+                isDesktopWeb={isDesktopWeb}
+              />
             )}
-
-            <View style={styles.infoCard}>
-              <Text style={styles.infoTitle}>Required CSV Columns</Text>
-
-              <InfoLine text="First Name, Middle Initial, Last Name" />
-              <InfoLine text="Share Capital, Savings, Special Savings" />
-              <InfoLine text="All loan type balances" />
-              <InfoLine text="Total Loan Balance" />
-            </View>
-
-            <TouchableOpacity
-              style={[styles.uploadButton, !selectedFile && styles.uploadDisabled]}
-              disabled={!selectedFile}
-            >
-              <Feather name="upload" size={18} color="#ffffff" />
-              <Text style={styles.uploadButtonText}>Upload and Process File</Text>
-            </TouchableOpacity>
-
-            <View style={styles.bottomSpace} />
           </ScrollView>
-        ) : (
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            <View style={styles.manualCard}>
-              <Text style={styles.sectionTitle}>Member Information</Text>
 
-              <InputField
-                label="First Name"
-                value={formData.firstName}
-                onChangeText={(value) => updateField("firstName", value)}
-                placeholder="e.g. Maria"
-              />
+          {!isDesktopWeb && <BottomNav router={router} />}
+        </View>
+      </View>
+    </View>
+  );
+}
 
-              <InputField
-                label="Middle Initial"
-                value={formData.middleInitial}
-                onChangeText={(value) => updateField("middleInitial", value)}
-                placeholder="e.g. C"
-                maxLength={2}
-              />
+function Sidebar({ router }) {
+  return (
+    <View style={styles.sidebar}>
+      <View style={styles.sidebarBrand}>
+        <View style={styles.brandIcon}>
+          <Ionicons name="shield-checkmark" size={24} color="#ffffff" />
+        </View>
 
-              <InputField
-                label="Last Name"
-                value={formData.lastName}
-                onChangeText={(value) => updateField("lastName", value)}
-                placeholder="e.g. Santos"
-              />
+        <View>
+          <Text style={styles.brandTitle}>SMI Coop</Text>
+          <Text style={styles.brandSub}>Admin Portal</Text>
+        </View>
+      </View>
+
+      <View style={styles.sidebarMenu}>
+        <SidebarItem
+          icon="bar-chart-2"
+          label="Dashboard"
+          active={false}
+          onPress={() => router.push("/admin/AdminDashboardScreen")}
+        />
+
+        <SidebarItem
+          icon="users"
+          label="Members"
+          active={false}
+          onPress={() =>
+            router.push({
+              pathname: "/admin/AdminDashboardScreen",
+              params: { tab: "members" },
+            })
+          }
+        />
+
+        <SidebarItem icon="upload-cloud" label="Upload Records" active onPress={() => {}} />
+
+        <SidebarItem
+          icon="clipboard"
+          label="Loan Requests"
+          active={false}
+          badge="1"
+          onPress={() =>
+            router.push({
+              pathname: "/admin/AdminDashboardScreen",
+              params: { tab: "requests" },
+            })
+          }
+        />
+
+        <SidebarItem
+          icon="user"
+          label="Profile"
+          active={false}
+          onPress={() =>
+            router.push({
+              pathname: "/admin/AdminDashboardScreen",
+              params: { tab: "profile" },
+            })
+          }
+        />
+      </View>
+
+      <TouchableOpacity style={styles.sidebarLogout} onPress={() => router.push("/")}>
+        <Feather name="log-out" size={18} color="#fecaca" />
+        <Text style={styles.sidebarLogoutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function SidebarItem({ icon, label, active, badge, onPress }) {
+  return (
+    <TouchableOpacity
+      style={active ? styles.sidebarItemActive : styles.sidebarItem}
+      onPress={onPress}
+    >
+      <Feather name={icon} size={18} color={active ? "#ffffff" : "#a7f3d0"} />
+
+      <Text style={active ? styles.sidebarItemTextActive : styles.sidebarItemText}>
+        {label}
+      </Text>
+
+      {badge && (
+        <View style={styles.sidebarBadge}>
+          <Text style={styles.sidebarBadgeText}>{badge}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function TopHeader({ router, isDesktopWeb }) {
+  return (
+    <View style={styles.topHeader}>
+      <View style={styles.topTitleBlock}>
+        <View style={styles.portalRow}>
+          <Ionicons name="cloud-upload-outline" size={14} color="#16a34a" />
+          <Text style={styles.portalText}>ADMIN UPLOAD</Text>
+        </View>
+
+        <Text style={styles.topTitle}>Upload Records</Text>
+        <Text style={styles.topSubtitle}>
+          Import CSV files or manually encode member financial data
+        </Text>
+      </View>
+
+      <View style={styles.headerActions}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/admin/AdminDashboardScreen")}
+        >
+          <Feather name="arrow-left" size={18} color="#06472f" />
+          {isDesktopWeb && <Text style={styles.backButtonText}>Back to Dashboard</Text>}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
+  return (
+    <View style={isDesktopWeb ? styles.uploadGrid : null}>
+      <View style={[styles.panelCard, isDesktopWeb && styles.uploadMainPanel]}>
+        <View style={styles.uploadDropZone}>
+          <View style={styles.uploadIcon}>
+            <Feather name="upload-cloud" size={42} color="#009060" />
+          </View>
+
+          <Text style={styles.uploadTitle}>Select CSV or Excel File</Text>
+
+          <Text style={styles.uploadSub}>
+            Upload member records, savings, share capital, special savings, and loan balances.
+          </Text>
+
+          <TouchableOpacity style={styles.chooseButton} onPress={pickCSVFile}>
+            <Feather name="file-plus" size={18} color="#ffffff" />
+            <Text style={styles.chooseText}>Choose File</Text>
+          </TouchableOpacity>
+        </View>
+
+        {selectedFile && (
+          <View style={styles.fileCard}>
+            <View style={styles.fileIconBox}>
+              <Feather name="file-text" size={26} color="#00a86b" />
             </View>
 
-            <View style={styles.manualCard}>
-              <Text style={styles.sectionTitle}>Savings Information</Text>
-
-              <InputField
-                label="Share Capital"
-                value={formData.shareCapital}
-                onChangeText={(value) => updateField("shareCapital", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Savings"
-                value={formData.savings}
-                onChangeText={(value) => updateField("savings", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Special Savings"
-                value={formData.specialSavings}
-                onChangeText={(value) => updateField("specialSavings", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.fileName}>{selectedFile.name}</Text>
+              <Text style={styles.fileSize}>
+                {selectedFile.size
+                  ? `${(selectedFile.size / 1024).toFixed(2)} KB`
+                  : "File selected"}
+              </Text>
             </View>
 
-            <View style={styles.manualCard}>
-              <Text style={styles.sectionTitle}>Loan Balances</Text>
-
-              <InputField
-                label="Regular Loan"
-                value={formData.regularLoan}
-                onChangeText={(value) => updateField("regularLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Regular Loan - Diminishing"
-                value={formData.regularLoanDiminishing}
-                onChangeText={(value) => updateField("regularLoanDiminishing", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Educational Loan"
-                value={formData.educationalLoan}
-                onChangeText={(value) => updateField("educationalLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Educational Loan - Diminishing"
-                value={formData.educationalLoanDiminishing}
-                onChangeText={(value) => updateField("educationalLoanDiminishing", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Short-term Loan"
-                value={formData.shortTermLoan}
-                onChangeText={(value) => updateField("shortTermLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Short-term Loan - Diminishing"
-                value={formData.shortTermLoanDiminishing}
-                onChangeText={(value) => updateField("shortTermLoanDiminishing", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Appliance Loan"
-                value={formData.applianceLoan}
-                onChangeText={(value) => updateField("applianceLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Appliance Loan - Diminishing"
-                value={formData.applianceLoanDiminishing}
-                onChangeText={(value) => updateField("applianceLoanDiminishing", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Medical Loan"
-                value={formData.medicalLoan}
-                onChangeText={(value) => updateField("medicalLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Medical Loan - Diminishing"
-                value={formData.medicalLoanDiminishing}
-                onChangeText={(value) => updateField("medicalLoanDiminishing", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Petty Cash Loan"
-                value={formData.pettyCashLoan}
-                onChangeText={(value) => updateField("pettyCashLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Vehicle Loan"
-                value={formData.vehicleLoan}
-                onChangeText={(value) => updateField("vehicleLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-
-              <InputField
-                label="Inter-Trading Loan"
-                value={formData.interTradingLoan}
-                onChangeText={(value) => updateField("interTradingLoan", value)}
-                placeholder="0.00"
-                keyboardType="numeric"
-              />
-            </View>
-
-            <View style={styles.totalCard}>
-              <Text style={styles.totalLabel}>TOTAL LOAN BALANCE</Text>
-              <Text style={styles.totalAmount}>₱{totalLoanBalance.toLocaleString()}.00</Text>
-            </View>
-
-            <TouchableOpacity style={styles.saveButton}>
-              <Feather name="save" size={18} color="#ffffff" />
-              <Text style={styles.saveButtonText}>Save Manual Record</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.clearButton} onPress={clearManualForm}>
-              <Feather name="refresh-cw" size={17} color="#e23b3b" />
-              <Text style={styles.clearButtonText}>Clear Form</Text>
-            </TouchableOpacity>
-
-            <View style={styles.bottomSpace} />
-          </ScrollView>
+            <Ionicons name="checkmark-circle" size={24} color="#00a86b" />
+          </View>
         )}
 
-        <View style={styles.bottomNav}>
-          <BottomTab
-            icon="bar-chart-2"
-            label="Overview"
-            active={false}
-            onPress={() => router.push("/admin/AdminDashboardScreen")}
+        <TouchableOpacity
+          style={[styles.uploadButton, !selectedFile && styles.uploadDisabled]}
+          disabled={!selectedFile}
+        >
+          <Feather name="upload" size={18} color="#ffffff" />
+          <Text style={styles.uploadButtonText}>Upload and Process File</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={[styles.panelCard, isDesktopWeb && styles.uploadSidePanel]}>
+        <Text style={styles.sectionTitle}>Required CSV Columns</Text>
+        <Text style={styles.sectionSub}>
+          Make sure your uploaded file follows this structure.
+        </Text>
+
+        <View style={styles.infoList}>
+          <InfoLine text="First Name, Middle Initial, Last Name" />
+          <InfoLine text="Share Capital, Savings, Special Savings" />
+          <InfoLine text="All loan type balances" />
+          <InfoLine text="Total Loan Balance" />
+          <InfoLine text="Member username or member ID" />
+        </View>
+
+        <View style={styles.noteBox}>
+          <Feather name="info" size={18} color="#b45309" />
+          <Text style={styles.noteText}>
+            For now, this page prepares the UI. Backend CSV processing can be connected next.
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ManualContent({
+  formData,
+  updateField,
+  clearManualForm,
+  totalLoanBalance,
+  isDesktopWeb,
+}) {
+  return (
+    <View>
+      <View style={isDesktopWeb ? styles.manualGrid : null}>
+        <View style={styles.panelCard}>
+          <Text style={styles.sectionTitle}>Member Information</Text>
+          <Text style={styles.sectionSub}>Basic identity of the cooperative member</Text>
+
+          <View style={isDesktopWeb ? styles.formGridThree : null}>
+            <InputField
+              label="First Name"
+              value={formData.firstName}
+              onChangeText={(value) => updateField("firstName", value)}
+              placeholder="e.g. Maria"
+            />
+
+            <InputField
+              label="Middle Initial"
+              value={formData.middleInitial}
+              onChangeText={(value) => updateField("middleInitial", value)}
+              placeholder="e.g. C"
+              maxLength={2}
+            />
+
+            <InputField
+              label="Last Name"
+              value={formData.lastName}
+              onChangeText={(value) => updateField("lastName", value)}
+              placeholder="e.g. Santos"
+            />
+          </View>
+        </View>
+
+        <View style={styles.panelCard}>
+          <Text style={styles.sectionTitle}>Savings Information</Text>
+          <Text style={styles.sectionSub}>Savings, share capital, and special savings</Text>
+
+          <View style={isDesktopWeb ? styles.formGridThree : null}>
+            <InputField
+              label="Share Capital"
+              value={formData.shareCapital}
+              onChangeText={(value) => updateField("shareCapital", value)}
+              placeholder="0.00"
+              keyboardType="numeric"
+            />
+
+            <InputField
+              label="Savings"
+              value={formData.savings}
+              onChangeText={(value) => updateField("savings", value)}
+              placeholder="0.00"
+              keyboardType="numeric"
+            />
+
+            <InputField
+              label="Special Savings"
+              value={formData.specialSavings}
+              onChangeText={(value) => updateField("specialSavings", value)}
+              placeholder="0.00"
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.panelCard}>
+        <Text style={styles.sectionTitle}>Loan Balances</Text>
+        <Text style={styles.sectionSub}>Encode all loan balances for this member</Text>
+
+        <View style={isDesktopWeb ? styles.formGridFour : null}>
+          <InputField
+            label="Regular Loan"
+            value={formData.regularLoan}
+            onChangeText={(value) => updateField("regularLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
           />
 
-          <BottomTab
-            icon="users"
-            label="Members"
-            active={false}
-            onPress={() =>
-              router.push({
-                pathname: "/admin/AdminDashboardScreen",
-                params: { tab: "members" },
-              })
-            }
+          <InputField
+            label="Regular Loan - Diminishing"
+            value={formData.regularLoanDiminishing}
+            onChangeText={(value) => updateField("regularLoanDiminishing", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
           />
 
-          <BottomTab
-            icon="upload-cloud"
-            label="Upload"
-            active
-            onPress={() => {}}
+          <InputField
+            label="Educational Loan"
+            value={formData.educationalLoan}
+            onChangeText={(value) => updateField("educationalLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
           />
 
-          <BottomTab
-            icon="clipboard"
-            label="Reqs"
-            active={false}
-            badge="1"
-            onPress={() =>
-              router.push({
-                pathname: "/admin/AdminDashboardScreen",
-                params: { tab: "requests" },
-              })
-            }
+          <InputField
+            label="Educational Loan - Diminishing"
+            value={formData.educationalLoanDiminishing}
+            onChangeText={(value) => updateField("educationalLoanDiminishing", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
           />
 
-          <BottomTab
-            icon="user"
-            label="Profile"
-            active={false}
-            onPress={() =>
-              router.push({
-                pathname: "/admin/AdminDashboardScreen",
-                params: { tab: "profile" },
-              })
-            }
+          <InputField
+            label="Short-term Loan"
+            value={formData.shortTermLoan}
+            onChangeText={(value) => updateField("shortTermLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
           />
+
+          <InputField
+            label="Short-term Loan - Diminishing"
+            value={formData.shortTermLoanDiminishing}
+            onChangeText={(value) => updateField("shortTermLoanDiminishing", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Appliance Loan"
+            value={formData.applianceLoan}
+            onChangeText={(value) => updateField("applianceLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Appliance Loan - Diminishing"
+            value={formData.applianceLoanDiminishing}
+            onChangeText={(value) => updateField("applianceLoanDiminishing", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Medical Loan"
+            value={formData.medicalLoan}
+            onChangeText={(value) => updateField("medicalLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Medical Loan - Diminishing"
+            value={formData.medicalLoanDiminishing}
+            onChangeText={(value) => updateField("medicalLoanDiminishing", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Petty Cash Loan"
+            value={formData.pettyCashLoan}
+            onChangeText={(value) => updateField("pettyCashLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Vehicle Loan"
+            value={formData.vehicleLoan}
+            onChangeText={(value) => updateField("vehicleLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Inter-Trading Loan"
+            value={formData.interTradingLoan}
+            onChangeText={(value) => updateField("interTradingLoan", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
+
+      <View style={isDesktopWeb ? styles.actionGrid : null}>
+        <View style={styles.totalCard}>
+          <Text style={styles.totalLabel}>TOTAL LOAN BALANCE</Text>
+          <Text style={styles.totalAmount}>₱{totalLoanBalance.toLocaleString()}.00</Text>
+        </View>
+
+        <View style={styles.actionPanel}>
+          <TouchableOpacity style={styles.saveButton}>
+            <Feather name="save" size={18} color="#ffffff" />
+            <Text style={styles.saveButtonText}>Save Manual Record</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.clearButton} onPress={clearManualForm}>
+            <Feather name="refresh-cw" size={17} color="#e23b3b" />
+            <Text style={styles.clearButtonText}>Clear Form</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -478,8 +611,60 @@ function InputField({
 function InfoLine({ text }) {
   return (
     <View style={styles.infoLine}>
-      <Ionicons name="checkmark-circle-outline" size={16} color="#00a86b" />
+      <Ionicons name="checkmark-circle-outline" size={17} color="#00a86b" />
       <Text style={styles.infoText}>{text}</Text>
+    </View>
+  );
+}
+
+function BottomNav({ router }) {
+  return (
+    <View style={styles.bottomNav}>
+      <BottomTab
+        icon="bar-chart-2"
+        label="Overview"
+        active={false}
+        onPress={() => router.push("/admin/AdminDashboardScreen")}
+      />
+
+      <BottomTab
+        icon="users"
+        label="Members"
+        active={false}
+        onPress={() =>
+          router.push({
+            pathname: "/admin/AdminDashboardScreen",
+            params: { tab: "members" },
+          })
+        }
+      />
+
+      <BottomTab icon="upload-cloud" label="Upload" active onPress={() => {}} />
+
+      <BottomTab
+        icon="clipboard"
+        label="Reqs"
+        active={false}
+        badge="1"
+        onPress={() =>
+          router.push({
+            pathname: "/admin/AdminDashboardScreen",
+            params: { tab: "requests" },
+          })
+        }
+      />
+
+      <BottomTab
+        icon="user"
+        label="Profile"
+        active={false}
+        onPress={() =>
+          router.push({
+            pathname: "/admin/AdminDashboardScreen",
+            params: { tab: "profile" },
+          })
+        }
+      />
     </View>
   );
 }
@@ -507,62 +692,228 @@ function BottomTab({ icon, label, active, badge, onPress }) {
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: "#005033",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#e8f5ee",
   },
 
-  phone: {
-    backgroundColor: "#eafff4",
-    overflow: "hidden",
-  },
-
-  phoneWeb: {
-    width: 390,
-    borderRadius: 36,
-    borderWidth: 1,
-    borderColor: "#2b7553",
-  },
-
-  phoneMobile: {
+  shell: {
     flex: 1,
+    backgroundColor: "#f6fbf8",
+  },
+
+  shellDesktop: {
+    flexDirection: "row",
+    width: "100%",
+  },
+
+  shellMobile: {
     width: "100%",
     height: "100%",
-    borderRadius: 0,
-    borderWidth: 0,
   },
 
-  header: {
+  sidebar: {
+    width: 280,
     backgroundColor: "#06472f",
     paddingHorizontal: 22,
-    paddingTop: Platform.OS === "ios" ? 52 : 34,
-    paddingBottom: 22,
+    paddingVertical: 24,
   },
 
-  title: {
+  sidebarBrand: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 34,
+  },
+
+  brandIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#009060",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  brandTitle: {
     color: "#ffffff",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "900",
   },
 
-  subtitle: {
-    color: "#5ff0b1",
+  brandSub: {
+    color: "#a7f3d0",
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  sidebarMenu: {
+    flex: 1,
+  },
+
+  sidebarItem: {
+    height: 48,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+
+  sidebarItemActive: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#009060",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+
+  sidebarItemText: {
+    flex: 1,
+    color: "#a7f3d0",
+    fontSize: 14,
+    fontWeight: "800",
+    marginLeft: 12,
+  },
+
+  sidebarItemTextActive: {
+    flex: 1,
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 12,
+  },
+
+  sidebarBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#ff7a1a",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+
+  sidebarBadgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+
+  sidebarLogout: {
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: "rgba(220, 38, 38, 0.15)",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  sidebarLogoutText: {
+    color: "#fecaca",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+
+  mainArea: {
+    flex: 1,
+    backgroundColor: "#f6fbf8",
+  },
+
+  topHeader: {
+    minHeight: 112,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d9eee6",
+    paddingHorizontal: Platform.OS === "web" ? 32 : 18,
+    paddingTop: Platform.OS === "ios" ? 54 : 24,
+    paddingBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  topTitleBlock: {
+    flex: 1,
+  },
+
+  portalRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  portalText: {
+    color: "#16a34a",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1,
+    marginLeft: 5,
+  },
+
+  topTitle: {
+    color: "#052e1d",
+    fontSize: Platform.OS === "web" ? 28 : 22,
+    fontWeight: "900",
+    marginTop: 6,
+  },
+
+  topSubtitle: {
+    color: "#64748b",
     fontSize: 14,
     marginTop: 5,
   },
 
-  modeTabs: {
-    height: 58,
-    backgroundColor: "#ffffff",
+  headerActions: {
+    marginLeft: 16,
+  },
+
+  backButton: {
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: "#e6fff2",
+    borderWidth: 1,
+    borderColor: "#86efac",
+    paddingHorizontal: 14,
     flexDirection: "row",
+    alignItems: "center",
+  },
+
+  backButtonText: {
+    color: "#06472f",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+
+  content: {
+    flex: 1,
+  },
+
+  contentInner: {
+    padding: 18,
+    paddingBottom: 92,
+  },
+
+  contentInnerDesktop: {
+    padding: 32,
+    paddingBottom: 40,
+  },
+
+  modeTabs: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
     padding: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#d9eee6",
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    flexDirection: "row",
+    marginBottom: 18,
   },
 
   modeTab: {
     flex: 1,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 13,
     borderWidth: 1,
     borderColor: "#bdebd7",
     backgroundColor: "#f0fbf6",
@@ -574,7 +925,8 @@ const styles = StyleSheet.create({
 
   modeTabActive: {
     flex: 1,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 13,
     backgroundColor: "#009060",
     flexDirection: "row",
     alignItems: "center",
@@ -596,23 +948,44 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
 
-  content: {
-    flex: 1,
-    padding: 22,
+  uploadGrid: {
+    flexDirection: "row",
+    gap: 20,
   },
 
-  uploadCard: {
+  uploadMainPanel: {
+    flex: 1,
+  },
+
+  uploadSidePanel: {
+    width: 380,
+  },
+
+  panelCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    marginBottom: 18,
+  },
+
+  uploadDropZone: {
+    minHeight: 280,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    borderColor: "#bdebd7",
+    backgroundColor: "#f7fffb",
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    padding: 28,
   },
 
   uploadIcon: {
-    width: 78,
-    height: 78,
-    borderRadius: 22,
+    width: 84,
+    height: 84,
+    borderRadius: 24,
     backgroundColor: "#e6fff2",
     justifyContent: "center",
     alignItems: "center",
@@ -620,23 +993,25 @@ const styles = StyleSheet.create({
   },
 
   uploadTitle: {
-    color: "#002c1d",
-    fontSize: 18,
+    color: "#052e1d",
+    fontSize: 20,
     fontWeight: "900",
+    textAlign: "center",
   },
 
   uploadSub: {
-    color: "#7f8790",
-    fontSize: 13,
+    color: "#64748b",
+    fontSize: 14,
     textAlign: "center",
-    lineHeight: 20,
+    lineHeight: 22,
     marginTop: 8,
-    marginBottom: 18,
+    marginBottom: 20,
+    maxWidth: 520,
   },
 
   chooseButton: {
-    height: 44,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 13,
     backgroundColor: "#009060",
     paddingHorizontal: 22,
     flexDirection: "row",
@@ -651,12 +1026,14 @@ const styles = StyleSheet.create({
   },
 
   fileCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#f0fbf6",
     borderRadius: 14,
     padding: 15,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#cfeee0",
   },
 
   fileIconBox: {
@@ -670,41 +1047,15 @@ const styles = StyleSheet.create({
   },
 
   fileName: {
-    color: "#002c1d",
+    color: "#052e1d",
     fontSize: 14,
     fontWeight: "900",
   },
 
   fileSize: {
-    color: "#7f8790",
+    color: "#64748b",
     fontSize: 11,
     marginTop: 4,
-  },
-
-  infoCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 18,
-  },
-
-  infoTitle: {
-    color: "#002c1d",
-    fontSize: 15,
-    fontWeight: "900",
-    marginBottom: 12,
-  },
-
-  infoLine: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-
-  infoText: {
-    color: "#344d41",
-    fontSize: 13,
-    marginLeft: 8,
   },
 
   uploadButton: {
@@ -714,7 +1065,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: 12,
+    marginTop: 16,
   },
 
   uploadDisabled: {
@@ -728,47 +1079,105 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  manualCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 18,
+  sectionTitle: {
+    color: "#052e1d",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+
+  sectionSub: {
+    color: "#64748b",
+    fontSize: 13,
+    marginTop: 5,
     marginBottom: 16,
   },
 
-  sectionTitle: {
-    color: "#002c1d",
-    fontSize: 16,
-    fontWeight: "900",
-    marginBottom: 14,
+  infoList: {
+    marginTop: 6,
+  },
+
+  infoLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 13,
+  },
+
+  infoText: {
+    color: "#334155",
+    fontSize: 13,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+
+  noteBox: {
+    backgroundColor: "#fff7ed",
+    borderWidth: 1,
+    borderColor: "#fed7aa",
+    borderRadius: 14,
+    padding: 14,
+    flexDirection: "row",
+    marginTop: 12,
+  },
+
+  noteText: {
+    flex: 1,
+    color: "#92400e",
+    fontSize: 13,
+    lineHeight: 19,
+    marginLeft: 9,
+  },
+
+  manualGrid: {
+    flexDirection: "row",
+    gap: 20,
+  },
+
+  formGridThree: {
+    flexDirection: "row",
+    gap: 14,
+  },
+
+  formGridFour: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 14,
   },
 
   inputGroup: {
+    flex: 1,
+    minWidth: Platform.OS === "web" ? 210 : "100%",
     marginBottom: 14,
   },
 
   inputLabel: {
-    color: "#344d41",
+    color: "#334155",
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 7,
   },
 
   input: {
-    height: 45,
+    height: 46,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#bdebd7",
     backgroundColor: "#f0fbf6",
     paddingHorizontal: 14,
-    color: "#002c1d",
+    color: "#052e1d",
     fontSize: 14,
   },
 
+  actionGrid: {
+    flexDirection: "row",
+    gap: 20,
+  },
+
   totalCard: {
+    flex: 1,
     backgroundColor: "#06472f",
-    borderRadius: 15,
-    padding: 20,
-    marginBottom: 14,
+    borderRadius: 18,
+    padding: 22,
+    marginBottom: 18,
   },
 
   totalLabel: {
@@ -780,13 +1189,18 @@ const styles = StyleSheet.create({
 
   totalAmount: {
     color: "#ffffff",
-    fontSize: 26,
+    fontSize: 30,
     fontWeight: "900",
     marginTop: 8,
   },
 
+  actionPanel: {
+    width: Platform.OS === "web" ? 320 : "100%",
+    marginBottom: 18,
+  },
+
   saveButton: {
-    height: 50,
+    height: 52,
     borderRadius: 13,
     backgroundColor: "#009060",
     justifyContent: "center",
@@ -803,7 +1217,7 @@ const styles = StyleSheet.create({
   },
 
   clearButton: {
-    height: 48,
+    height: 50,
     borderRadius: 13,
     borderWidth: 1,
     borderColor: "#efb4a2",
@@ -820,18 +1234,12 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  bottomSpace: {
-    height: 92,
-  },
-
   bottomNav: {
     height: 64,
     backgroundColor: "#003d25",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    borderTopLeftRadius: Platform.OS === "web" ? 18 : 0,
-    borderTopRightRadius: Platform.OS === "web" ? 18 : 0,
   },
 
   bottomTab: {

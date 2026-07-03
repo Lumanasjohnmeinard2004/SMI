@@ -18,7 +18,7 @@ export default function AdminDashboardScreen() {
   const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
 
-  const isDesktopWeb = Platform.OS === "web" && width >= 768;
+  const isDesktopWeb = Platform.OS === "web" && width >= 900;
   const [activeTab, setActiveTab] = useState(params.tab || "overview");
 
   useEffect(() => {
@@ -27,135 +27,221 @@ export default function AdminDashboardScreen() {
     }
   }, [params.tab]);
 
+  function renderContent() {
+    if (activeTab === "overview") return <OverviewContent isDesktopWeb={isDesktopWeb} />;
+    if (activeTab === "members") return <MembersContent isDesktopWeb={isDesktopWeb} />;
+    if (activeTab === "requests") return <RequestsContent isDesktopWeb={isDesktopWeb} />;
+    if (activeTab === "profile") return <ProfileContent router={router} />;
+    return <OverviewContent isDesktopWeb={isDesktopWeb} />;
+  }
+
   return (
     <View style={styles.page}>
       <View
         style={[
-          styles.phone,
+          styles.shell,
           isDesktopWeb
-            ? [styles.phoneWeb, { height: Math.min(height - 32, 900) }]
-            : styles.phoneMobile,
+            ? [styles.shellDesktop, { minHeight: Math.max(height, 720) }]
+            : styles.shellMobile,
         ]}
       >
-        <View style={styles.header}>
-          {activeTab === "overview" && (
-            <>
-              <View style={styles.portalRow}>
-                <Ionicons
-                  name="shield-checkmark-outline"
-                  size={14}
-                  color="#5ff0b1"
-                />
-                <Text style={styles.portalText}>ADMIN PORTAL</Text>
-              </View>
+        {isDesktopWeb && (
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            router={router}
+          />
+        )}
 
-              <View style={styles.titleRow}>
-                <Text style={styles.headerTitle}>Cooperative Dashboard</Text>
+        <View style={styles.mainArea}>
+          <TopHeader
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            router={router}
+            isDesktopWeb={isDesktopWeb}
+          />
 
-                <View style={styles.headerActions}>
-                  <TouchableOpacity style={styles.toggleButton}>
-                    <Ionicons name="sunny-outline" size={16} color="#ffffff" />
-                  </TouchableOpacity>
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={[
+              styles.contentInner,
+              isDesktopWeb && styles.contentInnerDesktop,
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {renderContent()}
+          </ScrollView>
 
-                  <TouchableOpacity
-                    style={styles.iconButton}
-                    onPress={() => router.push("/admin/AdminUploadCSVScreen")}
-                  >
-                    <Feather name="upload-cloud" size={18} color="#80d6b1" />
-                    <View style={styles.dot} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </>
+          {!isDesktopWeb && (
+            <BottomNav
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              router={router}
+            />
           )}
-
-          {activeTab === "members" && (
-            <>
-              <Text style={styles.pageTitle}>Member Records</Text>
-              <Text style={styles.pageSub}>6 registered members</Text>
-
-              <View style={styles.searchBox}>
-                <Feather name="search" size={16} color="#8bb8a2" />
-                <Text style={styles.searchText}>
-                  Search by name, ID, or username...
-                </Text>
-              </View>
-            </>
-          )}
-
-          {activeTab === "requests" && <RequestsHeader />}
-
-          {activeTab === "profile" && <AdminProfileHeader />}
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {activeTab === "overview" && <OverviewContent />}
-          {activeTab === "members" && <MembersContent />}
-          {activeTab === "requests" && <RequestsContent />}
-          {activeTab === "profile" && <ProfileContent router={router} />}
-        </ScrollView>
-
-        <View style={styles.bottomNav}>
-          <BottomTab
-            icon="bar-chart-2"
-            label="Overview"
-            active={activeTab === "overview"}
-            onPress={() => setActiveTab("overview")}
-          />
-
-          <BottomTab
-            icon="users"
-            label="Members"
-            active={activeTab === "members"}
-            onPress={() => setActiveTab("members")}
-          />
-
-          <BottomTab
-            icon="upload-cloud"
-            label="Upload"
-            active={false}
-            onPress={() => router.push("/admin/AdminUploadCSVScreen")}
-          />
-
-          <BottomTab
-            icon="clipboard"
-            label="Reqs"
-            active={activeTab === "requests"}
-            badge="1"
-            onPress={() => setActiveTab("requests")}
-          />
-
-          <BottomTab
-            icon="user"
-            label="Profile"
-            active={activeTab === "profile"}
-            onPress={() => setActiveTab("profile")}
-          />
         </View>
       </View>
     </View>
   );
 }
 
-function OverviewContent() {
+function Sidebar({ activeTab, setActiveTab, router }) {
   return (
-    <View style={styles.overviewWrapper}>
-      <View style={styles.statsGrid}>
-        <StatCard icon="users" value="6" label="Total Members" sub="5 active" />
+    <View style={styles.sidebar}>
+      <View style={styles.sidebarBrand}>
+        <View style={styles.brandIcon}>
+          <Ionicons name="shield-checkmark" size={24} color="#ffffff" />
+        </View>
+
+        <View>
+          <Text style={styles.brandTitle}>SMI Coop</Text>
+          <Text style={styles.brandSub}>Admin Portal</Text>
+        </View>
+      </View>
+
+      <View style={styles.sidebarMenu}>
+        <SidebarItem
+          icon="bar-chart-2"
+          label="Dashboard"
+          active={activeTab === "overview"}
+          onPress={() => setActiveTab("overview")}
+        />
+
+        <SidebarItem
+          icon="users"
+          label="Members"
+          active={activeTab === "members"}
+          onPress={() => setActiveTab("members")}
+        />
+
+        <SidebarItem
+          icon="upload-cloud"
+          label="Upload Records"
+          active={false}
+          onPress={() => router.push("/admin/AdminUploadCSVScreen")}
+        />
+
+        <SidebarItem
+          icon="clipboard"
+          label="Loan Requests"
+          active={activeTab === "requests"}
+          badge="1"
+          onPress={() => setActiveTab("requests")}
+        />
+
+        <SidebarItem
+          icon="user"
+          label="Profile"
+          active={activeTab === "profile"}
+          onPress={() => setActiveTab("profile")}
+        />
+      </View>
+
+      <TouchableOpacity style={styles.sidebarLogout} onPress={() => router.push("/")}>
+        <Feather name="log-out" size={18} color="#fecaca" />
+        <Text style={styles.sidebarLogoutText}>Sign Out</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function SidebarItem({ icon, label, active, badge, onPress }) {
+  return (
+    <TouchableOpacity
+      style={active ? styles.sidebarItemActive : styles.sidebarItem}
+      onPress={onPress}
+    >
+      <Feather name={icon} size={18} color={active ? "#ffffff" : "#a7f3d0"} />
+
+      <Text style={active ? styles.sidebarItemTextActive : styles.sidebarItemText}>
+        {label}
+      </Text>
+
+      {badge && (
+        <View style={styles.sidebarBadge}>
+          <Text style={styles.sidebarBadgeText}>{badge}</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function TopHeader({ activeTab, setActiveTab, router, isDesktopWeb }) {
+  const titles = {
+    overview: "Cooperative Dashboard",
+    members: "Member Records",
+    requests: "Loan Requests",
+    profile: "Admin Profile",
+  };
+
+  const subtitles = {
+    overview: "Overview of members, savings, loans, and dividends",
+    members: "View and manage cooperative member records",
+    requests: "Review and process member loan requests",
+    profile: "System administrator account details",
+  };
+
+  return (
+    <View style={styles.topHeader}>
+      <View style={styles.topTitleBlock}>
+        <View style={styles.portalRow}>
+          <Ionicons name="shield-checkmark-outline" size={14} color="#16a34a" />
+          <Text style={styles.portalText}>ADMIN PORTAL</Text>
+        </View>
+
+        <Text style={styles.topTitle}>{titles[activeTab]}</Text>
+        <Text style={styles.topSubtitle}>{subtitles[activeTab]}</Text>
+      </View>
+
+      <View style={styles.headerActions}>
+        {!isDesktopWeb && (
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => setActiveTab("overview")}
+          >
+            <Feather name="home" size={18} color="#06472f" />
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={styles.uploadHeaderButton}
+          onPress={() => router.push("/admin/AdminUploadCSVScreen")}
+        >
+          <Feather name="upload-cloud" size={18} color="#ffffff" />
+          {isDesktopWeb && <Text style={styles.uploadHeaderText}>Upload Records</Text>}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+function OverviewContent({ isDesktopWeb }) {
+  return (
+    <View>
+      <View style={isDesktopWeb ? styles.statsGridDesktop : styles.statsGridMobile}>
+        <StatCard
+          icon="users"
+          value="6"
+          label="Total Members"
+          sub="5 active members"
+          color="#009060"
+        />
 
         <StatCard
           icon="piggy-bank-outline"
           value="₱283k"
           label="Total Savings"
-          sub="Share capital"
+          sub="Savings and share capital"
           type="material"
+          color="#0f766e"
         />
 
         <StatCard
           icon="credit-card"
           value="₱369k"
           label="Total Loans"
-          sub="Outstanding"
+          sub="Outstanding balances"
+          color="#ea580c"
         />
 
         <StatCard
@@ -163,347 +249,307 @@ function OverviewContent() {
           value="₱33k"
           label="Dividends Paid"
           sub="FY 2024"
+          color="#16a34a"
         />
       </View>
 
-      <View style={styles.chartCard}>
-        <Text style={styles.sectionTitle}>Savings vs Loans · Per Member</Text>
+      <View style={isDesktopWeb ? styles.overviewTwoColumns : null}>
+        <View style={[styles.panelCard, isDesktopWeb && styles.panelCardFlex]}>
+          <View style={styles.panelHeader}>
+            <View>
+              <Text style={styles.sectionTitle}>Savings vs Loans</Text>
+              <Text style={styles.sectionSub}>Per member comparison</Text>
+            </View>
 
-        <View style={styles.chartArea}>
-          <View style={styles.yAxis}>
-            <Text style={styles.axisText}>120k</Text>
-            <Text style={styles.axisText}>60k</Text>
-            <Text style={styles.axisText}>30k</Text>
-            <Text style={styles.axisText}>0k</Text>
+            <View style={styles.legendRow}>
+              <Legend color="#009060" label="Savings" />
+              <Legend color="#ff7a1a" label="Loans" />
+            </View>
           </View>
 
-          <View style={styles.barGroup}>
-            <MiniBar name="Maria" savings={45} loans={65} />
-            <MiniBar name="Juan" savings={5} loans={10} />
-            <MiniBar name="Lourdes" savings={5} loans={10} />
-            <MiniBar name="Roberto" savings={5} loans={10} />
-            <MiniBar name="Cristina" savings={120} loans={95} />
-            <MiniBar name="Danilo" savings={0} loans={10} />
+          <View style={styles.chartArea}>
+            <MiniBar name="Maria" savings={90} loans={120} />
+            <MiniBar name="Juan" savings={65} loans={95} />
+            <MiniBar name="Lourdes" savings={120} loans={20} />
+            <MiniBar name="Roberto" savings={45} loans={80} />
+            <MiniBar name="Cristina" savings={135} loans={130} />
+            <MiniBar name="Danilo" savings={35} loans={60} />
           </View>
         </View>
 
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendBox, { backgroundColor: "#00a86b" }]} />
-            <Text style={styles.legendText}>Savings</Text>
-          </View>
-
-          <View style={styles.legendItem}>
-            <View style={[styles.legendBox, { backgroundColor: "#ff7a1a" }]} />
-            <Text style={styles.legendText}>Loans</Text>
-          </View>
+        <View style={[styles.panelCard, isDesktopWeb && styles.sidePanel]}>
+          <Text style={styles.sectionTitle}>Recent Activity</Text>
+          <ActivityItem title="Juan submitted a loan request" time="Today, 2:00 PM" />
+          <ActivityItem title="Maria request approved" time="Mar 20, 2025" />
+          <ActivityItem title="CSV upload ready for processing" time="Mar 19, 2025" />
+          <ActivityItem title="Cristina record updated" time="Mar 18, 2025" />
         </View>
       </View>
 
-      <Text style={styles.sectionTitle}>All Members</Text>
+      <View style={styles.panelCard}>
+        <View style={styles.panelHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>All Members</Text>
+            <Text style={styles.sectionSub}>Quick view of cooperative members</Text>
+          </View>
+        </View>
 
-      <MemberSmall
-        name="Maria Santos"
-        id="2019-004827"
-        savings="₱52,750.00"
-        status="Caution"
-      />
+        {isDesktopWeb ? (
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.th, { flex: 1.4 }]}>Member</Text>
+              <Text style={styles.th}>Member ID</Text>
+              <Text style={styles.th}>Savings</Text>
+              <Text style={styles.th}>Loan</Text>
+              <Text style={styles.th}>Status</Text>
+            </View>
 
-      <MemberSmall
-        name="Juan dela Cruz"
-        id="2020-005112"
-        savings="₱38,400.00"
-        status="Caution"
-      />
+            <MemberTableRow
+              name="Maria Santos"
+              username="@msantos"
+              id="2019-004827"
+              savings="₱52,750.00"
+              loan="₱84,000.00"
+              status="Caution"
+            />
 
-      <MemberSmall
-        name="Lourdes Reyes"
-        id="2018-003991"
-        savings="₱71,200.00"
-        status="Excellent"
-      />
+            <MemberTableRow
+              name="Juan dela Cruz"
+              username="@jdelacruz"
+              id="2020-005112"
+              savings="₱38,400.00"
+              loan="₱60,000.00"
+              status="Caution"
+            />
+
+            <MemberTableRow
+              name="Lourdes Reyes"
+              username="@lreyes"
+              id="2018-003991"
+              savings="₱71,200.00"
+              loan="₱0.00"
+              status="Excellent"
+            />
+          </View>
+        ) : (
+          <>
+            <MemberCard
+              name="Maria Santos"
+              username="@msantos"
+              id="2019-004827"
+              savings="₱52,750.00"
+              loan="₱84,000.00"
+              dividend="₱6,330.00"
+              status="Caution"
+            />
+
+            <MemberCard
+              name="Juan dela Cruz"
+              username="@jdelacruz"
+              id="2020-005112"
+              savings="₱38,400.00"
+              loan="₱60,000.00"
+              dividend="₱4,608.00"
+              status="Caution"
+            />
+
+            <MemberCard
+              name="Lourdes Reyes"
+              username="@lreyes"
+              id="2018-003991"
+              savings="₱71,200.00"
+              loan="₱0.00"
+              dividend="₱8,544.00"
+              status="Excellent"
+            />
+          </>
+        )}
+      </View>
     </View>
   );
 }
 
-function MembersContent() {
-  return (
-    <View style={styles.listWrapper}>
-      <MemberRecord
-        initial="M"
-        name="Maria Santos"
-        username="@msantos"
-        id="2019-004827"
-        savings="₱52,750.00"
-        loan="₱84,000.00"
-        dividend="₱6,330.00"
-        status="Caution"
-      />
-
-      <MemberRecord
-        initial="J"
-        name="Juan dela Cruz"
-        username="@jdelacruz"
-        id="2020-005112"
-        savings="₱38,400.00"
-        loan="₱60,000.00"
-        dividend="₱4,608.00"
-        status="Caution"
-      />
-
-      <MemberRecord
-        initial="L"
-        name="Lourdes Reyes"
-        username="@lreyes"
-        id="2018-003991"
-        savings="₱71,200.00"
-        loan="₱0.00"
-        dividend="₱8,544.00"
-        status="Excellent"
-      />
-
-      <MemberRecord
-        initial="R"
-        name="Roberto Alcantara"
-        username="@ralcantara"
-        id="2021-006033"
-        savings="₱18,600.00"
-        loan="₱30,000.00"
-        dividend="₱2,232.00"
-        status="Suspended"
-        suspended
-      />
-
-      <MemberRecord
-        initial="C"
-        name="Cristina Villanueva"
-        username="@cvillanueva"
-        id="2017-002748"
-        savings="₱94,300.00"
-        loan="₱120,000.00"
-        dividend="₱11,316.00"
-        status="Fair"
-      />
-    </View>
-  );
-}
-
-function RequestsHeader() {
-  const [selectedLoanType, setSelectedLoanType] = useState("All Loan Types");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("All");
-
-  const loanTypes = [
-    "All Loan Types",
-    "Regular Loan",
-    "Regular Loan - Diminishing",
-    "Educational Loan",
-    "Educational Loan - Diminishing",
-    "Short-term Loan",
-    "Short-term Loan - Diminishing",
-    "Appliance Loan",
-    "Appliance Loan - Diminishing",
-    "Medical Loan",
-    "Medical Loan - Diminishing",
-    "Petty Cash Loan",
-    "Vehicle Loan",
-    "Inter-Trading Loan",
+function MembersContent({ isDesktopWeb }) {
+  const members = [
+    {
+      name: "Maria Santos",
+      username: "@msantos",
+      id: "2019-004827",
+      savings: "₱52,750.00",
+      loan: "₱84,000.00",
+      dividend: "₱6,330.00",
+      status: "Caution",
+    },
+    {
+      name: "Juan dela Cruz",
+      username: "@jdelacruz",
+      id: "2020-005112",
+      savings: "₱38,400.00",
+      loan: "₱60,000.00",
+      dividend: "₱4,608.00",
+      status: "Caution",
+    },
+    {
+      name: "Lourdes Reyes",
+      username: "@lreyes",
+      id: "2018-003991",
+      savings: "₱71,200.00",
+      loan: "₱0.00",
+      dividend: "₱8,544.00",
+      status: "Excellent",
+    },
+    {
+      name: "Roberto Alcantara",
+      username: "@ralcantara",
+      id: "2021-006033",
+      savings: "₱18,600.00",
+      loan: "₱30,000.00",
+      dividend: "₱2,232.00",
+      status: "Suspended",
+    },
+    {
+      name: "Cristina Villanueva",
+      username: "@cvillanueva",
+      id: "2017-002748",
+      savings: "₱94,300.00",
+      loan: "₱120,000.00",
+      dividend: "₱11,316.00",
+      status: "Fair",
+    },
   ];
 
   return (
-    <>
-      <Text style={styles.requestsTitle}>Requests</Text>
-      <Text style={styles.requestsSub}>1 pending · 2 total</Text>
+    <View>
+      <View style={styles.searchPanel}>
+        <View style={styles.searchBox}>
+          <Feather name="search" size={17} color="#64748b" />
+          <Text style={styles.searchText}>Search by name, ID, or username...</Text>
+        </View>
 
-      <TouchableOpacity
-        style={styles.loanDropdownButton}
-        onPress={() => setShowDropdown(!showDropdown)}
-      >
-        <Feather name="credit-card" size={17} color="#37e6a3" />
-        <Text style={styles.loanDropdownText}>{selectedLoanType}</Text>
-        <Feather
-          name={showDropdown ? "chevron-up" : "chevron-down"}
-          size={19}
-          color="#d9fff0"
-        />
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.addButton}>
+          <Feather name="plus" size={18} color="#ffffff" />
+          <Text style={styles.addButtonText}>Add Member</Text>
+        </TouchableOpacity>
+      </View>
 
-      {showDropdown && (
-        <View style={styles.loanDropdownMenu}>
-          <ScrollView style={styles.loanDropdownScroll} nestedScrollEnabled>
-            {loanTypes.map((loanType) => (
-              <TouchableOpacity
-                key={loanType}
-                style={
-                  selectedLoanType === loanType
-                    ? styles.loanDropdownItemActive
-                    : styles.loanDropdownItem
-                }
-                onPress={() => {
-                  setSelectedLoanType(loanType);
-                  setShowDropdown(false);
-                }}
-              >
-                <Text
-                  style={
-                    selectedLoanType === loanType
-                      ? styles.loanDropdownItemTextActive
-                      : styles.loanDropdownItemText
-                  }
-                >
-                  {loanType}
-                </Text>
+      <View style={styles.panelCard}>
+        <View style={styles.panelHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Member List</Text>
+            <Text style={styles.sectionSub}>6 registered members</Text>
+          </View>
+        </View>
 
-                {selectedLoanType === loanType && (
-                  <Ionicons name="checkmark-circle" size={16} color="#37e6a3" />
-                )}
-              </TouchableOpacity>
+        {isDesktopWeb ? (
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.th, { flex: 1.4 }]}>Member</Text>
+              <Text style={styles.th}>Member ID</Text>
+              <Text style={styles.th}>Savings</Text>
+              <Text style={styles.th}>Loan</Text>
+              <Text style={styles.th}>Dividend</Text>
+              <Text style={styles.th}>Status</Text>
+              <Text style={styles.th}>Action</Text>
+            </View>
+
+            {members.map((member) => (
+              <MemberFullTableRow key={member.id} {...member} />
+            ))}
+          </View>
+        ) : (
+          members.map((member) => <MemberCard key={member.id} {...member} />)
+        )}
+      </View>
+    </View>
+  );
+}
+
+function RequestsContent({ isDesktopWeb }) {
+  const [selectedLoanType, setSelectedLoanType] = useState("All Loan Types");
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  const requests = [
+    {
+      name: "Maria Santos",
+      loanType: "Regular Loan",
+      amount: "₱25,000.00",
+      date: "Mar 20, 2025 · 10:00 AM",
+      purpose: "Business expansion",
+      status: "Approved",
+    },
+    {
+      name: "Juan dela Cruz",
+      loanType: "Educational Loan",
+      amount: "₱15,000.00",
+      date: "Mar 18, 2025 · 2:00 PM",
+      purpose: "Tuition payment",
+      status: "Pending",
+      showActions: true,
+    },
+  ];
+
+  return (
+    <View>
+      <View style={styles.filterPanel}>
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Loan Type</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {["All Loan Types", "Regular Loan", "Educational Loan", "Medical Loan", "Vehicle Loan"].map(
+              (item) => (
+                <FilterChip
+                  key={item}
+                  label={item}
+                  active={selectedLoanType === item}
+                  onPress={() => setSelectedLoanType(item)}
+                />
+              )
+            )}
+          </ScrollView>
+        </View>
+
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Status</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {["All", "Pending", "Approved", "Rejected"].map((item) => (
+              <FilterChip
+                key={item}
+                label={item}
+                active={statusFilter === item}
+                onPress={() => setStatusFilter(item)}
+              />
             ))}
           </ScrollView>
         </View>
-      )}
-
-      <View style={styles.requestFilterRow}>
-        <RequestFilterChip
-          label="All"
-          active={statusFilter === "All"}
-          onPress={() => setStatusFilter("All")}
-        />
-
-        <RequestFilterChip
-          label="Pending"
-          active={statusFilter === "Pending"}
-          onPress={() => setStatusFilter("Pending")}
-        />
-
-        <RequestFilterChip
-          label="Approved"
-          active={statusFilter === "Approved"}
-          onPress={() => setStatusFilter("Approved")}
-        />
-
-        <RequestFilterChip
-          label="Rejected"
-          active={statusFilter === "Rejected"}
-          onPress={() => setStatusFilter("Rejected")}
-        />
       </View>
-    </>
-  );
-}
 
-function RequestsContent() {
-  return (
-    <View style={styles.requestsWrapper}>
-      <RequestCard
-        name="Maria Santos"
-        loanType="Regular Loan"
-        amount="₱25,000.00"
-        date="Mar 20, 2025 · 10:00 AM"
-        purpose="Business expansion"
-        status="Approved"
-      />
-
-      <RequestCard
-        name="Juan dela Cruz"
-        loanType="Educational Loan"
-        amount="₱15,000.00"
-        date="Mar 18, 2025 · 2:00 PM"
-        purpose="Tuition payment"
-        status="Pending"
-        showActions
-      />
-    </View>
-  );
-}
-
-function RequestCard({
-  name,
-  loanType,
-  amount,
-  date,
-  purpose,
-  status,
-  showActions,
-}) {
-  return (
-    <View style={styles.requestCard}>
-      <View style={styles.requestCardHeader}>
-        <View>
-          <Text style={styles.requestName}>{name}</Text>
-          <Text style={styles.requestLoanType}>{loanType}</Text>
+      <View style={styles.panelCard}>
+        <View style={styles.panelHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Request Queue</Text>
+            <Text style={styles.sectionSub}>1 pending · 2 total requests</Text>
+          </View>
         </View>
 
-        <View
-          style={
-            status === "Approved"
-              ? styles.approvedBadge
-              : status === "Rejected"
-              ? styles.rejectedBadge
-              : styles.pendingRequestBadge
-          }
-        >
-          <Text
-            style={
-              status === "Approved"
-                ? styles.approvedText
-                : status === "Rejected"
-                ? styles.rejectedText
-                : styles.pendingRequestText
-            }
-          >
-            {status}
-          </Text>
-        </View>
-      </View>
+        {isDesktopWeb ? (
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.th, { flex: 1.3 }]}>Member</Text>
+              <Text style={styles.th}>Loan Type</Text>
+              <Text style={styles.th}>Amount</Text>
+              <Text style={styles.th}>Purpose</Text>
+              <Text style={styles.th}>Status</Text>
+              <Text style={styles.th}>Action</Text>
+            </View>
 
-      <View style={styles.requestInfoBlock}>
-        <Text style={styles.requestLabel}>Amount Requested</Text>
-        <Text style={styles.requestAmount}>{amount}</Text>
-      </View>
-
-      <View style={styles.requestInfoBlock}>
-        <Text style={styles.requestLabel}>Date Requested</Text>
-        <Text style={styles.requestValue}>{date}</Text>
-      </View>
-
-      <View style={styles.requestInfoBlock}>
-        <Text style={styles.requestLabel}>Purpose</Text>
-        <Text style={styles.requestValue}>{purpose}</Text>
-      </View>
-
-      {showActions && (
-        <View style={styles.requestActionRow}>
-          <TouchableOpacity style={styles.approveButton}>
-            <Feather name="check-square" size={16} color="#009060" />
-            <Text style={styles.approveButtonText}>Approve</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.rejectButton}>
-            <Feather name="x-circle" size={16} color="#ff4b4b" />
-            <Text style={styles.rejectButtonText}>Reject</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-}
-
-function AdminProfileHeader() {
-  return (
-    <View style={styles.adminProfileHeader}>
-      <View style={styles.bigAvatar}>
-        <Text style={styles.bigAvatarText}>A</Text>
-        <View style={styles.cameraCircle}>
-          <Feather name="camera" size={13} color="#ffffff" />
-        </View>
-      </View>
-
-      <Text style={styles.adminName}>Administrator</Text>
-      <Text style={styles.adminSub}>SMIMC · System Admin</Text>
-
-      <View style={styles.fullAccessBadge}>
-        <Text style={styles.fullAccessText}>• Full Access</Text>
+            {requests.map((request) => (
+              <RequestTableRow key={`${request.name}-${request.loanType}`} {...request} />
+            ))}
+          </View>
+        ) : (
+          requests.map((request) => (
+            <RequestCard key={`${request.name}-${request.loanType}`} {...request} />
+          ))
+        )}
       </View>
     </View>
   );
@@ -511,47 +557,59 @@ function AdminProfileHeader() {
 
 function ProfileContent({ router }) {
   return (
-    <View style={styles.profileContent}>
-      <View style={styles.profileStatsCard}>
-        <ProfileStat value="6" label="Members" />
-        <ProfileStat value="5" label="Active" />
-        <ProfileStat value="₱283k" label="Savings" />
+    <View>
+      <View style={styles.profileGrid}>
+        <View style={styles.profileMainCard}>
+          <View style={styles.profileAvatar}>
+            <Text style={styles.profileAvatarText}>A</Text>
+          </View>
+
+          <Text style={styles.profileName}>Administrator</Text>
+          <Text style={styles.profileSub}>SMI Coop · System Admin</Text>
+
+          <View style={styles.fullAccessBadge}>
+            <Text style={styles.fullAccessText}>Full Access</Text>
+          </View>
+        </View>
+
+        <View style={styles.profileInfoCard}>
+          <Text style={styles.sectionTitle}>Account Info</Text>
+
+          <ProfileRow label="Username" value="admin" />
+          <ProfileRow label="Role" value="System Administrator" />
+          <ProfileRow label="Access Level" value="Full — All Modules" />
+          <ProfileRow
+            label="Cooperative"
+            value="Savings Mutual Inter-Company Multipurpose Cooperative"
+          />
+          <ProfileRow label="Last Login" value="Today" />
+
+          <TouchableOpacity
+            style={styles.profileUploadButton}
+            onPress={() => router.push("/admin/AdminUploadCSVScreen")}
+          >
+            <Feather name="upload-cloud" size={18} color="#009060" />
+            <Text style={styles.profileUploadText}>Upload CSV / Manual Input</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.profileSignOut} onPress={() => router.push("/")}>
+            <Feather name="log-out" size={18} color="#e23b3b" />
+            <Text style={styles.profileSignOutText}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
-      <Text style={styles.profileSectionTitle}>Account Info</Text>
-
-      <View style={styles.infoBox}>
-        <ProfileRow label="Username" value="admin" />
-        <ProfileRow label="Role" value="System Administrator" />
-        <ProfileRow label="Access Level" value="Full — All Modules" />
-        <ProfileRow label="Cooperative" value="SMIMC" />
-        <ProfileRow label="Last Login" value="Today" />
-      </View>
-
-      <TouchableOpacity
-        style={styles.profileUploadButton}
-        onPress={() => router.push("/admin/AdminUploadCSVScreen")}
-      >
-        <Feather name="upload-cloud" size={18} color="#009060" />
-        <Text style={styles.profileUploadText}>Upload CSV / Manual Input</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.profileSignOut} onPress={() => router.push("/")}>
-        <Feather name="log-out" size={18} color="#e23b3b" />
-        <Text style={styles.profileSignOutText}>Sign Out</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
-function StatCard({ icon, value, label, sub, type }) {
+function StatCard({ icon, value, label, sub, type, color }) {
   return (
     <View style={styles.statCard}>
-      <View style={styles.statIconBox}>
+      <View style={[styles.statIconBox, { backgroundColor: `${color}18` }]}>
         {type === "material" ? (
-          <MaterialCommunityIcons name={icon} size={19} color="#009060" />
+          <MaterialCommunityIcons name={icon} size={22} color={color} />
         ) : (
-          <Feather name={icon} size={19} color="#009060" />
+          <Feather name={icon} size={22} color={color} />
         )}
       </View>
 
@@ -574,97 +632,259 @@ function MiniBar({ name, savings, loans }) {
   );
 }
 
-function MemberSmall({ name, id, savings, status }) {
+function Legend({ color, label }) {
   return (
-    <View style={styles.memberSmallCard}>
-      <View style={styles.smallInitial}>
-        <Text style={styles.smallInitialText}>{name[0]}</Text>
-      </View>
-
-      <View style={{ flex: 1 }}>
-        <Text style={styles.memberSmallName}>{name}</Text>
-        <Text style={styles.memberSmallId}>{id}</Text>
-      </View>
-
-      <View>
-        <Text style={styles.memberSavings}>{savings}</Text>
-        <View style={styles.cautionBadge}>
-          <Text style={styles.cautionText}>{status}</Text>
-        </View>
-      </View>
-
-      <Feather name="chevron-right" size={18} color="#9aa8a1" />
+    <View style={styles.legendItem}>
+      <View style={[styles.legendBox, { backgroundColor: color }]} />
+      <Text style={styles.legendText}>{label}</Text>
     </View>
   );
 }
 
-function MemberRecord({
-  initial,
-  name,
-  username,
-  id,
-  savings,
-  loan,
-  dividend,
-  status,
-  suspended,
-}) {
+function ActivityItem({ title, time }) {
   return (
-    <View style={styles.memberRecordCard}>
-      <View style={styles.recordHeader}>
-        <View style={styles.recordInitial}>
-          <Text style={styles.recordInitialText}>{initial}</Text>
+    <View style={styles.activityItem}>
+      <View style={styles.activityDot} />
+      <View style={{ flex: 1 }}>
+        <Text style={styles.activityTitle}>{title}</Text>
+        <Text style={styles.activityTime}>{time}</Text>
+      </View>
+    </View>
+  );
+}
+
+function MemberTableRow({ name, username, id, savings, loan, status }) {
+  return (
+    <View style={styles.tableRow}>
+      <View style={[styles.memberCell, { flex: 1.4 }]}>
+        <View style={styles.initialCircle}>
+          <Text style={styles.initialText}>{name[0]}</Text>
+        </View>
+        <View>
+          <Text style={styles.tableName}>{name}</Text>
+          <Text style={styles.tableSub}>{username}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.td}>{id}</Text>
+      <Text style={styles.tdGreen}>{savings}</Text>
+      <Text style={styles.tdOrange}>{loan}</Text>
+      <StatusBadge status={status} />
+    </View>
+  );
+}
+
+function MemberFullTableRow({ name, username, id, savings, loan, dividend, status }) {
+  return (
+    <View style={styles.tableRow}>
+      <View style={[styles.memberCell, { flex: 1.4 }]}>
+        <View style={styles.initialCircle}>
+          <Text style={styles.initialText}>{name[0]}</Text>
+        </View>
+        <View>
+          <Text style={styles.tableName}>{name}</Text>
+          <Text style={styles.tableSub}>{username}</Text>
+        </View>
+      </View>
+
+      <Text style={styles.td}>{id}</Text>
+      <Text style={styles.tdGreen}>{savings}</Text>
+      <Text style={styles.tdOrange}>{loan}</Text>
+      <Text style={styles.tdGreen}>{dividend}</Text>
+      <StatusBadge status={status} />
+
+      <TouchableOpacity style={styles.smallActionButton}>
+        <Text style={styles.smallActionText}>View</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function MemberCard({ name, username, id, savings, loan, dividend, status }) {
+  return (
+    <View style={styles.memberCard}>
+      <View style={styles.memberCardHeader}>
+        <View style={styles.initialCircle}>
+          <Text style={styles.initialText}>{name[0]}</Text>
         </View>
 
         <View style={{ flex: 1 }}>
-          <Text style={styles.recordName}>{name}</Text>
-          <Text style={styles.recordMeta}>
+          <Text style={styles.memberCardName}>{name}</Text>
+          <Text style={styles.memberCardMeta}>
             {username} · {id}
           </Text>
         </View>
 
-        <View
-          style={
-            status === "Excellent"
-              ? styles.excellentBadge
-              : status === "Suspended"
-              ? styles.suspendedBadge
-              : styles.cautionBadge
-          }
-        >
-          <Text
-            style={
-              status === "Excellent"
-                ? styles.excellentText
-                : status === "Suspended"
-                ? styles.suspendedText
-                : styles.cautionText
-            }
-          >
-            {status}
-          </Text>
-        </View>
+        <StatusBadge status={status} />
       </View>
 
-      <View style={styles.recordStats}>
-        <RecordStat value={savings} label="Savings" color="#009060" />
-        <RecordStat value={loan} label="Loan" color="#ff4f00" />
-        <RecordStat value={dividend} label="Div" color="#009060" />
-
-        <TouchableOpacity style={styles.suspendBox}>
-          <Feather name={suspended ? "unlock" : "lock"} size={12} color="#ff4f00" />
-          <Text style={styles.suspendText}>{suspended ? "Restore" : "Suspend"}</Text>
-        </TouchableOpacity>
+      <View style={styles.memberStats}>
+        <RecordStat label="Savings" value={savings} color="#009060" />
+        <RecordStat label="Loan" value={loan} color="#ea580c" />
+        <RecordStat label="Div" value={dividend} color="#009060" />
       </View>
     </View>
   );
 }
 
-function RecordStat({ value, label, color }) {
+function RequestTableRow({ name, loanType, amount, purpose, status, showActions }) {
+  return (
+    <View style={styles.tableRow}>
+      <Text style={[styles.tdStrong, { flex: 1.3 }]}>{name}</Text>
+      <Text style={styles.td}>{loanType}</Text>
+      <Text style={styles.tdGreen}>{amount}</Text>
+      <Text style={styles.td}>{purpose}</Text>
+      <StatusBadge status={status} />
+
+      <View style={styles.actionCell}>
+        {showActions ? (
+          <>
+            <TouchableOpacity style={styles.approveMini}>
+              <Feather name="check" size={14} color="#009060" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.rejectMini}>
+              <Feather name="x" size={14} color="#dc2626" />
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.tableSub}>Done</Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function RequestCard({ name, loanType, amount, date, purpose, status, showActions }) {
+  return (
+    <View style={styles.requestCard}>
+      <View style={styles.requestCardHeader}>
+        <View>
+          <Text style={styles.requestName}>{name}</Text>
+          <Text style={styles.requestLoanType}>{loanType}</Text>
+        </View>
+
+        <StatusBadge status={status} />
+      </View>
+
+      <InfoBlock label="Amount Requested" value={amount} highlight />
+      <InfoBlock label="Date Requested" value={date} />
+      <InfoBlock label="Purpose" value={purpose} />
+
+      {showActions && (
+        <View style={styles.requestActionRow}>
+          <TouchableOpacity style={styles.approveButton}>
+            <Feather name="check-square" size={16} color="#009060" />
+            <Text style={styles.approveButtonText}>Approve</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.rejectButton}>
+            <Feather name="x-circle" size={16} color="#ff4b4b" />
+            <Text style={styles.rejectButtonText}>Reject</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+}
+
+function InfoBlock({ label, value, highlight }) {
+  return (
+    <View style={styles.infoBlock}>
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={highlight ? styles.infoValueHighlight : styles.infoValue}>{value}</Text>
+    </View>
+  );
+}
+
+function StatusBadge({ status }) {
+  const statusStyle =
+    status === "Excellent" || status === "Approved"
+      ? styles.statusGreen
+      : status === "Suspended" || status === "Rejected"
+      ? styles.statusRed
+      : styles.statusOrange;
+
+  const textStyle =
+    status === "Excellent" || status === "Approved"
+      ? styles.statusGreenText
+      : status === "Suspended" || status === "Rejected"
+      ? styles.statusRedText
+      : styles.statusOrangeText;
+
+  return (
+    <View style={statusStyle}>
+      <Text style={textStyle}>{status}</Text>
+    </View>
+  );
+}
+
+function RecordStat({ label, value, color }) {
   return (
     <View style={styles.recordStat}>
       <Text style={[styles.recordStatValue, { color }]}>{value}</Text>
       <Text style={styles.recordStatLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function FilterChip({ label, active, onPress }) {
+  return (
+    <TouchableOpacity style={active ? styles.filterChipActive : styles.filterChip} onPress={onPress}>
+      <Text style={active ? styles.filterChipTextActive : styles.filterChipText}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+function ProfileRow({ label, value }) {
+  return (
+    <View style={styles.profileRow}>
+      <Text style={styles.profileRowLabel}>{label}</Text>
+      <Text style={styles.profileRowValue}>{value}</Text>
+    </View>
+  );
+}
+
+function BottomNav({ activeTab, setActiveTab, router }) {
+  return (
+    <View style={styles.bottomNav}>
+      <BottomTab
+        icon="bar-chart-2"
+        label="Overview"
+        active={activeTab === "overview"}
+        onPress={() => setActiveTab("overview")}
+      />
+
+      <BottomTab
+        icon="users"
+        label="Members"
+        active={activeTab === "members"}
+        onPress={() => setActiveTab("members")}
+      />
+
+      <BottomTab
+        icon="upload-cloud"
+        label="Upload"
+        active={false}
+        onPress={() => router.push("/admin/AdminUploadCSVScreen")}
+      />
+
+      <BottomTab
+        icon="clipboard"
+        label="Reqs"
+        active={activeTab === "requests"}
+        badge="1"
+        onPress={() => setActiveTab("requests")}
+      />
+
+      <BottomTab
+        icon="user"
+        label="Profile"
+        active={activeTab === "profile"}
+        onPress={() => setActiveTab("profile")}
+      />
     </View>
   );
 }
@@ -689,70 +909,153 @@ function BottomTab({ icon, label, active, badge, onPress }) {
   );
 }
 
-function RequestFilterChip({ label, active, onPress }) {
-  return (
-    <TouchableOpacity
-      style={active ? styles.requestFilterChipActive : styles.requestFilterChip}
-      onPress={onPress}
-    >
-      <Text style={active ? styles.requestFilterChipActiveText : styles.requestFilterChipText}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
-function ProfileStat({ value, label }) {
-  return (
-    <View style={styles.profileStat}>
-      <Text style={styles.profileStatValue}>{value}</Text>
-      <Text style={styles.profileStatLabel}>{label}</Text>
-    </View>
-  );
-}
-
-function ProfileRow({ label, value }) {
-  return (
-    <View style={styles.profileRowInfo}>
-      <Text style={styles.profileRowLabel}>{label}</Text>
-      <Text style={styles.profileRowValue}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   page: {
     flex: 1,
-    backgroundColor: "#005033",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#e8f5ee",
   },
 
-  phone: {
-    backgroundColor: "#eafff4",
-    overflow: "hidden",
-  },
-
-  phoneWeb: {
-    width: 390,
-    borderRadius: 36,
-    borderWidth: 1,
-    borderColor: "#2b7553",
-  },
-
-  phoneMobile: {
+  shell: {
     flex: 1,
+    backgroundColor: "#f6fbf8",
+  },
+
+  shellDesktop: {
+    flexDirection: "row",
+    width: "100%",
+  },
+
+  shellMobile: {
     width: "100%",
     height: "100%",
-    borderRadius: 0,
-    borderWidth: 0,
   },
 
-  header: {
+  sidebar: {
+    width: 280,
     backgroundColor: "#06472f",
-    paddingHorizontal: 18,
-    paddingTop: Platform.OS === "ios" ? 52 : 34,
-    paddingBottom: 16,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+  },
+
+  sidebarBrand: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 34,
+  },
+
+  brandIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#009060",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+
+  brandTitle: {
+    color: "#ffffff",
+    fontSize: 20,
+    fontWeight: "900",
+  },
+
+  brandSub: {
+    color: "#a7f3d0",
+    fontSize: 12,
+    marginTop: 3,
+  },
+
+  sidebarMenu: {
+    flex: 1,
+  },
+
+  sidebarItem: {
+    height: 48,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+
+  sidebarItemActive: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#009060",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 8,
+  },
+
+  sidebarItemText: {
+    flex: 1,
+    color: "#a7f3d0",
+    fontSize: 14,
+    fontWeight: "800",
+    marginLeft: 12,
+  },
+
+  sidebarItemTextActive: {
+    flex: 1,
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 12,
+  },
+
+  sidebarBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#ff7a1a",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 6,
+  },
+
+  sidebarBadgeText: {
+    color: "#ffffff",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+
+  sidebarLogout: {
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: "rgba(220, 38, 38, 0.15)",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  sidebarLogoutText: {
+    color: "#fecaca",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+
+  mainArea: {
+    flex: 1,
+    backgroundColor: "#f6fbf8",
+  },
+
+  topHeader: {
+    minHeight: 112,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#d9eee6",
+    paddingHorizontal: Platform.OS === "web" ? 32 : 18,
+    paddingTop: Platform.OS === "ios" ? 54 : 24,
+    paddingBottom: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  topTitleBlock: {
+    flex: 1,
   },
 
   portalRow: {
@@ -761,372 +1064,495 @@ const styles = StyleSheet.create({
   },
 
   portalText: {
-    color: "#5ff0b1",
-    fontSize: 12,
-    fontWeight: "800",
-    marginLeft: 5,
-    letterSpacing: 1,
-  },
-
-  titleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8,
-  },
-
-  headerTitle: {
-    color: "#ffffff",
-    fontSize: 20,
+    color: "#16a34a",
+    fontSize: 11,
     fontWeight: "900",
-    flex: 1,
+    letterSpacing: 1,
+    marginLeft: 5,
+  },
+
+  topTitle: {
+    color: "#052e1d",
+    fontSize: Platform.OS === "web" ? 28 : 21,
+    fontWeight: "900",
+    marginTop: 6,
+  },
+
+  topSubtitle: {
+    color: "#64748b",
+    fontSize: 14,
+    marginTop: 5,
   },
 
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: 8,
+    marginLeft: 16,
   },
 
-  toggleButton: {
-    width: 48,
-    height: 28,
-    borderRadius: 20,
-    backgroundColor: "#b5f4d5",
-    justifyContent: "center",
-    paddingLeft: 8,
-    marginRight: 8,
-  },
-
-  iconButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#1c6346",
+  headerButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "#e6fff2",
     justifyContent: "center",
     alignItems: "center",
-    position: "relative",
+    marginRight: 10,
   },
 
-  dot: {
-    position: "absolute",
-    right: 7,
-    top: 6,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: "#ff7a1a",
-  },
-
-  pageTitle: {
-    color: "#ffffff",
-    fontSize: 21,
-    fontWeight: "900",
-  },
-
-  pageSub: {
-    color: "#5ff0b1",
-    fontSize: 14,
-    marginTop: 4,
-  },
-
-  searchBox: {
-    height: 38,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: "#4b8d70",
-    backgroundColor: "#235f43",
-    marginTop: 14,
+  uploadHeaderButton: {
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: "#009060",
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
   },
 
-  searchText: {
-    color: "#9fc9b5",
-    fontSize: 13,
-    marginLeft: 9,
-    flex: 1,
+  uploadHeaderText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 8,
   },
 
   content: {
     flex: 1,
-    backgroundColor: "#eafff4",
   },
 
-  overviewWrapper: {
-    paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 90,
+  contentInner: {
+    padding: 18,
+    paddingBottom: 92,
   },
 
-  statsGrid: {
+  contentInnerDesktop: {
+    padding: 32,
+    paddingBottom: 40,
+  },
+
+  statsGridDesktop: {
+    flexDirection: "row",
+    gap: 18,
+    marginBottom: 20,
+  },
+
+  statsGridMobile: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-  },
-
-  statCard: {
-    width: "48%",
-    minHeight: 124,
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    padding: 14,
     marginBottom: 12,
   },
 
+  statCard: {
+    flex: 1,
+    minWidth: 190,
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 20,
+    marginBottom: Platform.OS === "web" ? 0 : 12,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+  },
+
   statIconBox: {
-    width: 33,
-    height: 33,
-    borderRadius: 9,
-    backgroundColor: "#e6fff2",
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 18,
   },
 
   statValue: {
-    color: "#002c1d",
-    fontSize: 18,
+    color: "#052e1d",
+    fontSize: 26,
     fontWeight: "900",
   },
 
   statLabel: {
-    color: "#9b8ead",
-    fontSize: 12,
-    marginTop: 8,
+    color: "#334155",
+    fontSize: 14,
+    fontWeight: "800",
+    marginTop: 6,
   },
 
   statSub: {
-    color: "#9b8ead",
-    fontSize: 11,
-    marginTop: 2,
+    color: "#64748b",
+    fontSize: 12,
+    marginTop: 4,
   },
 
-  chartCard: {
+  overviewTwoColumns: {
+    flexDirection: "row",
+    gap: 20,
+    marginBottom: 20,
+  },
+
+  panelCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 15,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    marginBottom: 18,
+  },
+
+  panelCardFlex: {
+    flex: 1,
+  },
+
+  sidePanel: {
+    width: 360,
+  },
+
+  panelHeader: {
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    justifyContent: "space-between",
+    marginBottom: 18,
   },
 
   sectionTitle: {
-    color: "#002c1d",
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 12,
+    color: "#052e1d",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+
+  sectionSub: {
+    color: "#64748b",
+    fontSize: 13,
+    marginTop: 4,
   },
 
   chartArea: {
+    height: 190,
     flexDirection: "row",
-    height: 135,
-  },
-
-  yAxis: {
-    width: 32,
-    justifyContent: "space-between",
-  },
-
-  axisText: {
-    fontSize: 8,
-    color: "#a69ab4",
-  },
-
-  barGroup: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-end",
+    justifyContent: "space-around",
+    borderTopWidth: 1,
+    borderTopColor: "#eef6f1",
+    paddingTop: 18,
   },
 
   miniBarWrap: {
     alignItems: "center",
+    flex: 1,
   },
 
   barSlot: {
-    height: 120,
+    height: 145,
     flexDirection: "row",
     alignItems: "flex-end",
   },
 
   savingsBar: {
-    width: 7,
-    backgroundColor: "#c9c9c9",
-    marginRight: 2,
+    width: 12,
+    backgroundColor: "#009060",
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
+    marginRight: 4,
   },
 
   loansBar: {
-    width: 7,
+    width: 12,
     backgroundColor: "#ff7a1a",
+    borderTopLeftRadius: 6,
+    borderTopRightRadius: 6,
   },
 
   barName: {
-    fontSize: 8,
-    color: "#a69ab4",
-    marginTop: 5,
+    color: "#64748b",
+    fontSize: 11,
+    marginTop: 8,
   },
 
   legendRow: {
     flexDirection: "row",
-    marginTop: 8,
+    marginTop: Platform.OS === "web" ? 0 : 12,
   },
 
   legendItem: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 14,
+    marginLeft: 12,
   },
 
   legendBox: {
-    width: 9,
-    height: 9,
-    borderRadius: 2,
-    marginRight: 5,
+    width: 10,
+    height: 10,
+    borderRadius: 3,
+    marginRight: 6,
   },
 
   legendText: {
-    fontSize: 10,
-    color: "#7f8790",
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
-  memberSmallCard: {
-    backgroundColor: "#ffffff",
-    minHeight: 63,
-    borderRadius: 12,
-    marginBottom: 8,
+  activityItem: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eef6f1",
   },
 
-  smallInitial: {
-    width: 38,
-    height: 38,
-    borderRadius: 9,
-    backgroundColor: "#fff1e6",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+  activityDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#009060",
+    marginTop: 5,
+    marginRight: 10,
   },
 
-  smallInitialText: {
-    color: "#ff6b1a",
-    fontWeight: "900",
-    fontSize: 15,
-  },
-
-  memberSmallName: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#002c1d",
-  },
-
-  memberSmallId: {
-    fontSize: 10,
-    color: "#7f8790",
-    marginTop: 3,
-  },
-
-  memberSavings: {
-    color: "#009060",
-    fontSize: 11,
-    fontWeight: "900",
-    textAlign: "right",
-  },
-
-  cautionBadge: {
-    backgroundColor: "#fff1e6",
-    borderRadius: 10,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    marginTop: 4,
-  },
-
-  cautionText: {
-    color: "#ff6b1a",
-    fontSize: 10,
+  activityTitle: {
+    color: "#052e1d",
+    fontSize: 14,
     fontWeight: "800",
   },
 
-  listWrapper: {
-    padding: 18,
-    paddingBottom: 90,
+  activityTime: {
+    color: "#64748b",
+    fontSize: 12,
+    marginTop: 4,
   },
 
-  memberRecordCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 15,
-    marginBottom: 11,
+  table: {
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    borderRadius: 14,
     overflow: "hidden",
   },
 
-  recordHeader: {
-    minHeight: 66,
+  tableHeader: {
+    minHeight: 48,
+    backgroundColor: "#f0fbf6",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 13,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
 
-  recordInitial: {
-    width: 41,
-    height: 41,
-    borderRadius: 10,
+  th: {
+    flex: 1,
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  tableRow: {
+    minHeight: 64,
+    backgroundColor: "#ffffff",
+    borderTopWidth: 1,
+    borderTopColor: "#e2f2eb",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+
+  memberCell: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  initialCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
     backgroundColor: "#fff1e6",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
 
-  recordInitialText: {
-    color: "#ff6b1a",
-    fontSize: 16,
+  initialText: {
+    color: "#ea580c",
+    fontSize: 15,
     fontWeight: "900",
   },
 
-  recordName: {
+  tableName: {
+    color: "#052e1d",
     fontSize: 14,
-    color: "#002c1d",
     fontWeight: "900",
   },
 
-  recordMeta: {
-    color: "#8e91a4",
-    fontSize: 10,
+  tableSub: {
+    color: "#64748b",
+    fontSize: 11,
+    marginTop: 3,
+  },
+
+  td: {
+    flex: 1,
+    color: "#334155",
+    fontSize: 13,
+  },
+
+  tdStrong: {
+    flex: 1,
+    color: "#052e1d",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  tdGreen: {
+    flex: 1,
+    color: "#009060",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  tdOrange: {
+    flex: 1,
+    color: "#ea580c",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  searchPanel: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    marginBottom: 18,
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    alignItems: Platform.OS === "web" ? "center" : "stretch",
+  },
+
+  searchBox: {
+    flex: 1,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: "#f0fbf6",
+    borderWidth: 1,
+    borderColor: "#cfeee0",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+  },
+
+  searchText: {
+    color: "#64748b",
+    fontSize: 13,
+    marginLeft: 9,
+  },
+
+  addButton: {
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: "#009060",
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: Platform.OS === "web" ? 12 : 0,
+    marginTop: Platform.OS === "web" ? 0 : 12,
+  },
+
+  addButtonText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 7,
+  },
+
+  statusGreen: {
+    flex: 1,
+    maxWidth: 100,
+    backgroundColor: "#e6fff2",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+
+  statusGreenText: {
+    color: "#009060",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  statusOrange: {
+    flex: 1,
+    maxWidth: 100,
+    backgroundColor: "#fff1e6",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+
+  statusOrangeText: {
+    color: "#ea580c",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  statusRed: {
+    flex: 1,
+    maxWidth: 100,
+    backgroundColor: "#fee2e2",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+
+  statusRedText: {
+    color: "#dc2626",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  smallActionButton: {
+    flex: 1,
+    maxWidth: 80,
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: "#e6fff2",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  smallActionText: {
+    color: "#009060",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  memberCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    marginBottom: 12,
+    overflow: "hidden",
+  },
+
+  memberCardHeader: {
+    minHeight: 68,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+  },
+
+  memberCardName: {
+    color: "#052e1d",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+
+  memberCardMeta: {
+    color: "#64748b",
+    fontSize: 11,
     marginTop: 4,
   },
 
-  excellentBadge: {
-    backgroundColor: "#e6fff2",
-    borderRadius: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-
-  excellentText: {
-    color: "#009060",
-    fontSize: 10,
-    fontWeight: "800",
-  },
-
-  suspendedBadge: {
-    backgroundColor: "#ffe9e9",
-    borderRadius: 11,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-  },
-
-  suspendedText: {
-    color: "#e23b3b",
-    fontSize: 10,
-    fontWeight: "800",
-  },
-
-  recordStats: {
-    minHeight: 52,
+  memberStats: {
+    minHeight: 54,
     borderTopWidth: 1,
-    borderTopColor: "#e7eee9",
+    borderTopColor: "#e2f2eb",
     flexDirection: "row",
   },
 
@@ -1134,245 +1560,145 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    borderRightWidth: 1,
-    borderRightColor: "#e7eee9",
-    paddingVertical: 8,
   },
 
   recordStatValue: {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "900",
   },
 
   recordStatLabel: {
-    fontSize: 9,
-    color: "#8e91a4",
-    marginTop: 3,
-  },
-
-  suspendBox: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  suspendText: {
-    color: "#ff4f00",
+    color: "#64748b",
     fontSize: 10,
-    marginTop: 3,
+    marginTop: 4,
   },
 
-  requestsTitle: {
+  filterPanel: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
+    marginBottom: 18,
+  },
+
+  filterGroup: {
+    marginBottom: 12,
+  },
+
+  filterLabel: {
+    color: "#334155",
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 9,
+  },
+
+  filterChip: {
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: "#f0fbf6",
+    borderWidth: 1,
+    borderColor: "#cfeee0",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginRight: 8,
+  },
+
+  filterChipActive: {
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: "#009060",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginRight: 8,
+  },
+
+  filterChipText: {
+    color: "#06472f",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  filterChipTextActive: {
     color: "#ffffff",
-    fontSize: 23,
-    fontWeight: "900",
-  },
-
-  requestsSub: {
-    color: "#37e6a3",
-    fontSize: 14,
-    marginTop: 5,
-    marginBottom: 14,
-  },
-
-  loanDropdownButton: {
-    height: 40,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#1c8c62",
-    backgroundColor: "#075b3c",
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 13,
-  },
-
-  loanDropdownText: {
-    flex: 1,
-    color: "#d9fff0",
-    fontSize: 14,
-    fontWeight: "700",
-    marginLeft: 10,
-  },
-
-  loanDropdownMenu: {
-    maxHeight: 170,
-    borderRadius: 12,
-    backgroundColor: "#075b3c",
-    borderWidth: 1,
-    borderColor: "#1c8c62",
-    marginTop: 6,
-    overflow: "hidden",
-  },
-
-  loanDropdownScroll: {
-    maxHeight: 170,
-  },
-
-  loanDropdownItem: {
-    minHeight: 36,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  loanDropdownItemActive: {
-    minHeight: 36,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
-    backgroundColor: "#0a704a",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-
-  loanDropdownItemText: {
-    color: "#d9fff0",
-    fontSize: 12,
-    fontWeight: "700",
-    flex: 1,
-  },
-
-  loanDropdownItemTextActive: {
-    color: "#37e6a3",
     fontSize: 12,
     fontWeight: "900",
+  },
+
+  actionCell: {
     flex: 1,
-  },
-
-  requestFilterRow: {
     flexDirection: "row",
-    marginTop: 14,
+    alignItems: "center",
   },
 
-  requestFilterChip: {
+  approveMini: {
+    width: 32,
     height: 32,
-    minWidth: 62,
-    borderRadius: 11,
-    backgroundColor: "#0b6a47",
+    borderRadius: 9,
+    backgroundColor: "#e6fff2",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
-    paddingHorizontal: 10,
   },
 
-  requestFilterChipActive: {
+  rejectMini: {
+    width: 32,
     height: 32,
-    minWidth: 50,
-    borderRadius: 11,
-    backgroundColor: "#0c8559",
-    borderWidth: 1,
-    borderColor: "#24e4a0",
+    borderRadius: 9,
+    backgroundColor: "#fee2e2",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
-    paddingHorizontal: 10,
-  },
-
-  requestFilterChipText: {
-    color: "#b9e8d2",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-
-  requestFilterChipActiveText: {
-    color: "#37e6a3",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-
-  requestsWrapper: {
-    padding: 18,
-    paddingBottom: 92,
   },
 
   requestCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 15,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
     padding: 16,
-    marginBottom: 14,
+    marginBottom: 12,
   },
 
   requestCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 18,
+    marginBottom: 14,
   },
 
   requestName: {
-    color: "#002c1d",
-    fontSize: 14,
+    color: "#052e1d",
+    fontSize: 15,
     fontWeight: "900",
   },
 
   requestLoanType: {
-    color: "#7f8790",
+    color: "#64748b",
     fontSize: 12,
     marginTop: 4,
   },
 
-  approvedBadge: {
-    backgroundColor: "#e6fff2",
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+  infoBlock: {
+    marginBottom: 12,
   },
 
-  approvedText: {
-    color: "#009060",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-
-  pendingRequestBadge: {
-    backgroundColor: "#fff1dd",
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-
-  pendingRequestText: {
-    color: "#ff9800",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-
-  rejectedBadge: {
-    backgroundColor: "#ffe9e9",
-    borderRadius: 9,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-  },
-
-  rejectedText: {
-    color: "#ff4b4b",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-
-  requestInfoBlock: {
-    marginBottom: 14,
-  },
-
-  requestLabel: {
-    color: "#596c63",
+  infoLabel: {
+    color: "#64748b",
     fontSize: 12,
     fontWeight: "800",
     marginBottom: 4,
   },
 
-  requestAmount: {
+  infoValue: {
+    color: "#334155",
+    fontSize: 13,
+  },
+
+  infoValueHighlight: {
     color: "#009060",
     fontSize: 17,
     fontWeight: "900",
-  },
-
-  requestValue: {
-    color: "#243a30",
-    fontSize: 13,
-    lineHeight: 18,
   },
 
   requestActionRow: {
@@ -1382,15 +1708,15 @@ const styles = StyleSheet.create({
 
   approveButton: {
     flex: 1,
-    height: 34,
-    borderRadius: 8,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#e6fff2",
     borderWidth: 1,
-    borderColor: "#38d39f",
-    backgroundColor: "#e8fff5",
+    borderColor: "#86efac",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
-    marginRight: 12,
+    marginRight: 10,
   },
 
   approveButtonText: {
@@ -1402,11 +1728,11 @@ const styles = StyleSheet.create({
 
   rejectButton: {
     flex: 1,
-    height: 34,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ff5f5f",
+    height: 38,
+    borderRadius: 10,
     backgroundColor: "#fff7f7",
+    borderWidth: 1,
+    borderColor: "#fecaca",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -1419,151 +1745,105 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
 
-  adminProfileHeader: {
-    alignItems: "center",
-    paddingTop: 10,
+  profileGrid: {
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    gap: 20,
   },
 
-  bigAvatar: {
-    width: 80,
-    height: 80,
+  profileMainCard: {
+    width: Platform.OS === "web" ? 320 : "100%",
+    backgroundColor: "#06472f",
     borderRadius: 20,
-    backgroundColor: "#0f95bd",
-    justifyContent: "center",
+    padding: 24,
     alignItems: "center",
-    position: "relative",
+    marginBottom: Platform.OS === "web" ? 0 : 18,
   },
 
-  bigAvatarText: {
-    color: "#ffffff",
-    fontSize: 28,
-    fontWeight: "900",
-  },
-
-  cameraCircle: {
-    position: "absolute",
-    right: -6,
-    bottom: -6,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#1aaad0",
-    borderWidth: 2,
-    borderColor: "#ffffff",
+  profileAvatar: {
+    width: 88,
+    height: 88,
+    borderRadius: 24,
+    backgroundColor: "#009060",
     justifyContent: "center",
     alignItems: "center",
   },
 
-  adminName: {
+  profileAvatarText: {
     color: "#ffffff",
-    fontSize: 20,
+    fontSize: 32,
     fontWeight: "900",
-    marginTop: 12,
   },
 
-  adminSub: {
-    color: "#5ff0b1",
+  profileName: {
+    color: "#ffffff",
+    fontSize: 22,
+    fontWeight: "900",
+    marginTop: 16,
+  },
+
+  profileSub: {
+    color: "#a7f3d0",
     fontSize: 13,
-    marginTop: 4,
+    marginTop: 5,
+    textAlign: "center",
   },
 
   fullAccessBadge: {
-    marginTop: 10,
+    marginTop: 14,
     backgroundColor: "#08784d",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
 
   fullAccessText: {
-    color: "#5ff0b1",
-    fontSize: 11,
-    fontWeight: "800",
+    color: "#a7f3d0",
+    fontSize: 12,
+    fontWeight: "900",
   },
 
-  profileContent: {
-    paddingHorizontal: 18,
-    paddingBottom: 90,
-  },
-
-  profileStatsCard: {
-    marginTop: 18,
-    minHeight: 68,
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 18,
-  },
-
-  profileStat: {
+  profileInfoCard: {
     flex: 1,
-    alignItems: "center",
-    borderRightWidth: 1,
-    borderRightColor: "#e7eee9",
-  },
-
-  profileStatValue: {
-    color: "#009060",
-    fontSize: 15,
-    fontWeight: "900",
-  },
-
-  profileStatLabel: {
-    color: "#9b8ead",
-    fontSize: 10,
-    marginTop: 6,
-  },
-
-  profileSectionTitle: {
-    color: "#002c1d",
-    fontSize: 14,
-    fontWeight: "900",
-    marginBottom: 10,
-  },
-
-  infoBox: {
     backgroundColor: "#ffffff",
-    borderRadius: 13,
-    overflow: "hidden",
-    marginBottom: 18,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#e2f2eb",
   },
 
-  profileRowInfo: {
-    minHeight: 43,
+  profileRow: {
+    minHeight: 48,
     borderBottomWidth: 1,
-    borderBottomColor: "#e7eee9",
+    borderBottomColor: "#eef6f1",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    justifyContent: "space-between",
   },
 
   profileRowLabel: {
-    color: "#9b8ead",
-    fontSize: 12,
     flex: 1,
+    color: "#64748b",
+    fontSize: 13,
   },
 
   profileRowValue: {
-    color: "#002c1d",
+    flex: 1.4,
+    color: "#052e1d",
     fontSize: 13,
     fontWeight: "800",
     textAlign: "right",
-    flex: 1,
   },
 
   profileUploadButton: {
     height: 48,
-    borderRadius: 12,
+    borderRadius: 13,
     backgroundColor: "#e6fff2",
     borderWidth: 1,
-    borderColor: "#80d6b1",
+    borderColor: "#86efac",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
-    marginBottom: 12,
+    marginTop: 18,
   },
 
   profileUploadText: {
@@ -1575,13 +1855,14 @@ const styles = StyleSheet.create({
 
   profileSignOut: {
     height: 48,
-    borderRadius: 12,
-    backgroundColor: "#fff8ef",
+    borderRadius: 13,
+    backgroundColor: "#fff7f7",
     borderWidth: 1,
-    borderColor: "#efb4a2",
+    borderColor: "#fecaca",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
+    marginTop: 12,
   },
 
   profileSignOutText: {
@@ -1597,8 +1878,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    borderTopLeftRadius: Platform.OS === "web" ? 18 : 0,
-    borderTopRightRadius: Platform.OS === "web" ? 18 : 0,
   },
 
   bottomTab: {
