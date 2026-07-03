@@ -18,7 +18,7 @@ export default function SmiLogo({ size = 130 }) {
       <Image
         source={require("../assets/images/smi-coop-logo.png")}
         style={styles.logoImage}
-        resizeMode="contain"
+        resizeMode="cover"
       />
     </View>
   );
