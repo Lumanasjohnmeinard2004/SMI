@@ -9,9 +9,68 @@ import {
   ScrollView,
   Platform,
   useWindowDimensions,
+  Modal,
+  TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import SmiLogo from "../../components/SmiLogo";
+import { apiRequest } from "../../config/api";
+
+const GOLD = "#c89b2c";
+const DARK_GREEN = "#06472f";
+const MAIN_GREEN = "#009060";
+const LIGHT_GREEN = "#e6fff2";
+const PAGE_BG = "#f6fbf8";
+
+const sampleMembers = [
+  {
+    name: "Maria Santos",
+    username: "@msantos",
+    id: "2019-004827",
+    savings: "₱52,750.00",
+    loan: "₱84,000.00",
+    dividend: "₱6,330.00",
+    status: "Caution",
+  },
+  {
+    name: "Juan dela Cruz",
+    username: "@jdelacruz",
+    id: "2020-005112",
+    savings: "₱38,400.00",
+    loan: "₱60,000.00",
+    dividend: "₱4,608.00",
+    status: "Caution",
+  },
+  {
+    name: "Lourdes Reyes",
+    username: "@lreyes",
+    id: "2018-003991",
+    savings: "₱71,200.00",
+    loan: "₱0.00",
+    dividend: "₱8,544.00",
+    status: "Excellent",
+  },
+  {
+    name: "Roberto Alcantara",
+    username: "@ralcantara",
+    id: "2021-006033",
+    savings: "₱18,600.00",
+    loan: "₱30,000.00",
+    dividend: "₱2,232.00",
+    status: "Suspended",
+  },
+  {
+    name: "Cristina Villanueva",
+    username: "@cvillanueva",
+    id: "2017-002748",
+    savings: "₱94,300.00",
+    loan: "₱120,000.00",
+    dividend: "₱11,316.00",
+    status: "Fair",
+  },
+];
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
@@ -20,6 +79,7 @@ export default function AdminDashboardScreen() {
 
   const isDesktopWeb = Platform.OS === "web" && width >= 900;
   const [activeTab, setActiveTab] = useState(params.tab || "overview");
+  const [members, setMembers] = useState(sampleMembers);
 
   useEffect(() => {
     if (params.tab) {
@@ -27,12 +87,45 @@ export default function AdminDashboardScreen() {
     }
   }, [params.tab]);
 
+  function addMemberToList(member) {
+    setMembers((prev) => [
+      {
+        name: member.full_name,
+        username: `@${member.username}`,
+        id: member.member_id,
+        savings: "₱0.00",
+        loan: "₱0.00",
+        dividend: "₱0.00",
+        status: member.status || "Active",
+      },
+      ...prev,
+    ]);
+  }
+
   function renderContent() {
-    if (activeTab === "overview") return <OverviewContent isDesktopWeb={isDesktopWeb} />;
-    if (activeTab === "members") return <MembersContent isDesktopWeb={isDesktopWeb} />;
-    if (activeTab === "requests") return <RequestsContent isDesktopWeb={isDesktopWeb} />;
-    if (activeTab === "profile") return <ProfileContent router={router} />;
-    return <OverviewContent isDesktopWeb={isDesktopWeb} />;
+    if (activeTab === "overview") {
+      return <OverviewContent members={members} isDesktopWeb={isDesktopWeb} />;
+    }
+
+    if (activeTab === "members") {
+      return (
+        <MembersContent
+          members={members}
+          isDesktopWeb={isDesktopWeb}
+          onMemberAdded={addMemberToList}
+        />
+      );
+    }
+
+    if (activeTab === "requests") {
+      return <RequestsContent isDesktopWeb={isDesktopWeb} />;
+    }
+
+    if (activeTab === "profile") {
+      return <ProfileContent router={router} />;
+    }
+
+    return <OverviewContent members={members} isDesktopWeb={isDesktopWeb} />;
   }
 
   return (
@@ -89,15 +182,17 @@ function Sidebar({ activeTab, setActiveTab, router }) {
   return (
     <View style={styles.sidebar}>
       <View style={styles.sidebarBrand}>
-        <View style={styles.brandIcon}>
-          <Ionicons name="shield-checkmark" size={24} color="#ffffff" />
+        <View style={styles.logoBox}>
+          <SmiLogo size={48} />
         </View>
 
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.brandTitle}>SMI Coop</Text>
           <Text style={styles.brandSub}>Admin Portal</Text>
         </View>
       </View>
+
+      <View style={styles.sidebarDivider} />
 
       <View style={styles.sidebarMenu}>
         <SidebarItem
@@ -151,7 +246,7 @@ function SidebarItem({ icon, label, active, badge, onPress }) {
       style={active ? styles.sidebarItemActive : styles.sidebarItem}
       onPress={onPress}
     >
-      <Feather name={icon} size={18} color={active ? "#ffffff" : "#a7f3d0"} />
+      <Feather name={icon} size={19} color={active ? "#ffffff" : "#d8c07a"} />
 
       <Text style={active ? styles.sidebarItemTextActive : styles.sidebarItemText}>
         {label}
@@ -176,16 +271,22 @@ function TopHeader({ activeTab, setActiveTab, router, isDesktopWeb }) {
 
   const subtitles = {
     overview: "Overview of members, savings, loans, and dividends",
-    members: "View and manage cooperative member records",
+    members: "View, add, and manage cooperative member records",
     requests: "Review and process member loan requests",
     profile: "System administrator account details",
   };
 
   return (
     <View style={styles.topHeader}>
+      {!isDesktopWeb && (
+        <View style={styles.mobileLogoWrap}>
+          <SmiLogo size={42} />
+        </View>
+      )}
+
       <View style={styles.topTitleBlock}>
         <View style={styles.portalRow}>
-          <Ionicons name="shield-checkmark-outline" size={14} color="#16a34a" />
+          <Ionicons name="shield-checkmark-outline" size={14} color={GOLD} />
           <Text style={styles.portalText}>ADMIN PORTAL</Text>
         </View>
 
@@ -199,7 +300,7 @@ function TopHeader({ activeTab, setActiveTab, router, isDesktopWeb }) {
             style={styles.headerButton}
             onPress={() => setActiveTab("overview")}
           >
-            <Feather name="home" size={18} color="#06472f" />
+            <Feather name="home" size={18} color={DARK_GREEN} />
           </TouchableOpacity>
         )}
 
@@ -215,16 +316,16 @@ function TopHeader({ activeTab, setActiveTab, router, isDesktopWeb }) {
   );
 }
 
-function OverviewContent({ isDesktopWeb }) {
+function OverviewContent({ members, isDesktopWeb }) {
   return (
     <View>
       <View style={isDesktopWeb ? styles.statsGridDesktop : styles.statsGridMobile}>
         <StatCard
           icon="users"
-          value="6"
+          value={String(members.length)}
           label="Total Members"
-          sub="5 active members"
-          color="#009060"
+          sub="Registered members"
+          color={MAIN_GREEN}
         />
 
         <StatCard
@@ -233,7 +334,7 @@ function OverviewContent({ isDesktopWeb }) {
           label="Total Savings"
           sub="Savings and share capital"
           type="material"
-          color="#0f766e"
+          color={GOLD}
         />
 
         <StatCard
@@ -241,7 +342,7 @@ function OverviewContent({ isDesktopWeb }) {
           value="₱369k"
           label="Total Loans"
           sub="Outstanding balances"
-          color="#ea580c"
+          color={GOLD}
         />
 
         <StatCard
@@ -249,7 +350,7 @@ function OverviewContent({ isDesktopWeb }) {
           value="₱33k"
           label="Dividends Paid"
           sub="FY 2024"
-          color="#16a34a"
+          color={MAIN_GREEN}
         />
       </View>
 
@@ -262,8 +363,8 @@ function OverviewContent({ isDesktopWeb }) {
             </View>
 
             <View style={styles.legendRow}>
-              <Legend color="#009060" label="Savings" />
-              <Legend color="#ff7a1a" label="Loans" />
+              <Legend color={MAIN_GREEN} label="Savings" />
+              <Legend color={GOLD} label="Loans" />
             </View>
           </View>
 
@@ -304,119 +405,22 @@ function OverviewContent({ isDesktopWeb }) {
               <Text style={styles.th}>Status</Text>
             </View>
 
-            <MemberTableRow
-              name="Maria Santos"
-              username="@msantos"
-              id="2019-004827"
-              savings="₱52,750.00"
-              loan="₱84,000.00"
-              status="Caution"
-            />
-
-            <MemberTableRow
-              name="Juan dela Cruz"
-              username="@jdelacruz"
-              id="2020-005112"
-              savings="₱38,400.00"
-              loan="₱60,000.00"
-              status="Caution"
-            />
-
-            <MemberTableRow
-              name="Lourdes Reyes"
-              username="@lreyes"
-              id="2018-003991"
-              savings="₱71,200.00"
-              loan="₱0.00"
-              status="Excellent"
-            />
+            {members.slice(0, 3).map((member) => (
+              <MemberTableRow key={`${member.id}-${member.username}`} {...member} />
+            ))}
           </View>
         ) : (
-          <>
-            <MemberCard
-              name="Maria Santos"
-              username="@msantos"
-              id="2019-004827"
-              savings="₱52,750.00"
-              loan="₱84,000.00"
-              dividend="₱6,330.00"
-              status="Caution"
-            />
-
-            <MemberCard
-              name="Juan dela Cruz"
-              username="@jdelacruz"
-              id="2020-005112"
-              savings="₱38,400.00"
-              loan="₱60,000.00"
-              dividend="₱4,608.00"
-              status="Caution"
-            />
-
-            <MemberCard
-              name="Lourdes Reyes"
-              username="@lreyes"
-              id="2018-003991"
-              savings="₱71,200.00"
-              loan="₱0.00"
-              dividend="₱8,544.00"
-              status="Excellent"
-            />
-          </>
+          members.slice(0, 3).map((member) => (
+            <MemberCard key={`${member.id}-${member.username}`} {...member} />
+          ))
         )}
       </View>
     </View>
   );
 }
 
-function MembersContent({ isDesktopWeb }) {
-  const members = [
-    {
-      name: "Maria Santos",
-      username: "@msantos",
-      id: "2019-004827",
-      savings: "₱52,750.00",
-      loan: "₱84,000.00",
-      dividend: "₱6,330.00",
-      status: "Caution",
-    },
-    {
-      name: "Juan dela Cruz",
-      username: "@jdelacruz",
-      id: "2020-005112",
-      savings: "₱38,400.00",
-      loan: "₱60,000.00",
-      dividend: "₱4,608.00",
-      status: "Caution",
-    },
-    {
-      name: "Lourdes Reyes",
-      username: "@lreyes",
-      id: "2018-003991",
-      savings: "₱71,200.00",
-      loan: "₱0.00",
-      dividend: "₱8,544.00",
-      status: "Excellent",
-    },
-    {
-      name: "Roberto Alcantara",
-      username: "@ralcantara",
-      id: "2021-006033",
-      savings: "₱18,600.00",
-      loan: "₱30,000.00",
-      dividend: "₱2,232.00",
-      status: "Suspended",
-    },
-    {
-      name: "Cristina Villanueva",
-      username: "@cvillanueva",
-      id: "2017-002748",
-      savings: "₱94,300.00",
-      loan: "₱120,000.00",
-      dividend: "₱11,316.00",
-      status: "Fair",
-    },
-  ];
+function MembersContent({ members, isDesktopWeb, onMemberAdded }) {
+  const [showAddMember, setShowAddMember] = useState(false);
 
   return (
     <View>
@@ -426,7 +430,10 @@ function MembersContent({ isDesktopWeb }) {
           <Text style={styles.searchText}>Search by name, ID, or username...</Text>
         </View>
 
-        <TouchableOpacity style={styles.addButton}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setShowAddMember(true)}
+        >
           <Feather name="plus" size={18} color="#ffffff" />
           <Text style={styles.addButtonText}>Add Member</Text>
         </TouchableOpacity>
@@ -436,7 +443,7 @@ function MembersContent({ isDesktopWeb }) {
         <View style={styles.panelHeader}>
           <View>
             <Text style={styles.sectionTitle}>Member List</Text>
-            <Text style={styles.sectionSub}>6 registered members</Text>
+            <Text style={styles.sectionSub}>{members.length} registered members</Text>
           </View>
         </View>
 
@@ -453,13 +460,201 @@ function MembersContent({ isDesktopWeb }) {
             </View>
 
             {members.map((member) => (
-              <MemberFullTableRow key={member.id} {...member} />
+              <MemberFullTableRow key={`${member.id}-${member.username}`} {...member} />
             ))}
           </View>
         ) : (
-          members.map((member) => <MemberCard key={member.id} {...member} />)
+          members.map((member) => (
+            <MemberCard key={`${member.id}-${member.username}`} {...member} />
+          ))
         )}
       </View>
+
+      <AddMemberModal
+        visible={showAddMember}
+        onClose={() => setShowAddMember(false)}
+        onMemberAdded={onMemberAdded}
+      />
+    </View>
+  );
+}
+
+function AddMemberModal({ visible, onClose, onMemberAdded }) {
+  const [form, setForm] = useState({
+    member_id: "",
+    full_name: "",
+    username: "",
+    password: "",
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  function updateField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  async function saveMember() {
+    try {
+      setMessage("");
+      setIsError(false);
+
+      if (
+        !form.member_id.trim() ||
+        !form.full_name.trim() ||
+        !form.username.trim() ||
+        !form.password.trim()
+      ) {
+        setIsError(true);
+        setMessage("Please complete all required fields.");
+        return;
+      }
+
+      setSaving(true);
+
+      const data = await apiRequest("/auth/register-member", "POST", {
+        member_id: form.member_id.trim(),
+        full_name: form.full_name.trim(),
+        username: form.username.trim(),
+        password: form.password.trim(),
+      });
+
+      onMemberAdded(data.member);
+
+      setForm({
+        member_id: "",
+        full_name: "",
+        username: "",
+        password: "",
+      });
+
+      setIsError(false);
+      setMessage("Member saved successfully.");
+
+      setTimeout(() => {
+        setMessage("");
+        onClose();
+      }, 700);
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message || "Failed to save member.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.addMemberModal}>
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitle}>Add Member</Text>
+              <Text style={styles.modalSubtitle}>
+                Create a member account and save it to the database
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
+              <Feather name="x" size={20} color="#334155" />
+            </TouchableOpacity>
+          </View>
+
+          {message ? (
+            <View style={isError ? styles.errorBox : styles.successBox}>
+              <Feather
+                name={isError ? "alert-circle" : "check-circle"}
+                size={16}
+                color={isError ? "#991b1b" : "#047857"}
+              />
+              <Text style={isError ? styles.errorText : styles.successText}>
+                {message}
+              </Text>
+            </View>
+          ) : null}
+
+          <ModalInput
+            label="Member ID"
+            value={form.member_id}
+            onChangeText={(value) => updateField("member_id", value)}
+            placeholder="e.g. SMI-002"
+          />
+
+          <ModalInput
+            label="Full Name"
+            value={form.full_name}
+            onChangeText={(value) => updateField("full_name", value)}
+            placeholder="e.g. Pedro Reyes"
+          />
+
+          <ModalInput
+            label="Username"
+            value={form.username}
+            onChangeText={(value) => updateField("username", value)}
+            placeholder="e.g. preyes"
+            autoCapitalize="none"
+          />
+
+          <ModalInput
+            label="Temporary Password"
+            value={form.password}
+            onChangeText={(value) => updateField("password", value)}
+            placeholder="e.g. member123"
+            secureTextEntry
+            autoCapitalize="none"
+          />
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelMemberButton} onPress={onClose}>
+              <Text style={styles.cancelMemberText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveMemberButton}
+              onPress={saveMember}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Feather name="save" size={17} color="#ffffff" />
+                  <Text style={styles.saveMemberText}>Save Member</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function ModalInput({
+  label,
+  value,
+  onChangeText,
+  placeholder,
+  secureTextEntry,
+  autoCapitalize = "words",
+}) {
+  return (
+    <View style={styles.modalInputGroup}>
+      <Text style={styles.modalInputLabel}>{label}</Text>
+
+      <TextInput
+        style={styles.modalInput}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#94a3b8"
+        secureTextEntry={secureTextEntry}
+        autoCapitalize={autoCapitalize}
+      />
     </View>
   );
 }
@@ -494,16 +689,20 @@ function RequestsContent({ isDesktopWeb }) {
         <View style={styles.filterGroup}>
           <Text style={styles.filterLabel}>Loan Type</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {["All Loan Types", "Regular Loan", "Educational Loan", "Medical Loan", "Vehicle Loan"].map(
-              (item) => (
-                <FilterChip
-                  key={item}
-                  label={item}
-                  active={selectedLoanType === item}
-                  onPress={() => setSelectedLoanType(item)}
-                />
-              )
-            )}
+            {[
+              "All Loan Types",
+              "Regular Loan",
+              "Educational Loan",
+              "Medical Loan",
+              "Vehicle Loan",
+            ].map((item) => (
+              <FilterChip
+                key={item}
+                label={item}
+                active={selectedLoanType === item}
+                onPress={() => setSelectedLoanType(item)}
+              />
+            ))}
           </ScrollView>
         </View>
 
@@ -560,8 +759,8 @@ function ProfileContent({ router }) {
     <View>
       <View style={styles.profileGrid}>
         <View style={styles.profileMainCard}>
-          <View style={styles.profileAvatar}>
-            <Text style={styles.profileAvatarText}>A</Text>
+          <View style={styles.profileLogoCircle}>
+            <SmiLogo size={92} />
           </View>
 
           <Text style={styles.profileName}>Administrator</Text>
@@ -588,7 +787,7 @@ function ProfileContent({ router }) {
             style={styles.profileUploadButton}
             onPress={() => router.push("/admin/AdminUploadCSVScreen")}
           >
-            <Feather name="upload-cloud" size={18} color="#009060" />
+            <Feather name="upload-cloud" size={18} color={MAIN_GREEN} />
             <Text style={styles.profileUploadText}>Upload CSV / Manual Input</Text>
           </TouchableOpacity>
 
@@ -605,7 +804,7 @@ function ProfileContent({ router }) {
 function StatCard({ icon, value, label, sub, type, color }) {
   return (
     <View style={styles.statCard}>
-      <View style={[styles.statIconBox, { backgroundColor: `${color}18` }]}>
+      <View style={[styles.statIconBox, { backgroundColor: `${color}1A` }]}>
         {type === "material" ? (
           <MaterialCommunityIcons name={icon} size={22} color={color} />
         ) : (
@@ -660,6 +859,7 @@ function MemberTableRow({ name, username, id, savings, loan, status }) {
         <View style={styles.initialCircle}>
           <Text style={styles.initialText}>{name[0]}</Text>
         </View>
+
         <View>
           <Text style={styles.tableName}>{name}</Text>
           <Text style={styles.tableSub}>{username}</Text>
@@ -668,7 +868,7 @@ function MemberTableRow({ name, username, id, savings, loan, status }) {
 
       <Text style={styles.td}>{id}</Text>
       <Text style={styles.tdGreen}>{savings}</Text>
-      <Text style={styles.tdOrange}>{loan}</Text>
+      <Text style={styles.tdGold}>{loan}</Text>
       <StatusBadge status={status} />
     </View>
   );
@@ -681,6 +881,7 @@ function MemberFullTableRow({ name, username, id, savings, loan, dividend, statu
         <View style={styles.initialCircle}>
           <Text style={styles.initialText}>{name[0]}</Text>
         </View>
+
         <View>
           <Text style={styles.tableName}>{name}</Text>
           <Text style={styles.tableSub}>{username}</Text>
@@ -689,7 +890,7 @@ function MemberFullTableRow({ name, username, id, savings, loan, dividend, statu
 
       <Text style={styles.td}>{id}</Text>
       <Text style={styles.tdGreen}>{savings}</Text>
-      <Text style={styles.tdOrange}>{loan}</Text>
+      <Text style={styles.tdGold}>{loan}</Text>
       <Text style={styles.tdGreen}>{dividend}</Text>
       <StatusBadge status={status} />
 
@@ -719,9 +920,9 @@ function MemberCard({ name, username, id, savings, loan, dividend, status }) {
       </View>
 
       <View style={styles.memberStats}>
-        <RecordStat label="Savings" value={savings} color="#009060" />
-        <RecordStat label="Loan" value={loan} color="#ea580c" />
-        <RecordStat label="Div" value={dividend} color="#009060" />
+        <RecordStat label="Savings" value={savings} color={MAIN_GREEN} />
+        <RecordStat label="Loan" value={loan} color={GOLD} />
+        <RecordStat label="Div" value={dividend} color={MAIN_GREEN} />
       </View>
     </View>
   );
@@ -740,7 +941,7 @@ function RequestTableRow({ name, loanType, amount, purpose, status, showActions 
         {showActions ? (
           <>
             <TouchableOpacity style={styles.approveMini}>
-              <Feather name="check" size={14} color="#009060" />
+              <Feather name="check" size={14} color={MAIN_GREEN} />
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.rejectMini}>
@@ -774,7 +975,7 @@ function RequestCard({ name, loanType, amount, date, purpose, status, showAction
       {showActions && (
         <View style={styles.requestActionRow}>
           <TouchableOpacity style={styles.approveButton}>
-            <Feather name="check-square" size={16} color="#009060" />
+            <Feather name="check-square" size={16} color={MAIN_GREEN} />
             <Text style={styles.approveButtonText}>Approve</Text>
           </TouchableOpacity>
 
@@ -798,23 +999,22 @@ function InfoBlock({ label, value, highlight }) {
 }
 
 function StatusBadge({ status }) {
-  const statusStyle =
-    status === "Excellent" || status === "Approved"
-      ? styles.statusGreen
-      : status === "Suspended" || status === "Rejected"
-      ? styles.statusRed
-      : styles.statusOrange;
-
-  const textStyle =
-    status === "Excellent" || status === "Approved"
-      ? styles.statusGreenText
-      : status === "Suspended" || status === "Rejected"
-      ? styles.statusRedText
-      : styles.statusOrangeText;
+  const good = status === "Excellent" || status === "Approved" || status === "Active";
+  const bad = status === "Suspended" || status === "Rejected";
 
   return (
-    <View style={statusStyle}>
-      <Text style={textStyle}>{status}</Text>
+    <View style={good ? styles.statusGreen : bad ? styles.statusRed : styles.statusGold}>
+      <Text
+        style={
+          good
+            ? styles.statusGreenText
+            : bad
+            ? styles.statusRedText
+            : styles.statusGoldText
+        }
+      >
+        {status}
+      </Text>
     </View>
   );
 }
@@ -830,7 +1030,10 @@ function RecordStat({ label, value, color }) {
 
 function FilterChip({ label, active, onPress }) {
   return (
-    <TouchableOpacity style={active ? styles.filterChipActive : styles.filterChip} onPress={onPress}>
+    <TouchableOpacity
+      style={active ? styles.filterChipActive : styles.filterChip}
+      onPress={onPress}
+    >
       <Text style={active ? styles.filterChipTextActive : styles.filterChipText}>
         {label}
       </Text>
@@ -893,7 +1096,7 @@ function BottomTab({ icon, label, active, badge, onPress }) {
   return (
     <TouchableOpacity style={styles.bottomTab} onPress={onPress}>
       <View style={styles.bottomIconWrap}>
-        <Feather name={icon} size={20} color={active ? "#37e6a3" : "#50906e"} />
+        <Feather name={icon} size={20} color={active ? GOLD : "#50906e"} />
 
         {badge && (
           <View style={styles.bottomBadge}>
@@ -917,7 +1120,7 @@ const styles = StyleSheet.create({
 
   shell: {
     flex: 1,
-    backgroundColor: "#f6fbf8",
+    backgroundColor: PAGE_BG,
   },
 
   shellDesktop: {
@@ -931,26 +1134,31 @@ const styles = StyleSheet.create({
   },
 
   sidebar: {
-    width: 280,
-    backgroundColor: "#06472f",
+    width: 286,
+    backgroundColor: DARK_GREEN,
     paddingHorizontal: 22,
     paddingVertical: 24,
+    borderRightWidth: 3,
+    borderRightColor: GOLD,
   },
 
   sidebarBrand: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 34,
+    marginBottom: 18,
   },
 
-  brandIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "#009060",
+  logoBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#ffffff",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: GOLD,
+    overflow: "hidden",
   },
 
   brandTitle: {
@@ -960,9 +1168,16 @@ const styles = StyleSheet.create({
   },
 
   brandSub: {
-    color: "#a7f3d0",
+    color: "#d8c07a",
     fontSize: 12,
     marginTop: 3,
+    fontWeight: "800",
+  },
+
+  sidebarDivider: {
+    height: 1,
+    backgroundColor: "rgba(200, 155, 44, 0.35)",
+    marginBottom: 22,
   },
 
   sidebarMenu: {
@@ -981,7 +1196,7 @@ const styles = StyleSheet.create({
   sidebarItemActive: {
     height: 48,
     borderRadius: 14,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -990,7 +1205,7 @@ const styles = StyleSheet.create({
 
   sidebarItemText: {
     flex: 1,
-    color: "#a7f3d0",
+    color: "#d8c07a",
     fontSize: 14,
     fontWeight: "800",
     marginLeft: 12,
@@ -1008,7 +1223,7 @@ const styles = StyleSheet.create({
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#ff7a1a",
+    backgroundColor: GOLD,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 6,
@@ -1038,20 +1253,33 @@ const styles = StyleSheet.create({
 
   mainArea: {
     flex: 1,
-    backgroundColor: "#f6fbf8",
+    backgroundColor: PAGE_BG,
   },
 
   topHeader: {
     minHeight: 112,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#d9eee6",
+    borderBottomColor: "#e5d4a2",
     paddingHorizontal: Platform.OS === "web" ? 32 : 18,
     paddingTop: Platform.OS === "ios" ? 54 : 24,
     paddingBottom: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+
+  mobileLogoWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: GOLD,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    overflow: "hidden",
   },
 
   topTitleBlock: {
@@ -1064,7 +1292,7 @@ const styles = StyleSheet.create({
   },
 
   portalText: {
-    color: "#16a34a",
+    color: GOLD,
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1,
@@ -1094,7 +1322,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: "#e6fff2",
+    backgroundColor: "#fff8e1",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
@@ -1103,7 +1331,7 @@ const styles = StyleSheet.create({
   uploadHeaderButton: {
     height: 44,
     borderRadius: 13,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -1151,7 +1379,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: Platform.OS === "web" ? 0 : 12,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
   },
 
   statIconBox: {
@@ -1193,7 +1421,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     marginBottom: 18,
   },
 
@@ -1229,7 +1457,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-around",
     borderTopWidth: 1,
-    borderTopColor: "#eef6f1",
+    borderTopColor: "#f3ead0",
     paddingTop: 18,
   },
 
@@ -1246,7 +1474,7 @@ const styles = StyleSheet.create({
 
   savingsBar: {
     width: 12,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     borderTopLeftRadius: 6,
     borderTopRightRadius: 6,
     marginRight: 4,
@@ -1254,7 +1482,7 @@ const styles = StyleSheet.create({
 
   loansBar: {
     width: 12,
-    backgroundColor: "#ff7a1a",
+    backgroundColor: GOLD,
     borderTopLeftRadius: 6,
     borderTopRightRadius: 6,
   },
@@ -1293,14 +1521,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: "#eef6f1",
+    borderBottomColor: "#f3ead0",
   },
 
   activityDot: {
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: "#009060",
+    backgroundColor: GOLD,
     marginTop: 5,
     marginRight: 10,
   },
@@ -1319,14 +1547,14 @@ const styles = StyleSheet.create({
 
   table: {
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     borderRadius: 14,
     overflow: "hidden",
   },
 
   tableHeader: {
     minHeight: 48,
-    backgroundColor: "#f0fbf6",
+    backgroundColor: "#fff8e1",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
@@ -1343,7 +1571,7 @@ const styles = StyleSheet.create({
     minHeight: 64,
     backgroundColor: "#ffffff",
     borderTopWidth: 1,
-    borderTopColor: "#e2f2eb",
+    borderTopColor: "#efe2bd",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
@@ -1358,14 +1586,16 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
-    backgroundColor: "#fff1e6",
+    backgroundColor: "#fff8e1",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
   },
 
   initialText: {
-    color: "#ea580c",
+    color: GOLD,
     fontSize: 15,
     fontWeight: "900",
   },
@@ -1397,14 +1627,14 @@ const styles = StyleSheet.create({
 
   tdGreen: {
     flex: 1,
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 13,
     fontWeight: "900",
   },
 
-  tdOrange: {
+  tdGold: {
     flex: 1,
-    color: "#ea580c",
+    color: GOLD,
     fontSize: 13,
     fontWeight: "900",
   },
@@ -1414,7 +1644,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     marginBottom: 18,
     flexDirection: Platform.OS === "web" ? "row" : "column",
     alignItems: Platform.OS === "web" ? "center" : "stretch",
@@ -1424,9 +1654,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     borderRadius: 13,
-    backgroundColor: "#f0fbf6",
+    backgroundColor: "#fffdf5",
     borderWidth: 1,
-    borderColor: "#cfeee0",
+    borderColor: "#e5d4a2",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -1441,7 +1671,7 @@ const styles = StyleSheet.create({
   addButton: {
     height: 44,
     borderRadius: 13,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
@@ -1468,23 +1698,23 @@ const styles = StyleSheet.create({
   },
 
   statusGreenText: {
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 11,
     fontWeight: "900",
   },
 
-  statusOrange: {
+  statusGold: {
     flex: 1,
     maxWidth: 100,
-    backgroundColor: "#fff1e6",
+    backgroundColor: "#fff8e1",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 6,
     alignItems: "center",
   },
 
-  statusOrangeText: {
-    color: "#ea580c",
+  statusGoldText: {
+    color: GOLD,
     fontSize: 11,
     fontWeight: "900",
   },
@@ -1510,13 +1740,13 @@ const styles = StyleSheet.create({
     maxWidth: 80,
     height: 32,
     borderRadius: 9,
-    backgroundColor: "#e6fff2",
+    backgroundColor: LIGHT_GREEN,
     justifyContent: "center",
     alignItems: "center",
   },
 
   smallActionText: {
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 12,
     fontWeight: "900",
   },
@@ -1525,7 +1755,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     marginBottom: 12,
     overflow: "hidden",
   },
@@ -1552,7 +1782,7 @@ const styles = StyleSheet.create({
   memberStats: {
     minHeight: 54,
     borderTopWidth: 1,
-    borderTopColor: "#e2f2eb",
+    borderTopColor: "#efe2bd",
     flexDirection: "row",
   },
 
@@ -1578,7 +1808,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     marginBottom: 18,
   },
 
@@ -1596,9 +1826,9 @@ const styles = StyleSheet.create({
   filterChip: {
     height: 36,
     borderRadius: 999,
-    backgroundColor: "#f0fbf6",
+    backgroundColor: "#fffdf5",
     borderWidth: 1,
-    borderColor: "#cfeee0",
+    borderColor: "#e5d4a2",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -1608,7 +1838,7 @@ const styles = StyleSheet.create({
   filterChipActive: {
     height: 36,
     borderRadius: 999,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -1616,7 +1846,7 @@ const styles = StyleSheet.create({
   },
 
   filterChipText: {
-    color: "#06472f",
+    color: DARK_GREEN,
     fontSize: 12,
     fontWeight: "800",
   },
@@ -1656,7 +1886,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     padding: 16,
     marginBottom: 12,
   },
@@ -1696,7 +1926,7 @@ const styles = StyleSheet.create({
   },
 
   infoValueHighlight: {
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 17,
     fontWeight: "900",
   },
@@ -1720,7 +1950,7 @@ const styles = StyleSheet.create({
   },
 
   approveButtonText: {
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 13,
     fontWeight: "900",
     marginLeft: 7,
@@ -1752,26 +1982,25 @@ const styles = StyleSheet.create({
 
   profileMainCard: {
     width: Platform.OS === "web" ? 320 : "100%",
-    backgroundColor: "#06472f",
+    backgroundColor: DARK_GREEN,
     borderRadius: 20,
     padding: 24,
     alignItems: "center",
     marginBottom: Platform.OS === "web" ? 0 : 18,
+    borderWidth: 2,
+    borderColor: GOLD,
   },
 
-  profileAvatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    backgroundColor: "#009060",
+  profileLogoCircle: {
+    width: 104,
+    height: 104,
+    borderRadius: 52,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: GOLD,
     justifyContent: "center",
     alignItems: "center",
-  },
-
-  profileAvatarText: {
-    color: "#ffffff",
-    fontSize: 32,
-    fontWeight: "900",
+    overflow: "hidden",
   },
 
   profileName: {
@@ -1782,7 +2011,7 @@ const styles = StyleSheet.create({
   },
 
   profileSub: {
-    color: "#a7f3d0",
+    color: "#d8c07a",
     fontSize: 13,
     marginTop: 5,
     textAlign: "center",
@@ -1790,14 +2019,16 @@ const styles = StyleSheet.create({
 
   fullAccessBadge: {
     marginTop: 14,
-    backgroundColor: "#08784d",
+    backgroundColor: "rgba(200, 155, 44, 0.18)",
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: GOLD,
   },
 
   fullAccessText: {
-    color: "#a7f3d0",
+    color: "#f6dd8c",
     fontSize: 12,
     fontWeight: "900",
   },
@@ -1808,13 +2039,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
   },
 
   profileRow: {
     minHeight: 48,
     borderBottomWidth: 1,
-    borderBottomColor: "#eef6f1",
+    borderBottomColor: "#f3ead0",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1847,7 +2078,7 @@ const styles = StyleSheet.create({
   },
 
   profileUploadText: {
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 14,
     fontWeight: "900",
     marginLeft: 8,
@@ -1869,6 +2100,154 @@ const styles = StyleSheet.create({
     color: "#e23b3b",
     fontSize: 14,
     fontWeight: "900",
+    marginLeft: 8,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.38)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 18,
+  },
+
+  addMemberModal: {
+    width: Platform.OS === "web" ? 520 : "100%",
+    maxWidth: 540,
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 22,
+    borderWidth: 2,
+    borderColor: GOLD,
+  },
+
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 18,
+  },
+
+  modalTitle: {
+    color: "#052e1d",
+    fontSize: 23,
+    fontWeight: "900",
+  },
+
+  modalSubtitle: {
+    color: "#64748b",
+    fontSize: 13,
+    marginTop: 5,
+  },
+
+  modalCloseButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#f8fafc",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  modalInputGroup: {
+    marginBottom: 14,
+  },
+
+  modalInputLabel: {
+    color: "#334155",
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 7,
+  },
+
+  modalInput: {
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
+    backgroundColor: "#fffdf5",
+    paddingHorizontal: 14,
+    color: "#052e1d",
+    fontSize: 14,
+  },
+
+  modalActions: {
+    flexDirection: "row",
+    marginTop: 8,
+  },
+
+  cancelMemberButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#cbd5e1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+
+  cancelMemberText: {
+    color: "#334155",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+
+  saveMemberButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    backgroundColor: MAIN_GREEN,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  saveMemberText: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 8,
+  },
+
+  errorBox: {
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+
+  errorText: {
+    flex: 1,
+    color: "#991b1b",
+    fontSize: 13,
+    fontWeight: "700",
+    marginLeft: 8,
+  },
+
+  successBox: {
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: "#dcfce7",
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+
+  successText: {
+    flex: 1,
+    color: "#047857",
+    fontSize: 13,
+    fontWeight: "700",
     marginLeft: 8,
   },
 
@@ -1896,7 +2275,7 @@ const styles = StyleSheet.create({
     width: 17,
     height: 17,
     borderRadius: 9,
-    backgroundColor: "#ff6b1a",
+    backgroundColor: GOLD,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1914,7 +2293,7 @@ const styles = StyleSheet.create({
   },
 
   bottomTabActiveText: {
-    color: "#37e6a3",
+    color: GOLD,
     fontSize: 10,
     marginTop: 4,
     fontWeight: "800",
