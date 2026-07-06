@@ -516,12 +516,12 @@ function AddMemberModal({ visible, onClose, onMemberAdded }) {
 
       setSaving(true);
 
-      const data = await apiRequest("/auth/register-member", "POST", {
-        member_id: form.member_id.trim(),
-        full_name: form.full_name.trim(),
-        username: form.username.trim(),
-        password: form.password.trim(),
-      });
+      const data = await apiRequest("/members", "POST", {
+      member_id: form.member_id.trim(),
+      full_name: form.full_name.trim(),
+      username: form.username.trim(),
+      password: form.password.trim(),
+    });
 
       onMemberAdded(data.member);
 
