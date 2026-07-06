@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     minWidth: 72,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: theme.borderSoft,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
@@ -378,6 +378,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: "#cdeed8",
   },
 
   requestTitleWrap: {
@@ -392,7 +394,7 @@ const styles = StyleSheet.create({
   },
 
   requestAmount: {
-    color: theme.green,
+    color: theme.greenDark,
     fontSize: 15,
     fontWeight: "900",
     marginTop: 6,
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
   detailsWrap: {
     marginTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#eee9df",
+    borderTopColor: "#eadfca",
     paddingTop: 12,
   },
 
@@ -410,9 +412,9 @@ const styles = StyleSheet.create({
   },
 
   detailLabel: {
-    color: theme.muted,
+    color: theme.gold,
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 4,
   },
 

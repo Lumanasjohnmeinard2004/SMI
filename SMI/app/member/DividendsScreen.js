@@ -138,7 +138,7 @@ function DividendItem({ year, status, statusType, details, amount }) {
 const styles = StyleSheet.create({
   dividendItem: {
     borderTopWidth: 1,
-    borderTopColor: "#eee9df",
+    borderTopColor: "#eadfca",
     paddingVertical: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
 
   dividendAmount: {
-    color: theme.text,
+    color: theme.greenDark,
     fontSize: 14,
     fontWeight: "900",
   },

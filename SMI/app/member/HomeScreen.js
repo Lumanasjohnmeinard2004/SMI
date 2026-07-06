@@ -140,10 +140,18 @@ export default function HomeScreen() {
   const totalLoan = getTotalLoan(member);
   const activeLoanCount = getActiveLoanCount(member);
 
+  const memberParams = {
+    id: member.id,
+    member_id: member.member_id,
+    username: member.username,
+    full_name: member.full_name,
+    status: member.status,
+  };
+
   return (
     <MemberScreen
       active="Home"
-      title="Welcome back"
+      title={`Welcome back, ${member.full_name}!`}
       subtitle="Here is your cooperative account summary."
     >
       <PrimaryCard
@@ -161,11 +169,7 @@ export default function HomeScreen() {
           onPress={() =>
             router.push({
               pathname: "/member/LoansScreen",
-              params: {
-                id: member.id,
-                member_id: member.member_id,
-                username: member.username,
-              },
+              params: memberParams,
             })
           }
         />
@@ -180,11 +184,7 @@ export default function HomeScreen() {
           onPress={() =>
             router.push({
               pathname: "/member/DividendsScreen",
-              params: {
-                id: member.id,
-                member_id: member.member_id,
-                username: member.username,
-              },
+              params: memberParams,
             })
           }
         />
@@ -196,14 +196,6 @@ export default function HomeScreen() {
         <InfoRow label="Special Savings" value={formatCurrency(member.special_savings)} />
         <InfoRow label="Outstanding Loan" value={formatCurrency(totalLoan)} />
         <InfoRow label="Total Dividends" value={formatCurrency(member.dividend_amount)} />
-      </SectionCard>
-
-      <SectionCard title="Latest Update">
-        <Text style={styles.updateTitle}>Your records are updated from the admin portal</Text>
-        <Text style={styles.updateText}>
-          Savings, loans, share capital, and dividends shown here are loaded from the
-          cooperative database.
-        </Text>
       </SectionCard>
 
       <HelpButton />
@@ -219,19 +211,6 @@ const styles = StyleSheet.create({
 
   cardGap: {
     width: 12,
-  },
-
-  updateTitle: {
-    color: theme.text,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-
-  updateText: {
-    color: theme.muted,
-    fontSize: 13,
-    lineHeight: 20,
-    marginTop: 7,
   },
 
   centerBox: {

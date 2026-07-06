@@ -33,7 +33,11 @@ function initialsFromName(name) {
     return "MB";
   }
 
-  const words = String(name).trim().split(" ");
+  const words = String(name).trim().split(" ").filter(Boolean);
+
+  if (words.length === 0) {
+    return "MB";
+  }
 
   if (words.length === 1) {
     return words[0].slice(0, 2).toUpperCase();
@@ -229,26 +233,30 @@ function SettingRow({ icon, label, value }) {
 
 const styles = StyleSheet.create({
   profileHero: {
-    backgroundColor: theme.green,
+    backgroundColor: theme.greenDark,
     borderRadius: 20,
     padding: 20,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.gold,
   },
 
   bigAvatar: {
     width: 76,
     height: 76,
     borderRadius: 38,
-    backgroundColor: theme.greenDark,
+    backgroundColor: "rgba(200,155,44,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(200,155,44,0.35)",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 16,
   },
 
   bigAvatarText: {
-    color: "#ffffff",
+    color: theme.gold,
     fontSize: 24,
     fontWeight: "900",
   },
@@ -264,7 +272,7 @@ const styles = StyleSheet.create({
   },
 
   memberCode: {
-    color: "#b7cbbb",
+    color: "#d7e8dc",
     fontSize: 12,
     marginTop: 5,
   },
@@ -276,7 +284,7 @@ const styles = StyleSheet.create({
 
   settingRow: {
     borderTopWidth: 1,
-    borderTopColor: "#eee9df",
+    borderTopColor: "#eadfca",
     paddingVertical: 14,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -296,7 +304,7 @@ const styles = StyleSheet.create({
   },
 
   settingValue: {
-    color: theme.green,
+    color: theme.greenDark,
     fontSize: 13,
     fontWeight: "900",
   },

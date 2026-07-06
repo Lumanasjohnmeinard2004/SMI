@@ -50,7 +50,11 @@ export default function SavingsScreen() {
 
   if (loading) {
     return (
-      <MemberScreen active="Savings" title="Share Capital" subtitle="Compulsory and voluntary savings.">
+      <MemberScreen
+        active="Savings"
+        title="Share Capital"
+        subtitle="Compulsory and voluntary savings."
+      >
         <SectionCard title="Loading">
           <View style={styles.centerBox}>
             <ActivityIndicator color={theme.green} />
@@ -63,7 +67,11 @@ export default function SavingsScreen() {
 
   if (errorMessage || !member) {
     return (
-      <MemberScreen active="Savings" title="Share Capital" subtitle="Compulsory and voluntary savings.">
+      <MemberScreen
+        active="Savings"
+        title="Share Capital"
+        subtitle="Compulsory and voluntary savings."
+      >
         <SectionCard title="Unable to Load Savings">
           <Text style={styles.errorText}>{errorMessage}</Text>
 
@@ -146,18 +154,18 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.18)",
+    borderTopColor: "rgba(5,68,23,0.15)",
   },
 
   smallLabel: {
-    color: "#b7cbbb",
+    color: theme.gold,
     fontSize: 10,
     letterSpacing: 1.2,
     fontWeight: "900",
   },
 
   smallAmount: {
-    color: "#ffffff",
+    color: theme.greenDark,
     fontSize: 14,
     fontWeight: "900",
     marginTop: 7,
@@ -168,7 +176,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#eee9df",
+    borderTopColor: "#eadfca",
     paddingVertical: 14,
   },
 
@@ -190,7 +198,7 @@ const styles = StyleSheet.create({
   },
 
   historyAmount: {
-    color: theme.green,
+    color: theme.greenDark,
     fontSize: 13,
     fontWeight: "900",
   },

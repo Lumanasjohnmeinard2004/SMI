@@ -207,7 +207,7 @@ export default function LoansScreen() {
       </View>
 
       {activeLoans.length > 0 ? (
-        activeLoans.map((loan, index) => (
+        activeLoans.map((loan) => (
           <LoanCard
             key={loan.code}
             title={loan.title}
@@ -241,16 +241,7 @@ export default function LoansScreen() {
         </SectionCard>
       )}
 
-      <SectionCard>
-        <View style={styles.loanHeader}>
-          <View>
-            <Text style={styles.loanTitle}>All Loan Types</Text>
-            <Text style={styles.loanCode}>Database balances</Text>
-          </View>
-
-          <StatusBadge type="settled" text="Updated" />
-        </View>
-
+      <SectionCard title="All Loan Types">
         <View style={styles.allLoanList}>
           {allLoans.map((loan) => (
             <View key={`all-${loan.code}`} style={styles.allLoanRow}>
@@ -320,16 +311,18 @@ function StatBox({ label, value }) {
 
 const styles = StyleSheet.create({
   summaryBar: {
-    backgroundColor: theme.green,
+    backgroundColor: theme.greenDark,
     borderRadius: 18,
     padding: 18,
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: theme.gold,
   },
 
   summaryLabel: {
-    color: "#b7cbbb",
+    color: theme.gold,
     fontSize: 9,
     letterSpacing: 1.1,
     fontWeight: "900",
@@ -358,6 +351,7 @@ const styles = StyleSheet.create({
     color: theme.green,
     fontSize: 11,
     marginTop: 5,
+    fontWeight: "800",
   },
 
   loanStats: {
@@ -367,23 +361,25 @@ const styles = StyleSheet.create({
 
   statBox: {
     flex: 1,
-    backgroundColor: "#e8e2d7",
+    backgroundColor: "#f7f0df",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
     marginRight: 7,
+    borderWidth: 1,
+    borderColor: "#ead8aa",
   },
 
   statLabel: {
-    color: theme.muted,
+    color: theme.gold,
     fontSize: 8,
     letterSpacing: 0.8,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: 6,
   },
 
   statValue: {
-    color: theme.text,
+    color: theme.greenDark,
     fontSize: 11,
     fontWeight: "900",
   },
@@ -401,7 +397,7 @@ const styles = StyleSheet.create({
 
   progressTrack: {
     height: 8,
-    backgroundColor: "#e8e2d7",
+    backgroundColor: "#eadfca",
     borderRadius: 8,
     marginTop: 8,
     overflow: "hidden",
@@ -437,6 +433,31 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
+  allLoanList: {
+    marginTop: 2,
+  },
+
+  allLoanRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#eadfca",
+  },
+
+  allLoanName: {
+    color: theme.text,
+    fontSize: 13,
+    fontWeight: "700",
+    flex: 1,
+  },
+
+  allLoanAmount: {
+    color: theme.greenDark,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
   centerBox: {
     alignItems: "center",
     justifyContent: "center",
@@ -467,31 +488,6 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: "#ffffff",
     fontSize: 13,
-    fontWeight: "900",
-  },
-
-  allLoanList: {
-    marginTop: 18,
-  },
-
-  allLoanRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e8e2d7",
-  },
-
-  allLoanName: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: "800",
-    flex: 1,
-  },
-
-  allLoanAmount: {
-    color: theme.text,
-    fontSize: 12,
     fontWeight: "900",
   },
 });

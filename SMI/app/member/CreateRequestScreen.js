@@ -357,8 +357,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: "#f7f5ef",
+    borderColor: theme.borderSoft,
+    backgroundColor: "#fffefa",
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   dropdownMenu: {
     backgroundColor: "#fffdf8",
     borderWidth: 1,
-    borderColor: theme.border,
+    borderColor: theme.borderSoft,
     borderRadius: 14,
     marginTop: 8,
     overflow: "hidden",
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#eee9df",
+    borderBottomColor: "#eadfca",
   },
 
   dropdownItemActive: {
@@ -430,8 +430,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: "#f7f5ef",
+    borderColor: theme.borderSoft,
+    backgroundColor: "#fffefa",
     paddingHorizontal: 14,
     color: theme.text,
     fontSize: 14,
@@ -442,8 +442,8 @@ const styles = StyleSheet.create({
     minHeight: 100,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: "#f7f5ef",
+    borderColor: theme.borderSoft,
+    backgroundColor: "#fffefa",
     paddingHorizontal: 14,
     paddingTop: 14,
     color: theme.text,
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
 
   infoLine: {
     borderTopWidth: 1,
-    borderTopColor: "#eee9df",
+    borderTopColor: "#eadfca",
     paddingVertical: 12,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
 
   infoValue: {
-    color: theme.text,
+    color: theme.greenDark,
     fontSize: 13,
     fontWeight: "900",
     textAlign: "right",

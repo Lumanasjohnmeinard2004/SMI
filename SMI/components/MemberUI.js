@@ -16,18 +16,19 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 export const theme = {
-  bg: "#f4f0e8",
-  card: "#fbfaf6",
-  border: "#ddd8cf",
-  greenDark: "#043915",
-  green: "#166534",
-  greenHover: "#14532d",
-  greenSoft: "#e8f5ed",
-  text: "#001c13",
-  muted: "#607163",
-  gold: "#c4ae42",
+  bg: "#fffdf5",
+  card: "#fffefa",
+  cardSoft: "#f7fff9",
+  border: "#d8aa3a",
+  borderSoft: "#ead8aa",
+  greenDark: "#054417",
+  green: "#0a7a35",
+  greenSoft: "#e8f7ee",
+  text: "#05351f",
+  muted: "#52635b",
+  gold: "#c89b2c",
   danger: "#b42318",
-  success: "#00a86b",
+  success: "#009060",
 };
 
 const tabs = [
@@ -74,7 +75,11 @@ function initialsFromName(name) {
     return "MB";
   }
 
-  const words = String(name).trim().split(" ");
+  const words = String(name).trim().split(" ").filter(Boolean);
+
+  if (words.length === 0) {
+    return "MB";
+  }
 
   if (words.length === 1) {
     return words[0].slice(0, 2).toUpperCase();
@@ -89,7 +94,7 @@ export function MemberScreen({ active, title, subtitle, children }) {
   const { width, height } = useWindowDimensions();
 
   const isDesktopWeb = Platform.OS === "web" && width >= 768;
-  const phoneHeight = Math.min(height - 32, 900);
+  const phoneHeight = Math.min(height - 32, 940);
 
   const memberParams = {
     id: params.id,
@@ -107,21 +112,17 @@ export function MemberScreen({ active, title, subtitle, children }) {
     <View style={styles.app}>
       <View style={styles.header}>
         <View style={styles.brandRow}>
-          <View style={styles.logoCircle}>
-            <MaterialCommunityIcons
-              name="piggy-bank-outline"
-              size={21}
-              color="#ffffff"
-            />
+          <View style={styles.logoIcon}>
+            <Ionicons name="shield-checkmark-outline" size={27} color={theme.gold} />
           </View>
 
           <View style={styles.brandTextWrap}>
-            <Text style={styles.brandName}>CoopConnect</Text>
+            <Text style={styles.brandName}>COOPCONNECT</Text>
             <Text style={styles.brandSub}>MEMBER PORTAL</Text>
           </View>
 
           <TouchableOpacity style={styles.bellButton}>
-            <Feather name="bell" size={19} color="#ffffff" />
+            <Feather name="bell" size={24} color="#f4d36f" />
             <View style={styles.notificationDot} />
           </TouchableOpacity>
         </View>
@@ -137,7 +138,7 @@ export function MemberScreen({ active, title, subtitle, children }) {
           </View>
 
           <View style={styles.memberBadge}>
-            <Feather name="user" size={12} color={theme.green} />
+            <Feather name="user" size={15} color={theme.green} />
             <Text style={styles.memberBadgeText}>Member</Text>
           </View>
         </View>
@@ -175,14 +176,14 @@ export function MemberScreen({ active, title, subtitle, children }) {
               {item.library === "MaterialCommunityIcons" ? (
                 <MaterialCommunityIcons
                   name={item.icon}
-                  size={20}
-                  color={selected ? theme.green : "#7b897d"}
+                  size={22}
+                  color={selected ? theme.gold : "#d7e8dc"}
                 />
               ) : (
                 <Feather
                   name={item.icon}
-                  size={20}
-                  color={selected ? theme.green : "#7b897d"}
+                  size={22}
+                  color={selected ? theme.gold : "#d7e8dc"}
                 />
               )}
 
@@ -203,10 +204,7 @@ export function MemberScreen({ active, title, subtitle, children }) {
       <SafeAreaView style={styles.webSafe}>
         <View style={styles.webCenter}>
           <View style={[styles.phoneShell, { height: phoneHeight }]}>
-            <StatusBar
-              barStyle="light-content"
-              backgroundColor={theme.greenDark}
-            />
+            <StatusBar barStyle="light-content" backgroundColor={theme.greenDark} />
             {content}
           </View>
         </View>
@@ -225,7 +223,8 @@ export function MemberScreen({ active, title, subtitle, children }) {
 export function PrimaryCard({ label, amount, sub, children }) {
   return (
     <View style={styles.primaryCard}>
-      <View style={styles.decorCircle} />
+      <View style={styles.decorCircleOne} />
+      <View style={styles.decorCircleTwo} />
       <Text style={styles.primaryLabel}>{label}</Text>
       <Text style={styles.primaryAmount}>{amount}</Text>
       {!!sub && <Text style={styles.primarySub}>{sub}</Text>}
@@ -239,10 +238,10 @@ export function SmallCard({ icon, label, amount, sub, onPress }) {
     <TouchableOpacity
       style={styles.smallCard}
       onPress={onPress}
-      activeOpacity={0.85}
+      activeOpacity={0.86}
     >
       <View style={styles.smallIcon}>
-        <Feather name={icon} size={18} color={theme.green} />
+        <Feather name={icon} size={20} color={theme.green} />
       </View>
 
       <Text style={styles.smallLabel}>{label}</Text>
@@ -321,7 +320,7 @@ export function StatusBadge({ type = "success", text }) {
 export function Notice({ title, subtitle }) {
   return (
     <View style={styles.notice}>
-      <Ionicons name="time-outline" size={18} color="#e86f00" />
+      <Ionicons name="information-circle-outline" size={20} color={theme.gold} />
 
       <View style={{ flex: 1 }}>
         <Text style={styles.noticeTitle}>{title}</Text>
@@ -342,12 +341,12 @@ export function HelpButton() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: theme.greenDark,
+    backgroundColor: "#000000",
   },
 
   webSafe: {
     flex: 1,
-    backgroundColor: theme.greenDark,
+    backgroundColor: "#000000",
   },
 
   webCenter: {
@@ -361,10 +360,10 @@ const styles = StyleSheet.create({
     width: 430,
     maxWidth: "100%",
     backgroundColor: theme.bg,
-    borderRadius: 34,
+    borderRadius: 36,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1.5,
+    borderColor: theme.gold,
     shadowColor: "#000",
     shadowOpacity: 0.28,
     shadowRadius: 20,
@@ -379,10 +378,13 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: theme.greenDark,
     paddingHorizontal: 18,
-    paddingTop: 14,
-    paddingBottom: 18,
-    borderBottomLeftRadius: 26,
-    borderBottomRightRadius: 26,
+    paddingTop: 18,
+    paddingBottom: 26,
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
+    borderWidth: 1.5,
+    borderTopWidth: 0,
+    borderColor: theme.gold,
   },
 
   brandRow: {
@@ -390,11 +392,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  logoCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: theme.green,
+  logoIcon: {
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -406,60 +406,64 @@ const styles = StyleSheet.create({
 
   brandName: {
     color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "800",
+    fontSize: 19,
+    fontWeight: "900",
+    letterSpacing: 3,
   },
 
   brandSub: {
-    color: "#b7cbbb",
-    fontSize: 10,
-    letterSpacing: 2,
-    marginTop: 3,
+    color: theme.gold,
+    fontSize: 13,
+    letterSpacing: 4,
+    marginTop: 5,
+    fontWeight: "900",
   },
 
   bellButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     justifyContent: "center",
     alignItems: "center",
   },
 
   notificationDot: {
     position: "absolute",
-    right: 11,
-    top: 10,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
+    right: 8,
+    top: 9,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: theme.gold,
   },
 
   memberCard: {
-    marginTop: 18,
-    backgroundColor: "rgba(255,255,255,0.10)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.14)",
-    borderRadius: 18,
-    padding: 14,
+    marginTop: 24,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1.4,
+    borderColor: theme.gold,
+    borderRadius: 20,
+    padding: 16,
+    minHeight: 92,
     flexDirection: "row",
     alignItems: "center",
   },
 
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: theme.green,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
+    backgroundColor: "rgba(200,155,44,0.16)",
+    borderWidth: 1,
+    borderColor: "rgba(200,155,44,0.35)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 15,
   },
 
   avatarText: {
-    color: "#ffffff",
-    fontSize: 13,
+    color: theme.gold,
+    fontSize: 25,
     fontWeight: "900",
   },
 
@@ -469,30 +473,30 @@ const styles = StyleSheet.create({
 
   memberName: {
     color: "#ffffff",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 22,
+    fontWeight: "900",
   },
 
   memberId: {
-    color: "#b7cbbb",
-    fontSize: 11,
-    marginTop: 3,
+    color: "#d7e8dc",
+    fontSize: 17,
+    marginTop: 5,
   },
 
   memberBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#eef9f1",
-    borderRadius: 13,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    backgroundColor: "#f2fff6",
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
 
   memberBadgeText: {
     color: theme.green,
-    fontSize: 11,
-    fontWeight: "800",
-    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: "900",
+    marginLeft: 7,
   },
 
   content: {
@@ -501,146 +505,165 @@ const styles = StyleSheet.create({
 
   contentInner: {
     paddingHorizontal: 18,
-    paddingTop: 20,
-    paddingBottom: 105,
+    paddingTop: 26,
+    paddingBottom: 104,
   },
 
   pageTitleWrap: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
 
   pageEyebrow: {
-    color: theme.green,
-    fontSize: 11,
+    color: theme.gold,
+    fontSize: 13,
     letterSpacing: 2,
     fontWeight: "900",
   },
 
   pageTitle: {
     color: theme.text,
-    fontSize: 27,
+    fontSize: 30,
     fontWeight: "900",
-    marginTop: 6,
+    marginTop: 10,
   },
 
   pageSubtitle: {
-    color: theme.muted,
-    fontSize: 13,
-    marginTop: 5,
+    color: "#42576d",
+    fontSize: 15,
+    marginTop: 7,
+    lineHeight: 22,
   },
 
   primaryCard: {
-    backgroundColor: theme.green,
+    backgroundColor: "#f3fff8",
     borderRadius: 20,
     padding: 22,
     marginBottom: 16,
     overflow: "hidden",
+    borderWidth: 1.2,
+    borderColor: theme.gold,
   },
 
-  decorCircle: {
+  decorCircleOne: {
     position: "absolute",
-    right: -38,
-    top: -45,
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    right: -42,
+    top: -52,
+    width: 155,
+    height: 155,
+    borderRadius: 78,
+    backgroundColor: "rgba(10,122,53,0.08)",
+  },
+
+  decorCircleTwo: {
+    position: "absolute",
+    right: -10,
+    top: -18,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 5,
+    borderColor: "rgba(10,122,53,0.06)",
   },
 
   primaryLabel: {
-    color: "#b7cbbb",
-    fontSize: 11,
-    letterSpacing: 1.6,
+    color: theme.gold,
+    fontSize: 14,
+    letterSpacing: 2,
     fontWeight: "900",
   },
 
   primaryAmount: {
-    color: "#ffffff",
-    fontSize: 34,
+    color: theme.greenDark,
+    fontSize: 38,
     fontWeight: "900",
-    marginTop: 12,
+    marginTop: 18,
   },
 
   primarySub: {
-    color: "#d2e1d5",
-    fontSize: 13,
-    marginTop: 8,
+    color: theme.green,
+    fontSize: 17,
+    marginTop: 10,
+    fontWeight: "700",
   },
 
   smallCard: {
     flex: 1,
     backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
+    borderWidth: 1.1,
+    borderColor: theme.borderSoft,
     borderRadius: 18,
-    padding: 16,
-    minHeight: 142,
+    padding: 17,
+    minHeight: 140,
   },
 
   smallIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: theme.greenSoft,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#cdeed8",
   },
 
   smallLabel: {
-    color: theme.muted,
-    fontSize: 10,
+    color: theme.gold,
+    fontSize: 13,
     letterSpacing: 1.4,
     fontWeight: "900",
   },
 
   smallAmount: {
-    color: theme.text,
-    fontSize: 21,
+    color: theme.greenDark,
+    fontSize: 22,
     fontWeight: "900",
-    marginTop: 7,
+    marginTop: 11,
   },
 
   smallSub: {
     color: theme.muted,
-    fontSize: 12,
-    marginTop: 8,
+    fontSize: 13,
+    marginTop: 9,
   },
 
   sectionCard: {
     backgroundColor: theme.card,
-    borderWidth: 1,
-    borderColor: theme.border,
+    borderWidth: 1.1,
+    borderColor: theme.borderSoft,
     borderRadius: 18,
-    padding: 17,
+    padding: 18,
     marginBottom: 16,
   },
 
   sectionTitle: {
-    color: theme.text,
+    color: theme.gold,
     fontSize: 16,
+    letterSpacing: 1,
     fontWeight: "900",
     marginBottom: 12,
+    textTransform: "uppercase",
   },
 
   infoRow: {
     borderTopWidth: 1,
-    borderTopColor: "#eee9df",
-    paddingVertical: 12,
+    borderTopColor: "#eadfca",
+    paddingVertical: 13,
     flexDirection: "row",
     justifyContent: "space-between",
   },
 
   infoLabel: {
-    color: theme.muted,
-    fontSize: 13,
+    color: theme.text,
+    fontSize: 14,
     flex: 1,
   },
 
   infoValue: {
-    color: theme.text,
-    fontSize: 13,
-    fontWeight: "800",
+    color: theme.greenDark,
+    fontSize: 14,
+    fontWeight: "900",
     textAlign: "right",
     flex: 1.2,
   },
@@ -693,7 +716,7 @@ const styles = StyleSheet.create({
   notice: {
     backgroundColor: "#fff9e8",
     borderWidth: 1,
-    borderColor: "#f2c94c",
+    borderColor: theme.gold,
     borderRadius: 16,
     padding: 15,
     flexDirection: "row",
@@ -702,14 +725,14 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    color: "#c45f00",
+    color: theme.gold,
     fontSize: 13,
     fontWeight: "900",
     marginLeft: 10,
   },
 
   noticeSub: {
-    color: "#9b4d00",
+    color: "#7a5a12",
     fontSize: 11,
     marginLeft: 10,
     marginTop: 4,
@@ -717,52 +740,50 @@ const styles = StyleSheet.create({
 
   bottomNav: {
     position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 14,
-    height: 70,
-    backgroundColor: theme.card,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: theme.border,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 74,
+    backgroundColor: theme.greenDark,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1.3,
+    borderBottomWidth: 0,
+    borderColor: theme.gold,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    shadowColor: "#000",
-    shadowOpacity: 0.13,
-    shadowRadius: 10,
-    elevation: 8,
   },
 
   tabItem: {
     flex: 1,
-    height: 58,
+    height: 62,
     justifyContent: "center",
     alignItems: "center",
     position: "relative",
   },
 
   tabText: {
-    color: "#7b897d",
-    fontSize: 9,
-    marginTop: 4,
+    color: "#d7e8dc",
+    fontSize: 11,
+    marginTop: 5,
     fontWeight: "700",
   },
 
   tabTextActive: {
-    color: theme.green,
-    fontSize: 9,
-    marginTop: 4,
+    color: theme.gold,
+    fontSize: 11,
+    marginTop: 5,
     fontWeight: "900",
   },
 
   tabActiveLine: {
     position: "absolute",
     bottom: 1,
-    width: 22,
+    width: 25,
     height: 3,
     borderRadius: 3,
-    backgroundColor: theme.green,
+    backgroundColor: theme.gold,
   },
 
   helpButton: {
