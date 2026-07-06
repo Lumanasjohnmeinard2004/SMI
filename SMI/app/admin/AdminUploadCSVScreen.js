@@ -14,6 +14,13 @@ import {
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
+import SmiLogo from "../../components/SmiLogo";
+
+const GOLD = "#c89b2c";
+const DARK_GREEN = "#06472f";
+const MAIN_GREEN = "#009060";
+const LIGHT_GREEN = "#e6fff2";
+const PAGE_BG = "#f6fbf8";
 
 export default function AdminUploadCSVScreen() {
   const router = useRouter();
@@ -140,7 +147,7 @@ export default function AdminUploadCSVScreen() {
                 <Feather
                   name="upload-cloud"
                   size={16}
-                  color={mode === "upload" ? "#ffffff" : "#009060"}
+                  color={mode === "upload" ? "#ffffff" : MAIN_GREEN}
                 />
                 <Text style={mode === "upload" ? styles.modeTextActive : styles.modeText}>
                   CSV Upload
@@ -154,7 +161,7 @@ export default function AdminUploadCSVScreen() {
                 <Feather
                   name="edit-3"
                   size={16}
-                  color={mode === "manual" ? "#ffffff" : "#009060"}
+                  color={mode === "manual" ? "#ffffff" : MAIN_GREEN}
                 />
                 <Text style={mode === "manual" ? styles.modeTextActive : styles.modeText}>
                   Manual Input
@@ -190,15 +197,17 @@ function Sidebar({ router }) {
   return (
     <View style={styles.sidebar}>
       <View style={styles.sidebarBrand}>
-        <View style={styles.brandIcon}>
-          <Ionicons name="shield-checkmark" size={24} color="#ffffff" />
+        <View style={styles.logoBox}>
+          <SmiLogo size={48} />
         </View>
 
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.brandTitle}>SMI Coop</Text>
           <Text style={styles.brandSub}>Admin Portal</Text>
         </View>
       </View>
+
+      <View style={styles.sidebarDivider} />
 
       <View style={styles.sidebarMenu}>
         <SidebarItem
@@ -220,7 +229,12 @@ function Sidebar({ router }) {
           }
         />
 
-        <SidebarItem icon="upload-cloud" label="Upload Records" active onPress={() => {}} />
+        <SidebarItem
+          icon="upload-cloud"
+          label="Upload Records"
+          active
+          onPress={() => {}}
+        />
 
         <SidebarItem
           icon="clipboard"
@@ -262,7 +276,7 @@ function SidebarItem({ icon, label, active, badge, onPress }) {
       style={active ? styles.sidebarItemActive : styles.sidebarItem}
       onPress={onPress}
     >
-      <Feather name={icon} size={18} color={active ? "#ffffff" : "#a7f3d0"} />
+      <Feather name={icon} size={19} color={active ? "#ffffff" : "#d8c07a"} />
 
       <Text style={active ? styles.sidebarItemTextActive : styles.sidebarItemText}>
         {label}
@@ -280,9 +294,15 @@ function SidebarItem({ icon, label, active, badge, onPress }) {
 function TopHeader({ router, isDesktopWeb }) {
   return (
     <View style={styles.topHeader}>
+      {!isDesktopWeb && (
+        <View style={styles.mobileLogoWrap}>
+          <SmiLogo size={42} />
+        </View>
+      )}
+
       <View style={styles.topTitleBlock}>
         <View style={styles.portalRow}>
-          <Ionicons name="cloud-upload-outline" size={14} color="#16a34a" />
+          <Ionicons name="cloud-upload-outline" size={14} color={GOLD} />
           <Text style={styles.portalText}>ADMIN UPLOAD</Text>
         </View>
 
@@ -292,15 +312,13 @@ function TopHeader({ router, isDesktopWeb }) {
         </Text>
       </View>
 
-      <View style={styles.headerActions}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.push("/admin/AdminDashboardScreen")}
-        >
-          <Feather name="arrow-left" size={18} color="#06472f" />
-          {isDesktopWeb && <Text style={styles.backButtonText}>Back to Dashboard</Text>}
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/admin/AdminDashboardScreen")}
+      >
+        <Feather name="arrow-left" size={18} color={DARK_GREEN} />
+        {isDesktopWeb && <Text style={styles.backButtonText}>Back to Dashboard</Text>}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -311,7 +329,7 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
       <View style={[styles.panelCard, isDesktopWeb && styles.uploadMainPanel]}>
         <View style={styles.uploadDropZone}>
           <View style={styles.uploadIcon}>
-            <Feather name="upload-cloud" size={42} color="#009060" />
+            <Feather name="upload-cloud" size={44} color={MAIN_GREEN} />
           </View>
 
           <Text style={styles.uploadTitle}>Select CSV or Excel File</Text>
@@ -329,7 +347,7 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
         {selectedFile && (
           <View style={styles.fileCard}>
             <View style={styles.fileIconBox}>
-              <Feather name="file-text" size={26} color="#00a86b" />
+              <Feather name="file-text" size={26} color={MAIN_GREEN} />
             </View>
 
             <View style={{ flex: 1 }}>
@@ -341,7 +359,7 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
               </Text>
             </View>
 
-            <Ionicons name="checkmark-circle" size={24} color="#00a86b" />
+            <Ionicons name="checkmark-circle" size={24} color={MAIN_GREEN} />
           </View>
         )}
 
@@ -369,9 +387,9 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
         </View>
 
         <View style={styles.noteBox}>
-          <Feather name="info" size={18} color="#b45309" />
+          <Feather name="info" size={18} color={GOLD} />
           <Text style={styles.noteText}>
-            For now, this page prepares the UI. Backend CSV processing can be connected next.
+            Backend CSV processing can be connected after the upload parser is added.
           </Text>
         </View>
       </View>
@@ -564,7 +582,9 @@ function ManualContent({
       <View style={isDesktopWeb ? styles.actionGrid : null}>
         <View style={styles.totalCard}>
           <Text style={styles.totalLabel}>TOTAL LOAN BALANCE</Text>
-          <Text style={styles.totalAmount}>₱{totalLoanBalance.toLocaleString()}.00</Text>
+          <Text style={styles.totalAmount}>
+            ₱{totalLoanBalance.toLocaleString("en-PH")}.00
+          </Text>
         </View>
 
         <View style={styles.actionPanel}>
@@ -600,7 +620,7 @@ function InputField({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9caea6"
+        placeholderTextColor="#94a3b8"
         keyboardType={keyboardType}
         maxLength={maxLength}
       />
@@ -611,7 +631,7 @@ function InputField({
 function InfoLine({ text }) {
   return (
     <View style={styles.infoLine}>
-      <Ionicons name="checkmark-circle-outline" size={17} color="#00a86b" />
+      <Ionicons name="checkmark-circle-outline" size={17} color={MAIN_GREEN} />
       <Text style={styles.infoText}>{text}</Text>
     </View>
   );
@@ -673,7 +693,7 @@ function BottomTab({ icon, label, active, badge, onPress }) {
   return (
     <TouchableOpacity style={styles.bottomTab} onPress={onPress}>
       <View style={styles.bottomIconWrap}>
-        <Feather name={icon} size={20} color={active ? "#37e6a3" : "#50906e"} />
+        <Feather name={icon} size={20} color={active ? GOLD : "#50906e"} />
 
         {badge && (
           <View style={styles.bottomBadge}>
@@ -697,7 +717,7 @@ const styles = StyleSheet.create({
 
   shell: {
     flex: 1,
-    backgroundColor: "#f6fbf8",
+    backgroundColor: PAGE_BG,
   },
 
   shellDesktop: {
@@ -711,26 +731,31 @@ const styles = StyleSheet.create({
   },
 
   sidebar: {
-    width: 280,
-    backgroundColor: "#06472f",
+    width: 286,
+    backgroundColor: DARK_GREEN,
     paddingHorizontal: 22,
     paddingVertical: 24,
+    borderRightWidth: 3,
+    borderRightColor: GOLD,
   },
 
   sidebarBrand: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 34,
+    marginBottom: 18,
   },
 
-  brandIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "#009060",
+  logoBox: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#ffffff",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: GOLD,
+    overflow: "hidden",
   },
 
   brandTitle: {
@@ -740,9 +765,16 @@ const styles = StyleSheet.create({
   },
 
   brandSub: {
-    color: "#a7f3d0",
+    color: "#d8c07a",
     fontSize: 12,
     marginTop: 3,
+    fontWeight: "800",
+  },
+
+  sidebarDivider: {
+    height: 1,
+    backgroundColor: "rgba(200, 155, 44, 0.35)",
+    marginBottom: 22,
   },
 
   sidebarMenu: {
@@ -761,7 +793,7 @@ const styles = StyleSheet.create({
   sidebarItemActive: {
     height: 48,
     borderRadius: 14,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
@@ -770,7 +802,7 @@ const styles = StyleSheet.create({
 
   sidebarItemText: {
     flex: 1,
-    color: "#a7f3d0",
+    color: "#d8c07a",
     fontSize: 14,
     fontWeight: "800",
     marginLeft: 12,
@@ -788,7 +820,7 @@ const styles = StyleSheet.create({
     minWidth: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: "#ff7a1a",
+    backgroundColor: GOLD,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 6,
@@ -818,20 +850,33 @@ const styles = StyleSheet.create({
 
   mainArea: {
     flex: 1,
-    backgroundColor: "#f6fbf8",
+    backgroundColor: PAGE_BG,
   },
 
   topHeader: {
     minHeight: 112,
     backgroundColor: "#ffffff",
     borderBottomWidth: 1,
-    borderBottomColor: "#d9eee6",
+    borderBottomColor: "#e5d4a2",
     paddingHorizontal: Platform.OS === "web" ? 32 : 18,
     paddingTop: Platform.OS === "ios" ? 54 : 24,
     paddingBottom: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+
+  mobileLogoWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: GOLD,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+    overflow: "hidden",
   },
 
   topTitleBlock: {
@@ -844,7 +889,7 @@ const styles = StyleSheet.create({
   },
 
   portalText: {
-    color: "#16a34a",
+    color: GOLD,
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1,
@@ -864,23 +909,20 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  headerActions: {
-    marginLeft: 16,
-  },
-
   backButton: {
     height: 44,
     borderRadius: 13,
-    backgroundColor: "#e6fff2",
+    backgroundColor: "#fff8e1",
     borderWidth: 1,
-    borderColor: "#86efac",
+    borderColor: "#e5d4a2",
     paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
+    marginLeft: 16,
   },
 
   backButtonText: {
-    color: "#06472f",
+    color: DARK_GREEN,
     fontSize: 14,
     fontWeight: "900",
     marginLeft: 8,
@@ -905,7 +947,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 8,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     flexDirection: "row",
     marginBottom: 18,
   },
@@ -915,8 +957,8 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: "#bdebd7",
-    backgroundColor: "#f0fbf6",
+    borderColor: "#e5d4a2",
+    backgroundColor: "#fffdf5",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -927,7 +969,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 46,
     borderRadius: 13,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -935,7 +977,7 @@ const styles = StyleSheet.create({
   },
 
   modeText: {
-    color: "#009060",
+    color: MAIN_GREEN,
     fontSize: 13,
     fontWeight: "900",
     marginLeft: 7,
@@ -958,7 +1000,7 @@ const styles = StyleSheet.create({
   },
 
   uploadSidePanel: {
-    width: 380,
+    width: 390,
   },
 
   panelCard: {
@@ -966,16 +1008,16 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#e2f2eb",
+    borderColor: "#efe2bd",
     marginBottom: 18,
   },
 
   uploadDropZone: {
-    minHeight: 280,
+    minHeight: 300,
     borderRadius: 18,
     borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#bdebd7",
+    borderColor: "#8ee4bf",
     backgroundColor: "#f7fffb",
     justifyContent: "center",
     alignItems: "center",
@@ -986,7 +1028,7 @@ const styles = StyleSheet.create({
     width: 84,
     height: 84,
     borderRadius: 24,
-    backgroundColor: "#e6fff2",
+    backgroundColor: LIGHT_GREEN,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
@@ -1012,7 +1054,7 @@ const styles = StyleSheet.create({
   chooseButton: {
     height: 46,
     borderRadius: 13,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     paddingHorizontal: 22,
     flexDirection: "row",
     alignItems: "center",
@@ -1026,21 +1068,21 @@ const styles = StyleSheet.create({
   },
 
   fileCard: {
-    backgroundColor: "#f0fbf6",
+    backgroundColor: "#f0fff8",
     borderRadius: 14,
     padding: 15,
     flexDirection: "row",
     alignItems: "center",
     marginTop: 16,
     borderWidth: 1,
-    borderColor: "#cfeee0",
+    borderColor: "#86efac",
   },
 
   fileIconBox: {
     width: 46,
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#e6fff2",
+    backgroundColor: LIGHT_GREEN,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 13,
@@ -1059,9 +1101,9 @@ const styles = StyleSheet.create({
   },
 
   uploadButton: {
-    height: 50,
+    height: 52,
     borderRadius: 13,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -1069,7 +1111,7 @@ const styles = StyleSheet.create({
   },
 
   uploadDisabled: {
-    backgroundColor: "#9bcab8",
+    backgroundColor: "#9fcfba",
   },
 
   uploadButtonText: {
@@ -1110,9 +1152,9 @@ const styles = StyleSheet.create({
   },
 
   noteBox: {
-    backgroundColor: "#fff7ed",
+    backgroundColor: "#fff8e1",
     borderWidth: 1,
-    borderColor: "#fed7aa",
+    borderColor: "#e5d4a2",
     borderRadius: 14,
     padding: 14,
     flexDirection: "row",
@@ -1121,7 +1163,7 @@ const styles = StyleSheet.create({
 
   noteText: {
     flex: 1,
-    color: "#92400e",
+    color: "#795700",
     fontSize: 13,
     lineHeight: 19,
     marginLeft: 9,
@@ -1160,8 +1202,8 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#bdebd7",
-    backgroundColor: "#f0fbf6",
+    borderColor: "#e5d4a2",
+    backgroundColor: "#fffdf5",
     paddingHorizontal: 14,
     color: "#052e1d",
     fontSize: 14,
@@ -1174,14 +1216,16 @@ const styles = StyleSheet.create({
 
   totalCard: {
     flex: 1,
-    backgroundColor: "#06472f",
+    backgroundColor: DARK_GREEN,
     borderRadius: 18,
     padding: 22,
     marginBottom: 18,
+    borderWidth: 2,
+    borderColor: GOLD,
   },
 
   totalLabel: {
-    color: "#5ff0b1",
+    color: "#d8c07a",
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 1,
@@ -1202,7 +1246,7 @@ const styles = StyleSheet.create({
   saveButton: {
     height: 52,
     borderRadius: 13,
-    backgroundColor: "#009060",
+    backgroundColor: MAIN_GREEN,
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -1220,8 +1264,8 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 13,
     borderWidth: 1,
-    borderColor: "#efb4a2",
-    backgroundColor: "#fff8ef",
+    borderColor: "#fecaca",
+    backgroundColor: "#fff7f7",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
@@ -1258,7 +1302,7 @@ const styles = StyleSheet.create({
     width: 17,
     height: 17,
     borderRadius: 9,
-    backgroundColor: "#ff6b1a",
+    backgroundColor: GOLD,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1276,7 +1320,7 @@ const styles = StyleSheet.create({
   },
 
   bottomTabActiveText: {
-    color: "#37e6a3",
+    color: GOLD,
     fontSize: 10,
     marginTop: 4,
     fontWeight: "800",

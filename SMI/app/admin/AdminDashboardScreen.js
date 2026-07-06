@@ -24,53 +24,45 @@ const MAIN_GREEN = "#009060";
 const LIGHT_GREEN = "#e6fff2";
 const PAGE_BG = "#f6fbf8";
 
-const sampleMembers = [
-  {
-    name: "Maria Santos",
-    username: "@msantos",
-    id: "2019-004827",
-    savings: "₱52,750.00",
-    loan: "₱84,000.00",
-    dividend: "₱6,330.00",
-    status: "Caution",
-  },
-  {
-    name: "Juan dela Cruz",
-    username: "@jdelacruz",
-    id: "2020-005112",
-    savings: "₱38,400.00",
-    loan: "₱60,000.00",
-    dividend: "₱4,608.00",
-    status: "Caution",
-  },
-  {
-    name: "Lourdes Reyes",
-    username: "@lreyes",
-    id: "2018-003991",
-    savings: "₱71,200.00",
-    loan: "₱0.00",
-    dividend: "₱8,544.00",
-    status: "Excellent",
-  },
-  {
-    name: "Roberto Alcantara",
-    username: "@ralcantara",
-    id: "2021-006033",
-    savings: "₱18,600.00",
-    loan: "₱30,000.00",
-    dividend: "₱2,232.00",
-    status: "Suspended",
-  },
-  {
-    name: "Cristina Villanueva",
-    username: "@cvillanueva",
-    id: "2017-002748",
-    savings: "₱94,300.00",
-    loan: "₱120,000.00",
-    dividend: "₱11,316.00",
-    status: "Fair",
-  },
-];
+function formatCurrency(value) {
+  const numberValue = Number(value || 0);
+
+  return `₱${numberValue.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function getTotalLoan(member) {
+  return (
+    Number(member.regular_loan || 0) +
+    Number(member.regular_loan_diminishing || 0) +
+    Number(member.educational_loan || 0) +
+    Number(member.educational_loan_diminishing || 0) +
+    Number(member.short_term_loan || 0) +
+    Number(member.short_term_loan_diminishing || 0) +
+    Number(member.appliance_loan || 0) +
+    Number(member.appliance_loan_diminishing || 0) +
+    Number(member.medical_loan || 0) +
+    Number(member.medical_loan_diminishing || 0) +
+    Number(member.petty_cash_loan || 0) +
+    Number(member.vehicle_loan || 0) +
+    Number(member.inter_trading_loan || 0)
+  );
+}
+
+function mapDbMember(member) {
+  return {
+    dbId: member.id,
+    name: member.full_name,
+    username: `@${member.username}`,
+    id: member.member_id,
+    savings: formatCurrency(member.savings),
+    loan: formatCurrency(getTotalLoan(member)),
+    dividend: formatCurrency(member.dividend_amount),
+    status: member.status || "Active",
+  };
+}
 
 export default function AdminDashboardScreen() {
   const router = useRouter();
@@ -78,8 +70,11 @@ export default function AdminDashboardScreen() {
   const { width, height } = useWindowDimensions();
 
   const isDesktopWeb = Platform.OS === "web" && width >= 900;
+
   const [activeTab, setActiveTab] = useState(params.tab || "overview");
-  const [members, setMembers] = useState(sampleMembers);
+  const [members, setMembers] = useState([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState("");
 
   useEffect(() => {
     if (params.tab) {
@@ -87,24 +82,39 @@ export default function AdminDashboardScreen() {
     }
   }, [params.tab]);
 
+  useEffect(() => {
+    loadMembersFromDatabase();
+  }, []);
+
+  async function loadMembersFromDatabase() {
+    try {
+      setMembersLoading(true);
+      setMembersError("");
+
+      const data = await apiRequest("/members", "GET");
+      const mappedMembers = data.members.map(mapDbMember);
+
+      setMembers(mappedMembers);
+    } catch (error) {
+      setMembersError(error.message || "Failed to load members.");
+    } finally {
+      setMembersLoading(false);
+    }
+  }
+
   function addMemberToList(member) {
-    setMembers((prev) => [
-      {
-        name: member.full_name,
-        username: `@${member.username}`,
-        id: member.member_id,
-        savings: "₱0.00",
-        loan: "₱0.00",
-        dividend: "₱0.00",
-        status: member.status || "Active",
-      },
-      ...prev,
-    ]);
+    setMembers((prev) => [mapDbMember(member), ...prev]);
   }
 
   function renderContent() {
     if (activeTab === "overview") {
-      return <OverviewContent members={members} isDesktopWeb={isDesktopWeb} />;
+      return (
+        <OverviewContent
+          members={members}
+          membersLoading={membersLoading}
+          isDesktopWeb={isDesktopWeb}
+        />
+      );
     }
 
     if (activeTab === "members") {
@@ -113,6 +123,9 @@ export default function AdminDashboardScreen() {
           members={members}
           isDesktopWeb={isDesktopWeb}
           onMemberAdded={addMemberToList}
+          membersLoading={membersLoading}
+          membersError={membersError}
+          onRefresh={loadMembersFromDatabase}
         />
       );
     }
@@ -125,7 +138,13 @@ export default function AdminDashboardScreen() {
       return <ProfileContent router={router} />;
     }
 
-    return <OverviewContent members={members} isDesktopWeb={isDesktopWeb} />;
+    return (
+      <OverviewContent
+        members={members}
+        membersLoading={membersLoading}
+        isDesktopWeb={isDesktopWeb}
+      />
+    );
   }
 
   return (
@@ -316,30 +335,42 @@ function TopHeader({ activeTab, setActiveTab, router, isDesktopWeb }) {
   );
 }
 
-function OverviewContent({ members, isDesktopWeb }) {
+function OverviewContent({ members, membersLoading, isDesktopWeb }) {
+  const totalSavings = members.reduce((sum, member) => {
+    return sum + Number(String(member.savings).replace(/[₱,]/g, "") || 0);
+  }, 0);
+
+  const totalLoans = members.reduce((sum, member) => {
+    return sum + Number(String(member.loan).replace(/[₱,]/g, "") || 0);
+  }, 0);
+
+  const totalDividends = members.reduce((sum, member) => {
+    return sum + Number(String(member.dividend).replace(/[₱,]/g, "") || 0);
+  }, 0);
+
   return (
     <View>
       <View style={isDesktopWeb ? styles.statsGridDesktop : styles.statsGridMobile}>
         <StatCard
           icon="users"
-          value={String(members.length)}
+          value={membersLoading ? "..." : String(members.length)}
           label="Total Members"
-          sub="Registered members"
+          sub="From database"
           color={MAIN_GREEN}
         />
 
         <StatCard
           icon="piggy-bank-outline"
-          value="₱283k"
+          value={formatCurrency(totalSavings)}
           label="Total Savings"
-          sub="Savings and share capital"
+          sub="Member savings"
           type="material"
           color={GOLD}
         />
 
         <StatCard
           icon="credit-card"
-          value="₱369k"
+          value={formatCurrency(totalLoans)}
           label="Total Loans"
           sub="Outstanding balances"
           color={GOLD}
@@ -347,9 +378,9 @@ function OverviewContent({ members, isDesktopWeb }) {
 
         <StatCard
           icon="trending-up"
-          value="₱33k"
+          value={formatCurrency(totalDividends)}
           label="Dividends Paid"
-          sub="FY 2024"
+          sub="Dividend amount"
           color={MAIN_GREEN}
         />
       </View>
@@ -369,21 +400,38 @@ function OverviewContent({ members, isDesktopWeb }) {
           </View>
 
           <View style={styles.chartArea}>
-            <MiniBar name="Maria" savings={90} loans={120} />
-            <MiniBar name="Juan" savings={65} loans={95} />
-            <MiniBar name="Lourdes" savings={120} loans={20} />
-            <MiniBar name="Roberto" savings={45} loans={80} />
-            <MiniBar name="Cristina" savings={135} loans={130} />
-            <MiniBar name="Danilo" savings={35} loans={60} />
+            {members.slice(0, 6).length > 0 ? (
+              members.slice(0, 6).map((member) => {
+                const savings = Math.min(
+                  140,
+                  Math.max(12, Number(String(member.savings).replace(/[₱,]/g, "")) / 800)
+                );
+
+                const loans = Math.min(
+                  140,
+                  Math.max(12, Number(String(member.loan).replace(/[₱,]/g, "")) / 800)
+                );
+
+                return (
+                  <MiniBar
+                    key={`${member.id}-chart`}
+                    name={member.name.split(" ")[0]}
+                    savings={savings}
+                    loans={loans}
+                  />
+                );
+              })
+            ) : (
+              <Text style={styles.emptyText}>No members found.</Text>
+            )}
           </View>
         </View>
 
         <View style={[styles.panelCard, isDesktopWeb && styles.sidePanel]}>
           <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <ActivityItem title="Juan submitted a loan request" time="Today, 2:00 PM" />
-          <ActivityItem title="Maria request approved" time="Mar 20, 2025" />
-          <ActivityItem title="CSV upload ready for processing" time="Mar 19, 2025" />
-          <ActivityItem title="Cristina record updated" time="Mar 18, 2025" />
+          <ActivityItem title="Members loaded from database" time="Today" />
+          <ActivityItem title="Admin member module ready" time="Today" />
+          <ActivityItem title="Add Member connected to backend" time="Today" />
         </View>
       </View>
 
@@ -391,7 +439,7 @@ function OverviewContent({ members, isDesktopWeb }) {
         <View style={styles.panelHeader}>
           <View>
             <Text style={styles.sectionTitle}>All Members</Text>
-            <Text style={styles.sectionSub}>Quick view of cooperative members</Text>
+            <Text style={styles.sectionSub}>Quick view from database</Text>
           </View>
         </View>
 
@@ -405,12 +453,12 @@ function OverviewContent({ members, isDesktopWeb }) {
               <Text style={styles.th}>Status</Text>
             </View>
 
-            {members.slice(0, 3).map((member) => (
+            {members.slice(0, 5).map((member) => (
               <MemberTableRow key={`${member.id}-${member.username}`} {...member} />
             ))}
           </View>
         ) : (
-          members.slice(0, 3).map((member) => (
+          members.slice(0, 5).map((member) => (
             <MemberCard key={`${member.id}-${member.username}`} {...member} />
           ))
         )}
@@ -419,7 +467,14 @@ function OverviewContent({ members, isDesktopWeb }) {
   );
 }
 
-function MembersContent({ members, isDesktopWeb, onMemberAdded }) {
+function MembersContent({
+  members,
+  isDesktopWeb,
+  onMemberAdded,
+  membersLoading,
+  membersError,
+  onRefresh,
+}) {
   const [showAddMember, setShowAddMember] = useState(false);
 
   return (
@@ -430,6 +485,10 @@ function MembersContent({ members, isDesktopWeb, onMemberAdded }) {
           <Text style={styles.searchText}>Search by name, ID, or username...</Text>
         </View>
 
+        <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
+          <Feather name="refresh-cw" size={17} color={MAIN_GREEN} />
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setShowAddMember(true)}
@@ -439,6 +498,20 @@ function MembersContent({ members, isDesktopWeb, onMemberAdded }) {
         </TouchableOpacity>
       </View>
 
+      {membersLoading && (
+        <View style={styles.noticeBox}>
+          <ActivityIndicator color={MAIN_GREEN} />
+          <Text style={styles.noticeText}>Loading members from database...</Text>
+        </View>
+      )}
+
+      {membersError ? (
+        <View style={styles.errorBox}>
+          <Feather name="alert-circle" size={16} color="#991b1b" />
+          <Text style={styles.errorText}>{membersError}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.panelCard}>
         <View style={styles.panelHeader}>
           <View>
@@ -447,7 +520,9 @@ function MembersContent({ members, isDesktopWeb, onMemberAdded }) {
           </View>
         </View>
 
-        {isDesktopWeb ? (
+        {members.length === 0 && !membersLoading ? (
+          <Text style={styles.emptyText}>No members found in the database.</Text>
+        ) : isDesktopWeb ? (
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 1.4 }]}>Member</Text>
@@ -517,11 +592,11 @@ function AddMemberModal({ visible, onClose, onMemberAdded }) {
       setSaving(true);
 
       const data = await apiRequest("/members", "POST", {
-      member_id: form.member_id.trim(),
-      full_name: form.full_name.trim(),
-      username: form.username.trim(),
-      password: form.password.trim(),
-    });
+        member_id: form.member_id.trim(),
+        full_name: form.full_name.trim(),
+        username: form.username.trim(),
+        password: form.password.trim(),
+      });
 
       onMemberAdded(data.member);
 
@@ -688,6 +763,7 @@ function RequestsContent({ isDesktopWeb }) {
       <View style={styles.filterPanel}>
         <View style={styles.filterGroup}>
           <Text style={styles.filterLabel}>Loan Type</Text>
+
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {[
               "All Loan Types",
@@ -708,6 +784,7 @@ function RequestsContent({ isDesktopWeb }) {
 
         <View style={styles.filterGroup}>
           <Text style={styles.filterLabel}>Status</Text>
+
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {["All", "Pending", "Approved", "Rejected"].map((item) => (
               <FilterChip
@@ -826,6 +903,7 @@ function MiniBar({ name, savings, loans }) {
         <View style={[styles.savingsBar, { height: savings }]} />
         <View style={[styles.loansBar, { height: loans }]} />
       </View>
+
       <Text style={styles.barName}>{name}</Text>
     </View>
   );
@@ -844,6 +922,7 @@ function ActivityItem({ title, time }) {
   return (
     <View style={styles.activityItem}>
       <View style={styles.activityDot} />
+
       <View style={{ flex: 1 }}>
         <Text style={styles.activityTitle}>{title}</Text>
         <Text style={styles.activityTime}>{time}</Text>
@@ -857,7 +936,7 @@ function MemberTableRow({ name, username, id, savings, loan, status }) {
     <View style={styles.tableRow}>
       <View style={[styles.memberCell, { flex: 1.4 }]}>
         <View style={styles.initialCircle}>
-          <Text style={styles.initialText}>{name[0]}</Text>
+          <Text style={styles.initialText}>{name ? name[0] : "?"}</Text>
         </View>
 
         <View>
@@ -879,7 +958,7 @@ function MemberFullTableRow({ name, username, id, savings, loan, dividend, statu
     <View style={styles.tableRow}>
       <View style={[styles.memberCell, { flex: 1.4 }]}>
         <View style={styles.initialCircle}>
-          <Text style={styles.initialText}>{name[0]}</Text>
+          <Text style={styles.initialText}>{name ? name[0] : "?"}</Text>
         </View>
 
         <View>
@@ -906,7 +985,7 @@ function MemberCard({ name, username, id, savings, loan, dividend, status }) {
     <View style={styles.memberCard}>
       <View style={styles.memberCardHeader}>
         <View style={styles.initialCircle}>
-          <Text style={styles.initialText}>{name[0]}</Text>
+          <Text style={styles.initialText}>{name ? name[0] : "?"}</Text>
         </View>
 
         <View style={{ flex: 1 }}>
@@ -1668,6 +1747,19 @@ const styles = StyleSheet.create({
     marginLeft: 9,
   },
 
+  refreshButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: LIGHT_GREEN,
+    borderWidth: 1,
+    borderColor: "#86efac",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: Platform.OS === "web" ? 12 : 0,
+    marginTop: Platform.OS === "web" ? 0 : 12,
+  },
+
   addButton: {
     height: 44,
     borderRadius: 13,
@@ -1685,6 +1777,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "900",
     marginLeft: 7,
+  },
+
+  noticeBox: {
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: "#e6fff2",
+    borderWidth: 1,
+    borderColor: "#86efac",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 14,
+  },
+
+  noticeText: {
+    color: MAIN_GREEN,
+    fontSize: 13,
+    fontWeight: "800",
+    marginLeft: 10,
+  },
+
+  emptyText: {
+    color: "#64748b",
+    fontSize: 14,
+    fontWeight: "700",
+    paddingVertical: 18,
+    textAlign: "center",
   },
 
   statusGreen: {
