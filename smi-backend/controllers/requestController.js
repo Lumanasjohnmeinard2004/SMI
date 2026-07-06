@@ -12,6 +12,42 @@ function toNumber(value) {
   return parsed;
 }
 
+const getAllRequests = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        lr.id,
+        lr.member_id,
+        lr.loan_type,
+        lr.amount,
+        lr.purpose,
+        lr.status,
+        lr.admin_remarks,
+        lr.requested_at,
+        lr.updated_at,
+        m.member_id AS member_code,
+        m.full_name,
+        m.username
+      FROM loan_requests lr
+      INNER JOIN members m
+      ON m.id = lr.member_id
+      ORDER BY lr.requested_at DESC
+      `
+    );
+
+    res.json({
+      message: "Loan requests loaded successfully",
+      requests: result.rows,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to load loan requests",
+      error: error.message,
+    });
+  }
+};
+
 const getMemberRequests = async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -121,7 +157,66 @@ const createRequest = async (req, res) => {
   }
 };
 
+const updateRequestStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, admin_remarks } = req.body;
+
+    if (!status || !["Approved", "Rejected"].includes(status)) {
+      return res.status(400).json({
+        message: "Status must be Approved or Rejected",
+      });
+    }
+
+    if (!admin_remarks || !admin_remarks.trim()) {
+      return res.status(400).json({
+        message: "Please provide a reason or remarks",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE loan_requests
+      SET
+        status = $1,
+        admin_remarks = $2,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+      RETURNING
+        id,
+        member_id,
+        loan_type,
+        amount,
+        purpose,
+        status,
+        admin_remarks,
+        requested_at,
+        updated_at
+      `,
+      [status, admin_remarks.trim(), id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Loan request not found",
+      });
+    }
+
+    res.json({
+      message: `Loan request ${status.toLowerCase()} successfully`,
+      request: result.rows[0],
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update loan request",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
+  getAllRequests,
   getMemberRequests,
   createRequest,
+  updateRequestStatus,
 };

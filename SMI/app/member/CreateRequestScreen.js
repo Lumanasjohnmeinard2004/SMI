@@ -269,11 +269,19 @@ export default function CreateRequestScreen() {
           <>
             <InfoLine label="Member Name" value={member.full_name} />
             <InfoLine label="Member ID" value={member.member_id} />
-            <InfoLine label="Current Loan Balance" value={formatCurrency(getTotalLoan(member))} />
-            <InfoLine label="Share Capital" value={formatCurrency(member.share_capital)} />
+            <InfoLine
+              label="Current Loan Balance"
+              value={formatCurrency(getTotalLoan(member))}
+            />
+            <InfoLine
+              label="Share Capital"
+              value={formatCurrency(member.share_capital)}
+            />
           </>
         ) : (
-          <Text style={styles.summaryLoadingText}>Unable to load member summary.</Text>
+          <Text style={styles.summaryLoadingText}>
+            Unable to load member summary.
+          </Text>
         )}
       </SectionCard>
 

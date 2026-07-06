@@ -33,6 +33,24 @@ function formatCurrency(value) {
   })}`;
 }
 
+function formatDate(value) {
+  if (!value) {
+    return "Not set";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not set";
+  }
+
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+}
+
 function getTotalLoan(member) {
   return (
     Number(member.regular_loan || 0) +
@@ -239,7 +257,7 @@ function Sidebar({ activeTab, setActiveTab, router }) {
           icon="clipboard"
           label="Loan Requests"
           active={activeTab === "requests"}
-          badge="1"
+          badge="!"
           onPress={() => setActiveTab("requests")}
         />
 
@@ -383,56 +401,6 @@ function OverviewContent({ members, membersLoading, isDesktopWeb }) {
           sub="Dividend amount"
           color={MAIN_GREEN}
         />
-      </View>
-
-      <View style={isDesktopWeb ? styles.overviewTwoColumns : null}>
-        <View style={[styles.panelCard, isDesktopWeb && styles.panelCardFlex]}>
-          <View style={styles.panelHeader}>
-            <View>
-              <Text style={styles.sectionTitle}>Savings vs Loans</Text>
-              <Text style={styles.sectionSub}>Per member comparison</Text>
-            </View>
-
-            <View style={styles.legendRow}>
-              <Legend color={MAIN_GREEN} label="Savings" />
-              <Legend color={GOLD} label="Loans" />
-            </View>
-          </View>
-
-          <View style={styles.chartArea}>
-            {members.slice(0, 6).length > 0 ? (
-              members.slice(0, 6).map((member) => {
-                const savings = Math.min(
-                  140,
-                  Math.max(12, Number(String(member.savings).replace(/[₱,]/g, "")) / 800)
-                );
-
-                const loans = Math.min(
-                  140,
-                  Math.max(12, Number(String(member.loan).replace(/[₱,]/g, "")) / 800)
-                );
-
-                return (
-                  <MiniBar
-                    key={`${member.id}-chart`}
-                    name={member.name.split(" ")[0]}
-                    savings={savings}
-                    loans={loans}
-                  />
-                );
-              })
-            ) : (
-              <Text style={styles.emptyText}>No members found.</Text>
-            )}
-          </View>
-        </View>
-
-        <View style={[styles.panelCard, isDesktopWeb && styles.sidePanel]}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <ActivityItem title="Members loaded from database" time="Today" />
-          <ActivityItem title="Admin member module ready" time="Today" />
-          <ActivityItem title="Add Member connected to backend" time="Today" />
-        </View>
       </View>
 
       <View style={styles.panelCard}>
@@ -737,26 +705,111 @@ function ModalInput({
 function RequestsContent({ isDesktopWeb }) {
   const [selectedLoanType, setSelectedLoanType] = useState("All Loan Types");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [requests, setRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState("");
 
-  const requests = [
-    {
-      name: "Maria Santos",
-      loanType: "Regular Loan",
-      amount: "₱25,000.00",
-      date: "Mar 20, 2025 · 10:00 AM",
-      purpose: "Business expansion",
-      status: "Approved",
-    },
-    {
-      name: "Juan dela Cruz",
-      loanType: "Educational Loan",
-      amount: "₱15,000.00",
-      date: "Mar 18, 2025 · 2:00 PM",
-      purpose: "Tuition payment",
-      status: "Pending",
-      showActions: true,
-    },
+  const [decisionModal, setDecisionModal] = useState({
+    visible: false,
+    request: null,
+    status: "",
+  });
+
+  const [remarks, setRemarks] = useState("");
+  const [savingDecision, setSavingDecision] = useState(false);
+  const [decisionMessage, setDecisionMessage] = useState("");
+
+  useEffect(() => {
+    loadLoanRequests();
+  }, []);
+
+  async function loadLoanRequests() {
+    try {
+      setRequestsLoading(true);
+      setRequestsError("");
+
+      const data = await apiRequest("/requests", "GET");
+
+      setRequests(data.requests || []);
+    } catch (error) {
+      setRequestsError(error.message || "Failed to load loan requests.");
+    } finally {
+      setRequestsLoading(false);
+    }
+  }
+
+  function openDecisionModal(request, status) {
+    setDecisionModal({
+      visible: true,
+      request,
+      status,
+    });
+
+    setRemarks("");
+    setDecisionMessage("");
+  }
+
+  function closeDecisionModal() {
+    setDecisionModal({
+      visible: false,
+      request: null,
+      status: "",
+    });
+
+    setRemarks("");
+    setDecisionMessage("");
+    setSavingDecision(false);
+  }
+
+  async function submitDecision() {
+    try {
+      setDecisionMessage("");
+
+      if (!remarks.trim()) {
+        setDecisionMessage("Please explain your decision before submitting.");
+        return;
+      }
+
+      setSavingDecision(true);
+
+      await apiRequest(`/requests/${decisionModal.request.id}/status`, "PATCH", {
+        status: decisionModal.status,
+        admin_remarks: remarks.trim(),
+      });
+
+      await loadLoanRequests();
+      closeDecisionModal();
+    } catch (error) {
+      setDecisionMessage(error.message || "Failed to update request.");
+    } finally {
+      setSavingDecision(false);
+    }
+  }
+
+  const loanTypeOptions = [
+    "All Loan Types",
+    "Regular Loan",
+    "Educational Loan",
+    "Medical Loan",
+    "Vehicle Loan",
   ];
+
+  const statusOptions = ["All", "Pending", "Approved", "Rejected"];
+
+  const filteredRequests = requests.filter((request) => {
+    const matchesLoanType =
+      selectedLoanType === "All Loan Types" ||
+      request.loan_type === selectedLoanType;
+
+    const matchesStatus =
+      statusFilter === "All" || request.status === statusFilter;
+
+    return matchesLoanType && matchesStatus;
+  });
+
+  const pendingCount = requests.filter(
+    (request) => request.status === "Pending"
+  ).length;
 
   return (
     <View>
@@ -765,13 +818,7 @@ function RequestsContent({ isDesktopWeb }) {
           <Text style={styles.filterLabel}>Loan Type</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {[
-              "All Loan Types",
-              "Regular Loan",
-              "Educational Loan",
-              "Medical Loan",
-              "Vehicle Loan",
-            ].map((item) => (
+            {loanTypeOptions.map((item) => (
               <FilterChip
                 key={item}
                 label={item}
@@ -786,7 +833,7 @@ function RequestsContent({ isDesktopWeb }) {
           <Text style={styles.filterLabel}>Status</Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {["All", "Pending", "Approved", "Rejected"].map((item) => (
+            {statusOptions.map((item) => (
               <FilterChip
                 key={item}
                 label={item}
@@ -798,15 +845,37 @@ function RequestsContent({ isDesktopWeb }) {
         </View>
       </View>
 
+      {requestsLoading && (
+        <View style={styles.noticeBox}>
+          <ActivityIndicator color={MAIN_GREEN} />
+          <Text style={styles.noticeText}>Loading loan requests...</Text>
+        </View>
+      )}
+
+      {requestsError ? (
+        <View style={styles.errorBox}>
+          <Feather name="alert-circle" size={16} color="#991b1b" />
+          <Text style={styles.errorText}>{requestsError}</Text>
+        </View>
+      ) : null}
+
       <View style={styles.panelCard}>
         <View style={styles.panelHeader}>
           <View>
             <Text style={styles.sectionTitle}>Request Queue</Text>
-            <Text style={styles.sectionSub}>1 pending · 2 total requests</Text>
+            <Text style={styles.sectionSub}>
+              {pendingCount} pending · {requests.length} total requests
+            </Text>
           </View>
+
+          <TouchableOpacity style={styles.refreshButton} onPress={loadLoanRequests}>
+            <Feather name="refresh-cw" size={17} color={MAIN_GREEN} />
+          </TouchableOpacity>
         </View>
 
-        {isDesktopWeb ? (
+        {filteredRequests.length === 0 && !requestsLoading ? (
+          <Text style={styles.emptyText}>No loan requests found.</Text>
+        ) : isDesktopWeb ? (
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 1.3 }]}>Member</Text>
@@ -817,17 +886,133 @@ function RequestsContent({ isDesktopWeb }) {
               <Text style={styles.th}>Action</Text>
             </View>
 
-            {requests.map((request) => (
-              <RequestTableRow key={`${request.name}-${request.loanType}`} {...request} />
+            {filteredRequests.map((request) => (
+              <RequestTableRow
+                key={request.id}
+                request={request}
+                onApprove={() => openDecisionModal(request, "Approved")}
+                onReject={() => openDecisionModal(request, "Rejected")}
+              />
             ))}
           </View>
         ) : (
-          requests.map((request) => (
-            <RequestCard key={`${request.name}-${request.loanType}`} {...request} />
+          filteredRequests.map((request) => (
+            <RequestCard
+              key={request.id}
+              request={request}
+              onApprove={() => openDecisionModal(request, "Approved")}
+              onReject={() => openDecisionModal(request, "Rejected")}
+            />
           ))
         )}
       </View>
+
+      <RequestDecisionModal
+        visible={decisionModal.visible}
+        request={decisionModal.request}
+        status={decisionModal.status}
+        remarks={remarks}
+        setRemarks={setRemarks}
+        message={decisionMessage}
+        saving={savingDecision}
+        onClose={closeDecisionModal}
+        onSubmit={submitDecision}
+      />
     </View>
+  );
+}
+
+function RequestDecisionModal({
+  visible,
+  request,
+  status,
+  remarks,
+  setRemarks,
+  message,
+  saving,
+  onClose,
+  onSubmit,
+}) {
+  if (!request) {
+    return null;
+  }
+
+  const isApprove = status === "Approved";
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.addMemberModal}>
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitle}>
+                {isApprove ? "Approve Loan Request" : "Reject Loan Request"}
+              </Text>
+
+              <Text style={styles.modalSubtitle}>
+                {request.full_name} · {request.loan_type} · {formatCurrency(request.amount)}
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
+              <Feather name="x" size={20} color="#334155" />
+            </TouchableOpacity>
+          </View>
+
+          {message ? (
+            <View style={styles.errorBox}>
+              <Feather name="alert-circle" size={16} color="#991b1b" />
+              <Text style={styles.errorText}>{message}</Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.modalInputLabel}>
+            Explain why this request is being {isApprove ? "approved" : "rejected"}
+          </Text>
+
+          <TextInput
+            style={styles.decisionTextArea}
+            value={remarks}
+            onChangeText={setRemarks}
+            placeholder={
+              isApprove
+                ? "Example: Approved based on good standing and sufficient eligibility."
+                : "Example: Rejected due to insufficient eligibility or incomplete requirements."
+            }
+            placeholderTextColor="#94a3b8"
+            multiline
+            textAlignVertical="top"
+          />
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelMemberButton} onPress={onClose}>
+              <Text style={styles.cancelMemberText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={isApprove ? styles.decisionApproveButton : styles.decisionRejectButton}
+              onPress={onSubmit}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Feather
+                    name={isApprove ? "check" : "x"}
+                    size={17}
+                    color="#ffffff"
+                  />
+                  <Text style={styles.saveMemberText}>
+                    {isApprove ? "Approve" : "Reject"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -892,41 +1077,6 @@ function StatCard({ icon, value, label, sub, type, color }) {
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statSub}>{sub}</Text>
-    </View>
-  );
-}
-
-function MiniBar({ name, savings, loans }) {
-  return (
-    <View style={styles.miniBarWrap}>
-      <View style={styles.barSlot}>
-        <View style={[styles.savingsBar, { height: savings }]} />
-        <View style={[styles.loansBar, { height: loans }]} />
-      </View>
-
-      <Text style={styles.barName}>{name}</Text>
-    </View>
-  );
-}
-
-function Legend({ color, label }) {
-  return (
-    <View style={styles.legendItem}>
-      <View style={[styles.legendBox, { backgroundColor: color }]} />
-      <Text style={styles.legendText}>{label}</Text>
-    </View>
-  );
-}
-
-function ActivityItem({ title, time }) {
-  return (
-    <View style={styles.activityItem}>
-      <View style={styles.activityDot} />
-
-      <View style={{ flex: 1 }}>
-        <Text style={styles.activityTitle}>{title}</Text>
-        <Text style={styles.activityTime}>{time}</Text>
-      </View>
     </View>
   );
 }
@@ -1007,58 +1157,63 @@ function MemberCard({ name, username, id, savings, loan, dividend, status }) {
   );
 }
 
-function RequestTableRow({ name, loanType, amount, purpose, status, showActions }) {
+function RequestTableRow({ request, onApprove, onReject }) {
   return (
     <View style={styles.tableRow}>
-      <Text style={[styles.tdStrong, { flex: 1.3 }]}>{name}</Text>
-      <Text style={styles.td}>{loanType}</Text>
-      <Text style={styles.tdGreen}>{amount}</Text>
-      <Text style={styles.td}>{purpose}</Text>
-      <StatusBadge status={status} />
+      <Text style={[styles.tdStrong, { flex: 1.3 }]}>{request.full_name}</Text>
+      <Text style={styles.td}>{request.loan_type}</Text>
+      <Text style={styles.tdGreen}>{formatCurrency(request.amount)}</Text>
+      <Text style={styles.td}>{request.purpose}</Text>
+
+      <StatusBadge status={request.status} />
 
       <View style={styles.actionCell}>
-        {showActions ? (
+        {request.status === "Pending" ? (
           <>
-            <TouchableOpacity style={styles.approveMini}>
+            <TouchableOpacity style={styles.approveMini} onPress={onApprove}>
               <Feather name="check" size={14} color={MAIN_GREEN} />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.rejectMini}>
+            <TouchableOpacity style={styles.rejectMini} onPress={onReject}>
               <Feather name="x" size={14} color="#dc2626" />
             </TouchableOpacity>
           </>
         ) : (
-          <Text style={styles.tableSub}>Done</Text>
+          <Text style={styles.tableSub}>{request.admin_remarks || "Done"}</Text>
         )}
       </View>
     </View>
   );
 }
 
-function RequestCard({ name, loanType, amount, date, purpose, status, showActions }) {
+function RequestCard({ request, onApprove, onReject }) {
   return (
     <View style={styles.requestCard}>
       <View style={styles.requestCardHeader}>
         <View>
-          <Text style={styles.requestName}>{name}</Text>
-          <Text style={styles.requestLoanType}>{loanType}</Text>
+          <Text style={styles.requestName}>{request.full_name}</Text>
+          <Text style={styles.requestLoanType}>{request.loan_type}</Text>
         </View>
 
-        <StatusBadge status={status} />
+        <StatusBadge status={request.status} />
       </View>
 
-      <InfoBlock label="Amount Requested" value={amount} highlight />
-      <InfoBlock label="Date Requested" value={date} />
-      <InfoBlock label="Purpose" value={purpose} />
+      <InfoBlock label="Amount Requested" value={formatCurrency(request.amount)} highlight />
+      <InfoBlock label="Date Requested" value={formatDate(request.requested_at)} />
+      <InfoBlock label="Purpose" value={request.purpose} />
 
-      {showActions && (
+      {request.admin_remarks ? (
+        <InfoBlock label="Admin Remarks" value={request.admin_remarks} />
+      ) : null}
+
+      {request.status === "Pending" && (
         <View style={styles.requestActionRow}>
-          <TouchableOpacity style={styles.approveButton}>
+          <TouchableOpacity style={styles.approveButton} onPress={onApprove}>
             <Feather name="check-square" size={16} color={MAIN_GREEN} />
             <Text style={styles.approveButtonText}>Approve</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.rejectButton}>
+          <TouchableOpacity style={styles.rejectButton} onPress={onReject}>
             <Feather name="x-circle" size={16} color="#ff4b4b" />
             <Text style={styles.rejectButtonText}>Reject</Text>
           </TouchableOpacity>
@@ -1080,7 +1235,6 @@ function InfoBlock({ label, value, highlight }) {
 function StatusBadge({ status }) {
   const good = status === "Excellent" || status === "Approved" || status === "Active";
   const bad = status === "Suspended" || status === "Rejected";
-  
 
   return (
     <View style={good ? styles.statusGreen : bad ? styles.statusRed : styles.statusGold}>
@@ -1158,7 +1312,7 @@ function BottomNav({ activeTab, setActiveTab, router }) {
         icon="clipboard"
         label="Reqs"
         active={activeTab === "requests"}
-        badge="1"
+        badge="!"
         onPress={() => setActiveTab("requests")}
       />
 
@@ -1490,12 +1644,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  overviewTwoColumns: {
-    flexDirection: "row",
-    gap: 20,
-    marginBottom: 20,
-  },
-
   panelCard: {
     backgroundColor: "#ffffff",
     borderRadius: 18,
@@ -1503,14 +1651,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#efe2bd",
     marginBottom: 18,
-  },
-
-  panelCardFlex: {
-    flex: 1,
-  },
-
-  sidePanel: {
-    width: 360,
   },
 
   panelHeader: {
@@ -1528,100 +1668,6 @@ const styles = StyleSheet.create({
   sectionSub: {
     color: "#64748b",
     fontSize: 13,
-    marginTop: 4,
-  },
-
-  chartArea: {
-    height: 190,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-around",
-    borderTopWidth: 1,
-    borderTopColor: "#f3ead0",
-    paddingTop: 18,
-  },
-
-  miniBarWrap: {
-    alignItems: "center",
-    flex: 1,
-  },
-
-  barSlot: {
-    height: 145,
-    flexDirection: "row",
-    alignItems: "flex-end",
-  },
-
-  savingsBar: {
-    width: 12,
-    backgroundColor: MAIN_GREEN,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    marginRight: 4,
-  },
-
-  loansBar: {
-    width: 12,
-    backgroundColor: GOLD,
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-  },
-
-  barName: {
-    color: "#64748b",
-    fontSize: 11,
-    marginTop: 8,
-  },
-
-  legendRow: {
-    flexDirection: "row",
-    marginTop: Platform.OS === "web" ? 0 : 12,
-  },
-
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: 12,
-  },
-
-  legendBox: {
-    width: 10,
-    height: 10,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-
-  legendText: {
-    color: "#64748b",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  activityItem: {
-    flexDirection: "row",
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3ead0",
-  },
-
-  activityDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: GOLD,
-    marginTop: 5,
-    marginRight: 10,
-  },
-
-  activityTitle: {
-    color: "#052e1d",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-
-  activityTime: {
-    color: "#64748b",
-    fontSize: 12,
     marginTop: 4,
   },
 
@@ -2291,6 +2337,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
+  decisionTextArea: {
+    minHeight: 110,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
+    backgroundColor: "#fffdf5",
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    color: "#052e1d",
+    fontSize: 14,
+    marginBottom: 14,
+  },
+
   modalActions: {
     flexDirection: "row",
     marginTop: 8,
@@ -2319,6 +2378,26 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 13,
     backgroundColor: MAIN_GREEN,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  decisionApproveButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    backgroundColor: MAIN_GREEN,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  decisionRejectButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    backgroundColor: "#dc2626",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",

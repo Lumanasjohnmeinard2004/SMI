@@ -68,6 +68,22 @@ function getLoanIcon(loanType) {
   return "wallet-outline";
 }
 
+function getDefaultNote(status) {
+  if (status === "Pending") {
+    return "Under review";
+  }
+
+  if (status === "Approved") {
+    return "Approved by admin";
+  }
+
+  if (status === "Rejected") {
+    return "Rejected by admin";
+  }
+
+  return "Request updated";
+}
+
 export default function RequestsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -204,22 +220,6 @@ export default function RequestsScreen() {
       )}
     </MemberScreen>
   );
-}
-
-function getDefaultNote(status) {
-  if (status === "Pending") {
-    return "Under review";
-  }
-
-  if (status === "Approved") {
-    return "Ready for release";
-  }
-
-  if (status === "Rejected") {
-    return "Request was rejected";
-  }
-
-  return "Request updated";
 }
 
 function FilterChip({ label, active, onPress }) {
