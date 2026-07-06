@@ -51,6 +51,14 @@ function formatDate(value) {
   });
 }
 
+function getTotalSavings(member) {
+  return (
+    Number(member.savings || 0) +
+    Number(member.share_capital || 0) +
+    Number(member.special_savings || 0)
+  );
+}
+
 function getTotalLoan(member) {
   return (
     Number(member.regular_loan || 0) +
@@ -69,15 +77,37 @@ function getTotalLoan(member) {
   );
 }
 
+function getInitials(name) {
+  if (!name) {
+    return "?";
+  }
+
+  const words = String(name).trim().split(" ").filter(Boolean);
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+}
+
 function mapDbMember(member) {
+  const rawSavings = getTotalSavings(member);
+  const rawLoan = getTotalLoan(member);
+  const rawDividend = Number(member.dividend_amount || 0);
+
   return {
     dbId: member.id,
     name: member.full_name,
     username: `@${member.username}`,
+    rawUsername: member.username,
     id: member.member_id,
-    savings: formatCurrency(member.savings),
-    loan: formatCurrency(getTotalLoan(member)),
-    dividend: formatCurrency(member.dividend_amount),
+    rawSavings,
+    rawLoan,
+    rawDividend,
+    savings: formatCurrency(rawSavings),
+    loan: formatCurrency(rawLoan),
+    dividend: formatCurrency(rawDividend),
     status: member.status || "Active",
   };
 }
@@ -110,7 +140,7 @@ export default function AdminDashboardScreen() {
       setMembersError("");
 
       const data = await apiRequest("/members", "GET");
-      const mappedMembers = data.members.map(mapDbMember);
+      const mappedMembers = (data.members || []).map(mapDbMember);
 
       setMembers(mappedMembers);
     } catch (error) {
@@ -130,6 +160,8 @@ export default function AdminDashboardScreen() {
         <OverviewContent
           members={members}
           membersLoading={membersLoading}
+          membersError={membersError}
+          onRefresh={loadMembersFromDatabase}
           isDesktopWeb={isDesktopWeb}
         />
       );
@@ -160,6 +192,8 @@ export default function AdminDashboardScreen() {
       <OverviewContent
         members={members}
         membersLoading={membersLoading}
+        membersError={membersError}
+        onRefresh={loadMembersFromDatabase}
         isDesktopWeb={isDesktopWeb}
       />
     );
@@ -353,17 +387,25 @@ function TopHeader({ activeTab, setActiveTab, router, isDesktopWeb }) {
   );
 }
 
-function OverviewContent({ members, membersLoading, isDesktopWeb }) {
+function OverviewContent({
+  members,
+  membersLoading,
+  membersError,
+  onRefresh,
+  isDesktopWeb,
+}) {
+  const [showFullGraph, setShowFullGraph] = useState(false);
+
   const totalSavings = members.reduce((sum, member) => {
-    return sum + Number(String(member.savings).replace(/[₱,]/g, "") || 0);
+    return sum + Number(member.rawSavings || 0);
   }, 0);
 
   const totalLoans = members.reduce((sum, member) => {
-    return sum + Number(String(member.loan).replace(/[₱,]/g, "") || 0);
+    return sum + Number(member.rawLoan || 0);
   }, 0);
 
   const totalDividends = members.reduce((sum, member) => {
-    return sum + Number(String(member.dividend).replace(/[₱,]/g, "") || 0);
+    return sum + Number(member.rawDividend || 0);
   }, 0);
 
   return (
@@ -381,7 +423,7 @@ function OverviewContent({ members, membersLoading, isDesktopWeb }) {
           icon="piggy-bank-outline"
           value={formatCurrency(totalSavings)}
           label="Total Savings"
-          sub="Member savings"
+          sub="Savings + share capital"
           type="material"
           color={GOLD}
         />
@@ -403,6 +445,20 @@ function OverviewContent({ members, membersLoading, isDesktopWeb }) {
         />
       </View>
 
+      {membersError ? (
+        <View style={styles.errorBox}>
+          <Feather name="alert-circle" size={16} color="#991b1b" />
+          <Text style={styles.errorText}>{membersError}</Text>
+        </View>
+      ) : null}
+
+      <MinimalMemberChart
+        members={members}
+        loading={membersLoading}
+        onRefresh={onRefresh}
+        onOpenFullGraph={() => setShowFullGraph(true)}
+      />
+
       <View style={styles.panelCard}>
         <View style={styles.panelHeader}>
           <View>
@@ -411,7 +467,9 @@ function OverviewContent({ members, membersLoading, isDesktopWeb }) {
           </View>
         </View>
 
-        {isDesktopWeb ? (
+        {members.length === 0 && !membersLoading ? (
+          <Text style={styles.emptyText}>No members found in the database.</Text>
+        ) : isDesktopWeb ? (
           <View style={styles.table}>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 1.4 }]}>Member</Text>
@@ -431,7 +489,188 @@ function OverviewContent({ members, membersLoading, isDesktopWeb }) {
           ))
         )}
       </View>
+
+      <FullGraphModal
+        visible={showFullGraph}
+        members={members}
+        onClose={() => setShowFullGraph(false)}
+      />
     </View>
+  );
+}
+
+function MinimalMemberChart({ members, loading, onRefresh, onOpenFullGraph }) {
+  const previewMembers = members.slice(0, 8);
+
+  const maxValue = Math.max(
+    1,
+    ...previewMembers.map((member) =>
+      Math.max(Number(member.rawSavings || 0), Number(member.rawLoan || 0))
+    )
+  );
+
+  return (
+    <View style={styles.chartCard}>
+      <View style={styles.chartTopRow}>
+        <View>
+          <Text style={styles.sectionTitle}>Member Balance Overview</Text>
+          <Text style={styles.sectionSub}>Minimal view of savings and loans</Text>
+        </View>
+
+        <View style={styles.chartActions}>
+          <TouchableOpacity style={styles.fullGraphButton} onPress={onOpenFullGraph}>
+            <Text style={styles.fullGraphText}>View Full Graph</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.chartRefreshButton} onPress={onRefresh}>
+            <Feather name="refresh-cw" size={15} color={MAIN_GREEN} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.miniLegendRow}>
+        <View style={styles.legendItem}>
+          <View style={styles.legendSavings} />
+          <Text style={styles.legendText}>Savings</Text>
+        </View>
+
+        <View style={styles.legendItem}>
+          <View style={styles.legendLoans} />
+          <Text style={styles.legendText}>Loan</Text>
+        </View>
+      </View>
+
+      {loading ? (
+        <View style={styles.chartLoadingBox}>
+          <ActivityIndicator color={MAIN_GREEN} />
+          <Text style={styles.noticeText}>Loading chart...</Text>
+        </View>
+      ) : previewMembers.length === 0 ? (
+        <Text style={styles.emptyText}>No graph data available.</Text>
+      ) : (
+        <View style={styles.minimalChartArea}>
+          {previewMembers.map((member) => {
+            const savingsHeight = `${Math.max(
+              4,
+              (Number(member.rawSavings || 0) / maxValue) * 100
+            )}%`;
+
+            const loanHeight = `${Math.max(
+              4,
+              (Number(member.rawLoan || 0) / maxValue) * 100
+            )}%`;
+
+            return (
+              <View key={`${member.id}-mini-chart`} style={styles.minimalColumn}>
+                <View style={styles.minimalBarsWrap}>
+                  <View style={[styles.minimalSavingsBar, { height: savingsHeight }]} />
+                  <View style={[styles.minimalLoanBar, { height: loanHeight }]} />
+                </View>
+
+                <Text style={styles.minimalChartLabel} numberOfLines={1}>
+                  {getInitials(member.name)}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+    </View>
+  );
+}
+
+function FullGraphModal({ visible, members, onClose }) {
+  const maxValue = Math.max(
+    1,
+    ...members.map((member) =>
+      Math.max(Number(member.rawSavings || 0), Number(member.rawLoan || 0))
+    )
+  );
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.fullGraphModal}>
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitle}>Full Member Graph</Text>
+              <Text style={styles.modalSubtitle}>
+                Savings and loan totals based on database records
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
+              <Feather name="x" size={20} color="#334155" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.fullGraphLegend}>
+            <View style={styles.legendItem}>
+              <View style={styles.legendSavings} />
+              <Text style={styles.legendText}>Total Savings</Text>
+            </View>
+
+            <View style={styles.legendItem}>
+              <View style={styles.legendLoans} />
+              <Text style={styles.legendText}>Total Loan</Text>
+            </View>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.fullGraphScrollContent}>
+              {members.length === 0 ? (
+                <Text style={styles.emptyText}>No graph data available.</Text>
+              ) : (
+                members.map((member) => {
+                  const savingsHeight = `${Math.max(
+                    4,
+                    (Number(member.rawSavings || 0) / maxValue) * 100
+                  )}%`;
+
+                  const loanHeight = `${Math.max(
+                    4,
+                    (Number(member.rawLoan || 0) / maxValue) * 100
+                  )}%`;
+
+                  return (
+                    <View key={`${member.id}-full-chart`} style={styles.fullGraphColumn}>
+                      <View style={styles.fullGraphBarsWrap}>
+                        <View
+                          style={[
+                            styles.fullGraphSavingsBar,
+                            { height: savingsHeight },
+                          ]}
+                        />
+                        <View
+                          style={[
+                            styles.fullGraphLoanBar,
+                            { height: loanHeight },
+                          ]}
+                        />
+                      </View>
+
+                      <Text style={styles.fullGraphName} numberOfLines={1}>
+                        {member.name}
+                      </Text>
+                      <Text style={styles.fullGraphId}>{member.id}</Text>
+
+                      <View style={styles.fullGraphValues}>
+                        <Text style={styles.fullGraphSavingsText}>
+                          S: {formatCurrency(member.rawSavings)}
+                        </Text>
+                        <Text style={styles.fullGraphLoanText}>
+                          L: {formatCurrency(member.rawLoan)}
+                        </Text>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -1642,6 +1881,236 @@ const styles = StyleSheet.create({
     color: "#64748b",
     fontSize: 12,
     marginTop: 4,
+  },
+
+  chartCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#efe2bd",
+    marginBottom: 18,
+  },
+
+  chartTopRow: {
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    justifyContent: "space-between",
+    alignItems: Platform.OS === "web" ? "center" : "flex-start",
+    marginBottom: 12,
+  },
+
+  chartActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: Platform.OS === "web" ? 0 : 12,
+  },
+
+  fullGraphButton: {
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: "#fffdf5",
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginRight: 8,
+  },
+
+  fullGraphText: {
+    color: DARK_GREEN,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  chartRefreshButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    backgroundColor: LIGHT_GREEN,
+    borderWidth: 1,
+    borderColor: "#86efac",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  miniLegendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 18,
+  },
+
+  legendSavings: {
+    width: 9,
+    height: 9,
+    borderRadius: 9,
+    backgroundColor: MAIN_GREEN,
+    marginRight: 7,
+  },
+
+  legendLoans: {
+    width: 9,
+    height: 9,
+    borderRadius: 9,
+    backgroundColor: GOLD,
+    marginRight: 7,
+  },
+
+  legendText: {
+    color: "#64748b",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+
+  chartLoadingBox: {
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  minimalChartArea: {
+    height: 150,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-around",
+    paddingTop: 12,
+    paddingHorizontal: 6,
+  },
+
+  minimalColumn: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    minWidth: 52,
+  },
+
+  minimalBarsWrap: {
+    height: 122,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+
+  minimalSavingsBar: {
+    width: 8,
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: MAIN_GREEN,
+    marginRight: 4,
+  },
+
+  minimalLoanBar: {
+    width: 8,
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+    backgroundColor: GOLD,
+  },
+
+  minimalChartLabel: {
+    color: "#64748b",
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 8,
+  },
+
+  fullGraphModal: {
+    width: Platform.OS === "web" ? "82%" : "100%",
+    maxWidth: 980,
+    maxHeight: "86%",
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 22,
+    borderWidth: 2,
+    borderColor: GOLD,
+  },
+
+  fullGraphLegend: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 14,
+  },
+
+  fullGraphScrollContent: {
+    minHeight: 360,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    paddingVertical: 12,
+  },
+
+  fullGraphColumn: {
+    width: 110,
+    alignItems: "center",
+    marginRight: 16,
+  },
+
+  fullGraphBarsWrap: {
+    height: 210,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+
+  fullGraphSavingsBar: {
+    width: 12,
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+    backgroundColor: MAIN_GREEN,
+    marginRight: 6,
+  },
+
+  fullGraphLoanBar: {
+    width: 12,
+    borderTopLeftRadius: 999,
+    borderTopRightRadius: 999,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
+    backgroundColor: GOLD,
+  },
+
+  fullGraphName: {
+    width: 100,
+    color: "#052e1d",
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center",
+    marginTop: 12,
+  },
+
+  fullGraphId: {
+    color: "#64748b",
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 3,
+  },
+
+  fullGraphValues: {
+    marginTop: 8,
+    alignItems: "center",
+  },
+
+  fullGraphSavingsText: {
+    color: MAIN_GREEN,
+    fontSize: 10,
+    fontWeight: "900",
+  },
+
+  fullGraphLoanText: {
+    color: GOLD,
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 3,
   },
 
   panelCard: {
