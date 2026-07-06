@@ -1,7 +1,8 @@
-//member/DividendsScreen.js
+// app/member/DividendsScreen.js
 
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 import {
   MemberScreen,
   PrimaryCard,
@@ -10,8 +11,72 @@ import {
   Notice,
   theme,
 } from "../../components/MemberUI";
+import { apiRequest } from "../../config/api";
+
+function formatCurrency(value) {
+  const numberValue = Number(value || 0);
+
+  return `₱${numberValue.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export default function DividendsScreen() {
+  const params = useLocalSearchParams();
+
+  const identifier =
+    params.member_id || params.username || params.id || params.userId || "msantos";
+
+  const [member, setMember] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    loadDividends();
+  }, [identifier]);
+
+  async function loadDividends() {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      const data = await apiRequest(`/members/${identifier}/financials`, "GET");
+      setMember(data.member);
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to load dividends.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <MemberScreen active="Dividend" title="Dividends" subtitle="Interest on Share Capital">
+        <SectionCard title="Loading">
+          <View style={styles.centerBox}>
+            <ActivityIndicator color={theme.green} />
+            <Text style={styles.loadingText}>Loading dividends...</Text>
+          </View>
+        </SectionCard>
+      </MemberScreen>
+    );
+  }
+
+  if (errorMessage || !member) {
+    return (
+      <MemberScreen active="Dividend" title="Dividends" subtitle="Interest on Share Capital">
+        <SectionCard title="Unable to Load Dividends">
+          <Text style={styles.errorText}>{errorMessage}</Text>
+
+          <TouchableOpacity style={styles.retryButton} onPress={loadDividends}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </SectionCard>
+      </MemberScreen>
+    );
+  }
+
   return (
     <MemberScreen
       active="Dividend"
@@ -19,47 +84,31 @@ export default function DividendsScreen() {
       subtitle="Interest on Share Capital"
     >
       <Notice
-        title="FY 2024 dividend pending"
-        subtitle="Projected rate: ~13% · Est. Feb 2025"
+        title="Dividend record loaded"
+        subtitle="This amount comes from the cooperative database."
       />
 
       <PrimaryCard
         label="TOTAL DIVIDENDS EARNED"
-        amount="₱15,050.00"
-        sub="Since 2018"
+        amount={formatCurrency(member.dividend_amount)}
+        sub="Latest recorded dividend amount"
       />
 
       <SectionCard title="Dividend History">
         <DividendItem
+          year="Latest Record"
+          status="Recorded"
+          statusType="paid"
+          details="Saved from admin manual input"
+          amount={formatCurrency(member.dividend_amount)}
+        />
+
+        <DividendItem
           year="FY 2024"
           status="Pending"
           statusType="pending"
-          details="Rate: ~13% · Est. Feb 2025"
+          details="Rate and release date to be updated by admin"
           amount="—"
-        />
-
-        <DividendItem
-          year="FY 2021"
-          status="Paid"
-          statusType="paid"
-          details="Rate: 11% · Feb 20, 2022"
-          amount="₱4,400.00"
-        />
-
-        <DividendItem
-          year="FY 2022"
-          status="Paid"
-          statusType="paid"
-          details="Rate: 10% · Mar 15, 2023"
-          amount="₱4,800.00"
-        />
-
-        <DividendItem
-          year="FY 2023"
-          status="Paid"
-          statusType="paid"
-          details="Rate: 12% · Feb 28, 2024"
-          amount="₱5,850.00"
         />
       </SectionCard>
     </MemberScreen>
@@ -122,6 +171,39 @@ const styles = StyleSheet.create({
   dividendAmount: {
     color: theme.text,
     fontSize: 14,
+    fontWeight: "900",
+  },
+
+  centerBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+  },
+
+  loadingText: {
+    color: theme.muted,
+    fontSize: 13,
+    marginTop: 10,
+    fontWeight: "700",
+  },
+
+  errorText: {
+    color: "#b91c1c",
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+
+  retryButton: {
+    backgroundColor: theme.green,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
     fontWeight: "900",
   },
 });

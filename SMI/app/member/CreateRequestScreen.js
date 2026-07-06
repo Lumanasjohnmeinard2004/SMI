@@ -1,28 +1,75 @@
-//members/CreateRequestScreen
+// app/member/CreateRequestScreen.js
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   MemberScreen,
   SectionCard,
   theme,
 } from "../../components/MemberUI";
+import { apiRequest } from "../../config/api";
+
+function formatCurrency(value) {
+  const numberValue = Number(value || 0);
+
+  return `₱${numberValue.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function getTotalLoan(member) {
+  return (
+    Number(member.regular_loan || 0) +
+    Number(member.regular_loan_diminishing || 0) +
+    Number(member.educational_loan || 0) +
+    Number(member.educational_loan_diminishing || 0) +
+    Number(member.short_term_loan || 0) +
+    Number(member.short_term_loan_diminishing || 0) +
+    Number(member.appliance_loan || 0) +
+    Number(member.appliance_loan_diminishing || 0) +
+    Number(member.medical_loan || 0) +
+    Number(member.medical_loan_diminishing || 0) +
+    Number(member.petty_cash_loan || 0) +
+    Number(member.vehicle_loan || 0) +
+    Number(member.inter_trading_loan || 0)
+  );
+}
 
 export default function CreateRequestScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  const identifier =
+    params.member_id || params.username || params.id || params.userId || "msantos";
+
+  const memberParams = {
+    id: params.id,
+    member_id: params.member_id,
+    username: params.username,
+    full_name: params.full_name,
+    status: params.status,
+  };
 
   const [loanType, setLoanType] = useState("Regular Loan");
   const [showDropdown, setShowDropdown] = useState(false);
   const [amount, setAmount] = useState("");
   const [purpose, setPurpose] = useState("");
+
+  const [member, setMember] = useState(null);
+  const [loadingMember, setLoadingMember] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
   const loanTypes = [
     "Regular Loan",
@@ -41,6 +88,67 @@ export default function CreateRequestScreen() {
     "Other Loan",
   ];
 
+  useEffect(() => {
+    loadMemberSummary();
+  }, [identifier]);
+
+  async function loadMemberSummary() {
+    try {
+      setLoadingMember(true);
+
+      const data = await apiRequest(`/members/${identifier}/financials`, "GET");
+
+      setMember(data.member);
+    } catch (error) {
+      setMember(null);
+    } finally {
+      setLoadingMember(false);
+    }
+  }
+
+  async function submitRequest() {
+    try {
+      setMessage("");
+      setIsError(false);
+
+      if (!amount.trim() || Number(amount) <= 0) {
+        setIsError(true);
+        setMessage("Please enter a valid amount.");
+        return;
+      }
+
+      if (!purpose.trim()) {
+        setIsError(true);
+        setMessage("Please enter the purpose of your request.");
+        return;
+      }
+
+      setSubmitting(true);
+
+      await apiRequest("/requests", "POST", {
+        member_identifier: identifier,
+        loan_type: loanType,
+        amount: amount.trim(),
+        purpose: purpose.trim(),
+      });
+
+      setIsError(false);
+      setMessage("Request submitted successfully.");
+
+      setTimeout(() => {
+        router.push({
+          pathname: "/member/RequestsScreen",
+          params: memberParams,
+        });
+      }, 700);
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message || "Failed to submit request.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <MemberScreen
       active="Requests"
@@ -49,11 +157,29 @@ export default function CreateRequestScreen() {
     >
       <TouchableOpacity
         style={styles.backButton}
-        onPress={() => router.push("/member/RequestsScreen")}
+        onPress={() =>
+          router.push({
+            pathname: "/member/RequestsScreen",
+            params: memberParams,
+          })
+        }
       >
         <Feather name="arrow-left" size={17} color={theme.green} />
         <Text style={styles.backText}>Back to Requests</Text>
       </TouchableOpacity>
+
+      {message ? (
+        <View style={isError ? styles.errorBox : styles.successBox}>
+          <Feather
+            name={isError ? "alert-circle" : "check-circle"}
+            size={16}
+            color={isError ? "#991b1b" : theme.success}
+          />
+          <Text style={isError ? styles.errorText : styles.successText}>
+            {message}
+          </Text>
+        </View>
+      ) : null}
 
       <SectionCard title="Request Details">
         <Text style={styles.label}>Loan Type</Text>
@@ -134,20 +260,46 @@ export default function CreateRequestScreen() {
       </SectionCard>
 
       <SectionCard title="Member Summary">
-        <InfoLine label="Member Name" value="Maria Santos" />
-        <InfoLine label="Member ID" value="MBR-00472" />
-        <InfoLine label="Current Loan Balance" value="₱55,600.00" />
-        <InfoLine label="Share Capital" value="₱48,750.00" />
+        {loadingMember ? (
+          <View style={styles.summaryLoading}>
+            <ActivityIndicator color={theme.green} />
+            <Text style={styles.summaryLoadingText}>Loading member summary...</Text>
+          </View>
+        ) : member ? (
+          <>
+            <InfoLine label="Member Name" value={member.full_name} />
+            <InfoLine label="Member ID" value={member.member_id} />
+            <InfoLine label="Current Loan Balance" value={formatCurrency(getTotalLoan(member))} />
+            <InfoLine label="Share Capital" value={formatCurrency(member.share_capital)} />
+          </>
+        ) : (
+          <Text style={styles.summaryLoadingText}>Unable to load member summary.</Text>
+        )}
       </SectionCard>
 
-      <TouchableOpacity style={styles.submitButton}>
-        <Feather name="send" size={18} color="#ffffff" />
-        <Text style={styles.submitText}>Submit Request</Text>
+      <TouchableOpacity
+        style={styles.submitButton}
+        onPress={submitRequest}
+        disabled={submitting}
+      >
+        {submitting ? (
+          <ActivityIndicator color="#ffffff" />
+        ) : (
+          <>
+            <Feather name="send" size={18} color="#ffffff" />
+            <Text style={styles.submitText}>Submit Request</Text>
+          </>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.cancelButton}
-        onPress={() => router.push("/member/RequestsScreen")}
+        onPress={() =>
+          router.push({
+            pathname: "/member/RequestsScreen",
+            params: memberParams,
+          })
+        }
       >
         <Text style={styles.cancelText}>Cancel</Text>
       </TouchableOpacity>
@@ -345,5 +497,57 @@ const styles = StyleSheet.create({
     color: theme.danger,
     fontSize: 14,
     fontWeight: "900",
+  },
+
+  successBox: {
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: "#eafff4",
+    borderWidth: 1,
+    borderColor: "#83e8b9",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+
+  successText: {
+    flex: 1,
+    color: theme.success,
+    fontSize: 12,
+    fontWeight: "800",
+    marginLeft: 8,
+  },
+
+  errorBox: {
+    minHeight: 42,
+    borderRadius: 12,
+    backgroundColor: "#fff0ef",
+    borderWidth: 1,
+    borderColor: "#f1b8b8",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+
+  errorText: {
+    flex: 1,
+    color: theme.danger,
+    fontSize: 12,
+    fontWeight: "800",
+    marginLeft: 8,
+  },
+
+  summaryLoading: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+
+  summaryLoadingText: {
+    color: theme.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 8,
   },
 });

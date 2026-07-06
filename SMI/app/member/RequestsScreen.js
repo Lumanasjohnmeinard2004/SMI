@@ -1,9 +1,15 @@
-//members/RequestScreen.js
+// app/member/RequestsScreen.js
 
-import React, { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   MemberScreen,
   PrimaryCard,
@@ -11,10 +17,104 @@ import {
   StatusBadge,
   theme,
 } from "../../components/MemberUI";
+import { apiRequest } from "../../config/api";
+
+function formatCurrency(value) {
+  const numberValue = Number(value || 0);
+
+  return `₱${numberValue.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Not set";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not set";
+  }
+
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+}
+
+function getLoanIcon(loanType) {
+  const value = String(loanType || "").toLowerCase();
+
+  if (value.includes("education")) {
+    return "school-outline";
+  }
+
+  if (value.includes("medical")) {
+    return "medical-bag";
+  }
+
+  if (value.includes("vehicle")) {
+    return "car-outline";
+  }
+
+  if (value.includes("appliance")) {
+    return "fridge-outline";
+  }
+
+  return "wallet-outline";
+}
 
 export default function RequestsScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  const identifier =
+    params.member_id || params.username || params.id || params.userId || "msantos";
+
+  const memberParams = {
+    id: params.id,
+    member_id: params.member_id,
+    username: params.username,
+    full_name: params.full_name,
+    status: params.status,
+  };
+
   const [filter, setFilter] = useState("All");
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    loadRequests();
+  }, [identifier]);
+
+  async function loadRequests() {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      const data = await apiRequest(`/requests/member/${identifier}`, "GET");
+
+      setRequests(data.requests || []);
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to load requests.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredRequests =
+    filter === "All"
+      ? requests
+      : requests.filter((request) => request.status === filter);
+
+  const pendingCount = requests.filter(
+    (request) => request.status === "Pending"
+  ).length;
 
   return (
     <MemberScreen
@@ -24,7 +124,12 @@ export default function RequestsScreen() {
     >
       <TouchableOpacity
         style={styles.createButton}
-        onPress={() => router.push("/member/CreateRequestScreen")}
+        onPress={() =>
+          router.push({
+            pathname: "/member/CreateRequestScreen",
+            params: memberParams,
+          })
+        }
       >
         <Feather name="plus-circle" size={18} color="#ffffff" />
         <Text style={styles.createButtonText}>Create Request</Text>
@@ -56,39 +161,65 @@ export default function RequestsScreen() {
         />
       </View>
 
-      <PrimaryCard label="TOTAL REQUESTS" amount="3" sub="1 pending request" />
-
-      <RequestCard
-        icon="wallet-outline"
-        title="Regular Loan"
-        amount="₱25,000.00"
-        date="Mar 20, 2025"
-        purpose="Business expansion"
-        status="Pending"
-        note="Under review"
+      <PrimaryCard
+        label="TOTAL REQUESTS"
+        amount={String(requests.length)}
+        sub={`${pendingCount} pending request${pendingCount === 1 ? "" : "s"}`}
       />
 
-      <RequestCard
-        icon="school-outline"
-        title="Educational Loan"
-        amount="₱15,000.00"
-        date="Mar 18, 2025"
-        purpose="Tuition payment"
-        status="Approved"
-        note="Ready for release"
-      />
+      {loading ? (
+        <SectionCard title="Loading">
+          <View style={styles.centerBox}>
+            <ActivityIndicator color={theme.green} />
+            <Text style={styles.loadingText}>Loading requests...</Text>
+          </View>
+        </SectionCard>
+      ) : errorMessage ? (
+        <SectionCard title="Unable to Load Requests">
+          <Text style={styles.errorText}>{errorMessage}</Text>
 
-      <RequestCard
-        icon="medical-bag"
-        title="Medical Loan"
-        amount="₱8,000.00"
-        date="Mar 15, 2025"
-        purpose="Medical expenses"
-        status="Rejected"
-        note="Insufficient eligibility"
-      />
+          <TouchableOpacity style={styles.retryButton} onPress={loadRequests}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </SectionCard>
+      ) : filteredRequests.length === 0 ? (
+        <SectionCard title="No Requests Found">
+          <Text style={styles.emptyText}>
+            No {filter === "All" ? "" : filter.toLowerCase()} requests found.
+          </Text>
+        </SectionCard>
+      ) : (
+        filteredRequests.map((request) => (
+          <RequestCard
+            key={request.id}
+            icon={getLoanIcon(request.loan_type)}
+            title={request.loan_type}
+            amount={formatCurrency(request.amount)}
+            date={formatDate(request.requested_at)}
+            purpose={request.purpose}
+            status={request.status}
+            note={request.admin_remarks || getDefaultNote(request.status)}
+          />
+        ))
+      )}
     </MemberScreen>
   );
+}
+
+function getDefaultNote(status) {
+  if (status === "Pending") {
+    return "Under review";
+  }
+
+  if (status === "Approved") {
+    return "Ready for release";
+  }
+
+  if (status === "Rejected") {
+    return "Request was rejected";
+  }
+
+  return "Request updated";
 }
 
 function FilterChip({ label, active, onPress }) {
@@ -349,5 +480,44 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     marginLeft: 8,
+  },
+
+  centerBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+  },
+
+  loadingText: {
+    color: theme.muted,
+    fontSize: 13,
+    marginTop: 10,
+    fontWeight: "700",
+  },
+
+  errorText: {
+    color: "#b91c1c",
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+
+  retryButton: {
+    backgroundColor: theme.green,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  emptyText: {
+    color: theme.muted,
+    fontSize: 13,
+    lineHeight: 20,
   },
 });

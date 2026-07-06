@@ -49,9 +49,16 @@ export default function LoginScreen() {
         password: password.trim(),
       });
 
-      console.log("Member login success:", data);
-
-      router.push("/member/HomeScreen");
+      router.push({
+        pathname: "/member/HomeScreen",
+        params: {
+          id: data.user.id,
+          member_id: data.user.member_id,
+          username: data.user.username,
+          full_name: data.user.full_name,
+          status: data.user.status,
+        },
+      });
     } catch (error) {
       setErrorMessage(error.message || "Member login failed.");
     } finally {
@@ -70,12 +77,10 @@ export default function LoginScreen() {
 
       setLoadingAdmin(true);
 
-      const data = await apiRequest("/auth/login-admin", "POST", {
+      await apiRequest("/auth/login-admin", "POST", {
         username: username.trim(),
         password: password.trim(),
       });
-
-      console.log("Admin login success:", data);
 
       router.push("/admin/AdminDashboardScreen");
     } catch (error) {

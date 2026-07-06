@@ -1080,6 +1080,7 @@ function InfoBlock({ label, value, highlight }) {
 function StatusBadge({ status }) {
   const good = status === "Excellent" || status === "Approved" || status === "Active";
   const bad = status === "Suspended" || status === "Rejected";
+  
 
   return (
     <View style={good ? styles.statusGreen : bad ? styles.statusRed : styles.statusGold}>

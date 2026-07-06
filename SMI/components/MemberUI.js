@@ -1,4 +1,4 @@
-//components/MemberUI.js
+// components/MemberUI.js
 
 import React from "react";
 import {
@@ -13,7 +13,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 export const theme = {
   bg: "#f4f0e8",
@@ -69,12 +69,39 @@ const tabs = [
   },
 ];
 
+function initialsFromName(name) {
+  if (!name) {
+    return "MB";
+  }
+
+  const words = String(name).trim().split(" ");
+
+  if (words.length === 1) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
+}
+
 export function MemberScreen({ active, title, subtitle, children }) {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
 
   const isDesktopWeb = Platform.OS === "web" && width >= 768;
   const phoneHeight = Math.min(height - 32, 900);
+
+  const memberParams = {
+    id: params.id,
+    member_id: params.member_id,
+    username: params.username,
+    full_name: params.full_name,
+    status: params.status,
+  };
+
+  const displayName = params.full_name || "Member";
+  const displayId = params.member_id || params.username || "Member ID";
+  const avatarText = initialsFromName(displayName);
 
   const content = (
     <View style={styles.app}>
@@ -101,12 +128,12 @@ export function MemberScreen({ active, title, subtitle, children }) {
 
         <View style={styles.memberCard}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>MS</Text>
+            <Text style={styles.avatarText}>{avatarText}</Text>
           </View>
 
           <View style={styles.memberInfo}>
-            <Text style={styles.memberName}>Maria Santos</Text>
-            <Text style={styles.memberId}>MBR-00472</Text>
+            <Text style={styles.memberName}>{displayName}</Text>
+            <Text style={styles.memberId}>{displayId}</Text>
           </View>
 
           <View style={styles.memberBadge}>
@@ -138,7 +165,12 @@ export function MemberScreen({ active, title, subtitle, children }) {
             <TouchableOpacity
               key={item.label}
               style={styles.tabItem}
-              onPress={() => router.push(item.route)}
+              onPress={() =>
+                router.push({
+                  pathname: item.route,
+                  params: memberParams,
+                })
+              }
             >
               {item.library === "MaterialCommunityIcons" ? (
                 <MaterialCommunityIcons
