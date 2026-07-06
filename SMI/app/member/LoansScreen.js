@@ -1,76 +1,263 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+// app/member/LoansScreen.js
+
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import {
   MemberScreen,
   SectionCard,
   StatusBadge,
   theme,
 } from "../../components/MemberUI";
+import { apiRequest } from "../../config/api";
+
+function formatCurrency(value) {
+  const numberValue = Number(value || 0);
+
+  return `₱${numberValue.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function getTotalLoan(member) {
+  return (
+    Number(member.regular_loan || 0) +
+    Number(member.regular_loan_diminishing || 0) +
+    Number(member.educational_loan || 0) +
+    Number(member.educational_loan_diminishing || 0) +
+    Number(member.short_term_loan || 0) +
+    Number(member.short_term_loan_diminishing || 0) +
+    Number(member.appliance_loan || 0) +
+    Number(member.appliance_loan_diminishing || 0) +
+    Number(member.medical_loan || 0) +
+    Number(member.medical_loan_diminishing || 0) +
+    Number(member.petty_cash_loan || 0) +
+    Number(member.vehicle_loan || 0) +
+    Number(member.inter_trading_loan || 0)
+  );
+}
+
+function getLoanList(member) {
+  return [
+    {
+      title: "Regular Loan",
+      code: "REGULAR",
+      balance: member.regular_loan,
+    },
+    {
+      title: "Regular Loan - Diminishing",
+      code: "REGULAR-DIM",
+      balance: member.regular_loan_diminishing,
+    },
+    {
+      title: "Educational Loan",
+      code: "EDUC",
+      balance: member.educational_loan,
+    },
+    {
+      title: "Educational Loan - Diminishing",
+      code: "EDUC-DIM",
+      balance: member.educational_loan_diminishing,
+    },
+    {
+      title: "Short-term Loan",
+      code: "SHORT",
+      balance: member.short_term_loan,
+    },
+    {
+      title: "Short-term Loan - Diminishing",
+      code: "SHORT-DIM",
+      balance: member.short_term_loan_diminishing,
+    },
+    {
+      title: "Appliance Loan",
+      code: "APP",
+      balance: member.appliance_loan,
+    },
+    {
+      title: "Appliance Loan - Diminishing",
+      code: "APP-DIM",
+      balance: member.appliance_loan_diminishing,
+    },
+    {
+      title: "Medical Loan",
+      code: "MED",
+      balance: member.medical_loan,
+    },
+    {
+      title: "Medical Loan - Diminishing",
+      code: "MED-DIM",
+      balance: member.medical_loan_diminishing,
+    },
+    {
+      title: "Petty Cash Loan",
+      code: "PETTY",
+      balance: member.petty_cash_loan,
+    },
+    {
+      title: "Vehicle Loan",
+      code: "VEHICLE",
+      balance: member.vehicle_loan,
+    },
+    {
+      title: "Inter-Trading Loan",
+      code: "INTER",
+      balance: member.inter_trading_loan,
+    },
+  ];
+}
 
 export default function LoansScreen() {
+  const params = useLocalSearchParams();
+
+  const identifier =
+    params.member_id || params.username || params.id || params.userId || "msantos";
+
+  const [member, setMember] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    loadMemberLoans();
+  }, [identifier]);
+
+  async function loadMemberLoans() {
+    try {
+      setLoading(true);
+      setErrorMessage("");
+
+      const data = await apiRequest(`/members/${identifier}/financials`, "GET");
+
+      setMember(data.member);
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to load loan records.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <MemberScreen
+        active="Loans"
+        title="My Loans"
+        subtitle="Loading member loan records"
+      >
+        <SectionCard title="Loading">
+          <View style={styles.centerBox}>
+            <ActivityIndicator color={theme.green} />
+            <Text style={styles.loadingText}>Loading loans...</Text>
+          </View>
+        </SectionCard>
+      </MemberScreen>
+    );
+  }
+
+  if (errorMessage || !member) {
+    return (
+      <MemberScreen
+        active="Loans"
+        title="My Loans"
+        subtitle="Unable to load member loan records"
+      >
+        <SectionCard title="Unable to Load Loans">
+          <Text style={styles.errorText}>{errorMessage}</Text>
+
+          <TouchableOpacity style={styles.retryButton} onPress={loadMemberLoans}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </SectionCard>
+      </MemberScreen>
+    );
+  }
+
+  const totalLoan = getTotalLoan(member);
+  const allLoans = getLoanList(member);
+  const activeLoans = allLoans.filter((loan) => Number(loan.balance || 0) > 0);
+
   return (
     <MemberScreen
       active="Loans"
       title="My Loans"
-      subtitle="Member ID: MBR-00472"
+      subtitle={`Member ID: ${member.member_id}`}
     >
       <View style={styles.summaryBar}>
         <View>
           <Text style={styles.summaryLabel}>TOTAL AVAILED</Text>
-          <Text style={styles.summaryAmount}>₱395,000.00</Text>
+          <Text style={styles.summaryAmount}>{formatCurrency(totalLoan)}</Text>
         </View>
 
         <View>
           <Text style={styles.summaryLabel}>OUTSTANDING</Text>
-          <Text style={styles.summaryAmount}>₱55,600.00</Text>
+          <Text style={styles.summaryAmount}>{formatCurrency(totalLoan)}</Text>
         </View>
 
         <View style={{ alignItems: "flex-end" }}>
           <Text style={styles.summaryLabel}>ACTIVE</Text>
-          <Text style={styles.summaryAmount}>2</Text>
+          <Text style={styles.summaryAmount}>{activeLoans.length}</Text>
         </View>
       </View>
 
-      <LoanCard
-        title="Multi-Purpose Loan"
-        code="LN-2024-0089"
-        status="Current"
-        principal="₱80,000.00"
-        balance="₱52,400.00"
-        monthly="₱4,200.00"
-        percent="65%"
-        dueDate="Jul 15, 2026"
-        progressWidth="65%"
-      />
+      {activeLoans.length > 0 ? (
+        activeLoans.map((loan, index) => (
+          <LoanCard
+            key={loan.code}
+            title={loan.title}
+            code={`${member.member_id}-${loan.code}`}
+            status="Current"
+            principal={formatCurrency(loan.balance)}
+            balance={formatCurrency(loan.balance)}
+            monthly="Not set"
+            percent="0%"
+            dueDate="Not set"
+            progressWidth="0%"
+          />
+        ))
+      ) : (
+        <SectionCard>
+          <View style={styles.loanHeader}>
+            <View>
+              <Text style={styles.loanTitle}>No Active Loans</Text>
+              <Text style={styles.loanCode}>{member.member_id}</Text>
+            </View>
 
-      <LoanCard
-        title="Emergency Loan"
-        code="LN-2023-0041"
-        status="Current"
-        principal="₱15,000.00"
-        balance="₱3,200.00"
-        monthly="₱1,600.00"
-        percent="79%"
-        dueDate="Dec 15, 2024"
-        progressWidth="79%"
-      />
+            <StatusBadge type="settled" text="Clear" />
+          </View>
+
+          <View style={styles.settledRow}>
+            <Ionicons name="checkmark-circle-outline" size={17} color={theme.success} />
+            <Text style={styles.settledText}>
+              This member currently has no outstanding loan balance.
+            </Text>
+          </View>
+        </SectionCard>
+      )}
 
       <SectionCard>
         <View style={styles.loanHeader}>
           <View>
-            <Text style={styles.loanTitle}>Housing Loan</Text>
-            <Text style={styles.loanCode}>LN-2022-0017</Text>
+            <Text style={styles.loanTitle}>All Loan Types</Text>
+            <Text style={styles.loanCode}>Database balances</Text>
           </View>
 
-          <StatusBadge type="settled" text="Settled" />
+          <StatusBadge type="settled" text="Updated" />
         </View>
 
-        <View style={styles.settledRow}>
-          <Ionicons name="checkmark-circle-outline" size={17} color={theme.success} />
-          <Text style={styles.settledText}>
-            Fully settled — ₱300,000.00 over term
-          </Text>
+        <View style={styles.allLoanList}>
+          {allLoans.map((loan) => (
+            <View key={`all-${loan.code}`} style={styles.allLoanRow}>
+              <Text style={styles.allLoanName}>{loan.title}</Text>
+              <Text style={styles.allLoanAmount}>{formatCurrency(loan.balance)}</Text>
+            </View>
+          ))}
         </View>
       </SectionCard>
     </MemberScreen>
@@ -248,5 +435,63 @@ const styles = StyleSheet.create({
     color: theme.muted,
     fontSize: 13,
     marginLeft: 8,
+  },
+
+  centerBox: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 18,
+  },
+
+  loadingText: {
+    color: theme.muted,
+    fontSize: 13,
+    marginTop: 10,
+    fontWeight: "700",
+  },
+
+  errorText: {
+    color: "#b91c1c",
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 14,
+  },
+
+  retryButton: {
+    backgroundColor: theme.green,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+
+  retryButtonText: {
+    color: "#ffffff",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  allLoanList: {
+    marginTop: 18,
+  },
+
+  allLoanRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 11,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e8e2d7",
+  },
+
+  allLoanName: {
+    color: theme.muted,
+    fontSize: 12,
+    fontWeight: "800",
+    flex: 1,
+  },
+
+  allLoanAmount: {
+    color: theme.text,
+    fontSize: 12,
+    fontWeight: "900",
   },
 });

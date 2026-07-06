@@ -1,6 +1,6 @@
 // app/admin/AdminUploadCSVScreen.js
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,17 +10,28 @@ import {
   TextInput,
   Platform,
   useWindowDimensions,
+  ActivityIndicator,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import SmiLogo from "../../components/SmiLogo";
+import { apiRequest } from "../../config/api";
 
 const GOLD = "#c89b2c";
 const DARK_GREEN = "#06472f";
 const MAIN_GREEN = "#009060";
 const LIGHT_GREEN = "#e6fff2";
 const PAGE_BG = "#f6fbf8";
+
+function currency(value) {
+  const numberValue = Number(value || 0);
+
+  return `₱${numberValue.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
 
 export default function AdminUploadCSVScreen() {
   const router = useRouter();
@@ -29,15 +40,17 @@ export default function AdminUploadCSVScreen() {
   const isDesktopWeb = Platform.OS === "web" && width >= 900;
 
   const [selectedFile, setSelectedFile] = useState(null);
-  const [mode, setMode] = useState("upload");
+  const [mode, setMode] = useState("manual");
+  const [members, setMembers] = useState([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
   const [formData, setFormData] = useState({
-    firstName: "",
-    middleInitial: "",
-    lastName: "",
+    memberIdentifier: "",
+
     shareCapital: "",
     savings: "",
     specialSavings: "",
+    dividendAmount: "",
 
     regularLoan: "",
     regularLoanDiminishing: "",
@@ -54,6 +67,14 @@ export default function AdminUploadCSVScreen() {
     interTradingLoan: "",
   });
 
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    loadMembers();
+  }, []);
+
   const totalLoanBalance =
     Number(formData.regularLoan || 0) +
     Number(formData.regularLoanDiminishing || 0) +
@@ -68,6 +89,19 @@ export default function AdminUploadCSVScreen() {
     Number(formData.pettyCashLoan || 0) +
     Number(formData.vehicleLoan || 0) +
     Number(formData.interTradingLoan || 0);
+
+  async function loadMembers() {
+    try {
+      setLoadingMembers(true);
+
+      const data = await apiRequest("/members", "GET");
+      setMembers(data.members || []);
+    } catch (error) {
+      setMembers([]);
+    } finally {
+      setLoadingMembers(false);
+    }
+  }
 
   function updateField(field, value) {
     setFormData((prev) => ({
@@ -93,12 +127,12 @@ export default function AdminUploadCSVScreen() {
 
   function clearManualForm() {
     setFormData({
-      firstName: "",
-      middleInitial: "",
-      lastName: "",
+      memberIdentifier: "",
+
       shareCapital: "",
       savings: "",
       specialSavings: "",
+      dividendAmount: "",
 
       regularLoan: "",
       regularLoanDiminishing: "",
@@ -114,6 +148,61 @@ export default function AdminUploadCSVScreen() {
       vehicleLoan: "",
       interTradingLoan: "",
     });
+
+    setMessage("");
+    setIsError(false);
+  }
+
+  async function saveManualRecord() {
+    try {
+      setMessage("");
+      setIsError(false);
+
+      if (!formData.memberIdentifier.trim()) {
+        setIsError(true);
+        setMessage("Please enter an existing Member ID or username.");
+        return;
+      }
+
+      setSaving(true);
+
+      const data = await apiRequest("/members/manual-financial-record", "POST", {
+        member_identifier: formData.memberIdentifier.trim(),
+
+        share_capital: formData.shareCapital,
+        savings: formData.savings,
+        special_savings: formData.specialSavings,
+        dividend_amount: formData.dividendAmount,
+
+        regular_loan: formData.regularLoan,
+        regular_loan_diminishing: formData.regularLoanDiminishing,
+
+        educational_loan: formData.educationalLoan,
+        educational_loan_diminishing: formData.educationalLoanDiminishing,
+
+        short_term_loan: formData.shortTermLoan,
+        short_term_loan_diminishing: formData.shortTermLoanDiminishing,
+
+        appliance_loan: formData.applianceLoan,
+        appliance_loan_diminishing: formData.applianceLoanDiminishing,
+
+        medical_loan: formData.medicalLoan,
+        medical_loan_diminishing: formData.medicalLoanDiminishing,
+
+        petty_cash_loan: formData.pettyCashLoan,
+        vehicle_loan: formData.vehicleLoan,
+        inter_trading_loan: formData.interTradingLoan,
+      });
+
+      setIsError(false);
+      setMessage(`${data.member.full_name}'s financial record was saved successfully.`);
+      await loadMembers();
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message || "Failed to save manual record.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -181,6 +270,12 @@ export default function AdminUploadCSVScreen() {
                 updateField={updateField}
                 clearManualForm={clearManualForm}
                 totalLoanBalance={totalLoanBalance}
+                saveManualRecord={saveManualRecord}
+                saving={saving}
+                message={message}
+                isError={isError}
+                members={members}
+                loadingMembers={loadingMembers}
                 isDesktopWeb={isDesktopWeb}
               />
             )}
@@ -229,12 +324,7 @@ function Sidebar({ router }) {
           }
         />
 
-        <SidebarItem
-          icon="upload-cloud"
-          label="Upload Records"
-          active
-          onPress={() => {}}
-        />
+        <SidebarItem icon="upload-cloud" label="Upload Records" active onPress={() => {}} />
 
         <SidebarItem
           icon="clipboard"
@@ -277,7 +367,6 @@ function SidebarItem({ icon, label, active, badge, onPress }) {
       onPress={onPress}
     >
       <Feather name={icon} size={19} color={active ? "#ffffff" : "#d8c07a"} />
-
       <Text style={active ? styles.sidebarItemTextActive : styles.sidebarItemText}>
         {label}
       </Text>
@@ -379,17 +468,16 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
         </Text>
 
         <View style={styles.infoList}>
-          <InfoLine text="First Name, Middle Initial, Last Name" />
+          <InfoLine text="Member ID or username" />
           <InfoLine text="Share Capital, Savings, Special Savings" />
           <InfoLine text="All loan type balances" />
-          <InfoLine text="Total Loan Balance" />
-          <InfoLine text="Member username or member ID" />
+          <InfoLine text="Dividend Amount" />
         </View>
 
         <View style={styles.noteBox}>
           <Feather name="info" size={18} color={GOLD} />
           <Text style={styles.noteText}>
-            Backend CSV processing can be connected after the upload parser is added.
+            CSV processing UI is ready. Backend parser can be connected next.
           </Text>
         </View>
       </View>
@@ -402,69 +490,102 @@ function ManualContent({
   updateField,
   clearManualForm,
   totalLoanBalance,
+  saveManualRecord,
+  saving,
+  message,
+  isError,
+  members,
+  loadingMembers,
   isDesktopWeb,
 }) {
   return (
     <View>
-      <View style={isDesktopWeb ? styles.manualGrid : null}>
-        <View style={styles.panelCard}>
-          <Text style={styles.sectionTitle}>Member Information</Text>
-          <Text style={styles.sectionSub}>Basic identity of the cooperative member</Text>
-
-          <View style={isDesktopWeb ? styles.formGridThree : null}>
-            <InputField
-              label="First Name"
-              value={formData.firstName}
-              onChangeText={(value) => updateField("firstName", value)}
-              placeholder="e.g. Maria"
-            />
-
-            <InputField
-              label="Middle Initial"
-              value={formData.middleInitial}
-              onChangeText={(value) => updateField("middleInitial", value)}
-              placeholder="e.g. C"
-              maxLength={2}
-            />
-
-            <InputField
-              label="Last Name"
-              value={formData.lastName}
-              onChangeText={(value) => updateField("lastName", value)}
-              placeholder="e.g. Santos"
-            />
-          </View>
+      {message ? (
+        <View style={isError ? styles.errorBox : styles.successBox}>
+          <Feather
+            name={isError ? "alert-circle" : "check-circle"}
+            size={17}
+            color={isError ? "#991b1b" : "#047857"}
+          />
+          <Text style={isError ? styles.errorText : styles.successText}>{message}</Text>
         </View>
+      ) : null}
 
-        <View style={styles.panelCard}>
-          <Text style={styles.sectionTitle}>Savings Information</Text>
-          <Text style={styles.sectionSub}>Savings, share capital, and special savings</Text>
+      <View style={styles.panelCard}>
+        <Text style={styles.sectionTitle}>Select Existing Member</Text>
+        <Text style={styles.sectionSub}>
+          Enter the member ID or username. The record will update that member.
+        </Text>
 
-          <View style={isDesktopWeb ? styles.formGridThree : null}>
-            <InputField
-              label="Share Capital"
-              value={formData.shareCapital}
-              onChangeText={(value) => updateField("shareCapital", value)}
-              placeholder="0.00"
-              keyboardType="numeric"
-            />
+        <InputField
+          label="Member ID or Username"
+          value={formData.memberIdentifier}
+          onChangeText={(value) => updateField("memberIdentifier", value)}
+          placeholder="e.g. SMI-001 or msantos"
+        />
 
-            <InputField
-              label="Savings"
-              value={formData.savings}
-              onChangeText={(value) => updateField("savings", value)}
-              placeholder="0.00"
-              keyboardType="numeric"
-            />
+        <View style={styles.memberHintBox}>
+          <Text style={styles.memberHintTitle}>Existing members</Text>
 
-            <InputField
-              label="Special Savings"
-              value={formData.specialSavings}
-              onChangeText={(value) => updateField("specialSavings", value)}
-              placeholder="0.00"
-              keyboardType="numeric"
-            />
-          </View>
+          {loadingMembers ? (
+            <Text style={styles.memberHintText}>Loading members...</Text>
+          ) : members.length === 0 ? (
+            <Text style={styles.memberHintText}>No members found.</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {members.map((member) => (
+                <TouchableOpacity
+                  key={member.id}
+                  style={styles.memberChip}
+                  onPress={() => updateField("memberIdentifier", member.member_id)}
+                >
+                  <Text style={styles.memberChipName}>{member.full_name}</Text>
+                  <Text style={styles.memberChipSub}>
+                    {member.member_id} · @{member.username}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.panelCard}>
+        <Text style={styles.sectionTitle}>Savings Information</Text>
+        <Text style={styles.sectionSub}>Savings, share capital, and dividend amount</Text>
+
+        <View style={isDesktopWeb ? styles.formGridFour : null}>
+          <InputField
+            label="Share Capital"
+            value={formData.shareCapital}
+            onChangeText={(value) => updateField("shareCapital", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Savings"
+            value={formData.savings}
+            onChangeText={(value) => updateField("savings", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Special Savings"
+            value={formData.specialSavings}
+            onChangeText={(value) => updateField("specialSavings", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
+
+          <InputField
+            label="Dividend Amount"
+            value={formData.dividendAmount}
+            onChangeText={(value) => updateField("dividendAmount", value)}
+            placeholder="0.00"
+            keyboardType="numeric"
+          />
         </View>
       </View>
 
@@ -582,15 +703,23 @@ function ManualContent({
       <View style={isDesktopWeb ? styles.actionGrid : null}>
         <View style={styles.totalCard}>
           <Text style={styles.totalLabel}>TOTAL LOAN BALANCE</Text>
-          <Text style={styles.totalAmount}>
-            ₱{totalLoanBalance.toLocaleString("en-PH")}.00
-          </Text>
+          <Text style={styles.totalAmount}>{currency(totalLoanBalance)}</Text>
         </View>
 
         <View style={styles.actionPanel}>
-          <TouchableOpacity style={styles.saveButton}>
-            <Feather name="save" size={18} color="#ffffff" />
-            <Text style={styles.saveButtonText}>Save Manual Record</Text>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={saveManualRecord}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <>
+                <Feather name="save" size={18} color="#ffffff" />
+                <Text style={styles.saveButtonText}>Save Manual Record</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.clearButton} onPress={clearManualForm}>
@@ -990,6 +1119,15 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
 
+  panelCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "#efe2bd",
+    marginBottom: 18,
+  },
+
   uploadGrid: {
     flexDirection: "row",
     gap: 20,
@@ -1001,15 +1139,6 @@ const styles = StyleSheet.create({
 
   uploadSidePanel: {
     width: 390,
-  },
-
-  panelCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 18,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: "#efe2bd",
-    marginBottom: 18,
   },
 
   uploadDropZone: {
@@ -1169,16 +1298,6 @@ const styles = StyleSheet.create({
     marginLeft: 9,
   },
 
-  manualGrid: {
-    flexDirection: "row",
-    gap: 20,
-  },
-
-  formGridThree: {
-    flexDirection: "row",
-    gap: 14,
-  },
-
   formGridFour: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1187,7 +1306,7 @@ const styles = StyleSheet.create({
 
   inputGroup: {
     flex: 1,
-    minWidth: Platform.OS === "web" ? 210 : "100%",
+    minWidth: Platform.OS === "web" ? 230 : "100%",
     marginBottom: 14,
   },
 
@@ -1207,6 +1326,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     color: "#052e1d",
     fontSize: 14,
+  },
+
+  memberHintBox: {
+    backgroundColor: "#f7fffb",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#c7f3dd",
+    padding: 14,
+  },
+
+  memberHintTitle: {
+    color: "#052e1d",
+    fontSize: 13,
+    fontWeight: "900",
+    marginBottom: 10,
+  },
+
+  memberHintText: {
+    color: "#64748b",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+
+  memberChip: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginRight: 10,
+  },
+
+  memberChipName: {
+    color: "#052e1d",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  memberChipSub: {
+    color: "#64748b",
+    fontSize: 11,
+    marginTop: 3,
   },
 
   actionGrid: {
@@ -1276,6 +1438,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "900",
     marginLeft: 8,
+  },
+
+  errorBox: {
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 14,
+  },
+
+  errorText: {
+    flex: 1,
+    color: "#991b1b",
+    fontSize: 13,
+    fontWeight: "800",
+    marginLeft: 9,
+  },
+
+  successBox: {
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: "#dcfce7",
+    borderWidth: 1,
+    borderColor: "#bbf7d0",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    marginBottom: 14,
+  },
+
+  successText: {
+    flex: 1,
+    color: "#047857",
+    fontSize: 13,
+    fontWeight: "800",
+    marginLeft: 9,
   },
 
   bottomNav: {
