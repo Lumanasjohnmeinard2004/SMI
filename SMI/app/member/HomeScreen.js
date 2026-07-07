@@ -153,6 +153,7 @@ export default function HomeScreen() {
       active="Home"
       title={`Welcome back, ${member.full_name}!`}
       subtitle="Here is your cooperative account summary."
+      member={member}
     >
       <PrimaryCard
         label="TOTAL SAVINGS"

@@ -82,6 +82,7 @@ export default function DividendsScreen() {
       active="Dividend"
       title="Dividends"
       subtitle="Interest on Share Capital"
+      member={member}
     >
       <Notice
         title="Dividend record loaded"

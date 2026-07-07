@@ -93,6 +93,7 @@ export default function SavingsScreen() {
       active="Savings"
       title="Share Capital"
       subtitle="Compulsory and voluntary savings."
+      member={member}
     >
       <PrimaryCard label="CURRENT BALANCE" amount={formatCurrency(currentBalance)}>
         <View style={styles.balanceRow}>
