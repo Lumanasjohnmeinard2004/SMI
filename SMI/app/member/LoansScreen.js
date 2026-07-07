@@ -27,6 +27,24 @@ function formatCurrency(value) {
   })}`;
 }
 
+function formatDueDate(value) {
+  if (!value) {
+    return "Not set";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Not set";
+  }
+
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+  });
+}
+
 function getTotalLoan(member) {
   return (
     Number(member.regular_loan || 0) +
@@ -51,66 +69,79 @@ function getLoanList(member) {
       title: "Regular Loan",
       code: "REGULAR",
       balance: member.regular_loan,
+      dueDate: member.regular_loan_due_date,
     },
     {
       title: "Regular Loan - Diminishing",
       code: "REGULAR-DIM",
       balance: member.regular_loan_diminishing,
+      dueDate: member.regular_loan_diminishing_due_date,
     },
     {
       title: "Educational Loan",
       code: "EDUC",
       balance: member.educational_loan,
+      dueDate: member.educational_loan_due_date,
     },
     {
       title: "Educational Loan - Diminishing",
       code: "EDUC-DIM",
       balance: member.educational_loan_diminishing,
+      dueDate: member.educational_loan_diminishing_due_date,
     },
     {
       title: "Short-term Loan",
       code: "SHORT",
       balance: member.short_term_loan,
+      dueDate: member.short_term_loan_due_date,
     },
     {
       title: "Short-term Loan - Diminishing",
       code: "SHORT-DIM",
       balance: member.short_term_loan_diminishing,
+      dueDate: member.short_term_loan_diminishing_due_date,
     },
     {
       title: "Appliance Loan",
       code: "APP",
       balance: member.appliance_loan,
+      dueDate: member.appliance_loan_due_date,
     },
     {
       title: "Appliance Loan - Diminishing",
       code: "APP-DIM",
       balance: member.appliance_loan_diminishing,
+      dueDate: member.appliance_loan_diminishing_due_date,
     },
     {
       title: "Medical Loan",
       code: "MED",
       balance: member.medical_loan,
+      dueDate: member.medical_loan_due_date,
     },
     {
       title: "Medical Loan - Diminishing",
       code: "MED-DIM",
       balance: member.medical_loan_diminishing,
+      dueDate: member.medical_loan_diminishing_due_date,
     },
     {
       title: "Petty Cash Loan",
       code: "PETTY",
       balance: member.petty_cash_loan,
+      dueDate: member.petty_cash_loan_due_date,
     },
     {
       title: "Vehicle Loan",
       code: "VEHICLE",
       balance: member.vehicle_loan,
+      dueDate: member.vehicle_loan_due_date,
     },
     {
       title: "Inter-Trading Loan",
       code: "INTER",
       balance: member.inter_trading_loan,
+      dueDate: member.inter_trading_loan_due_date,
     },
   ];
 }
@@ -217,7 +248,7 @@ export default function LoansScreen() {
             balance={formatCurrency(loan.balance)}
             monthly="Not set"
             percent="0%"
-            dueDate="Not set"
+            dueDate={formatDueDate(loan.dueDate)}
             progressWidth="0%"
           />
         ))
@@ -245,7 +276,13 @@ export default function LoansScreen() {
         <View style={styles.allLoanList}>
           {allLoans.map((loan) => (
             <View key={`all-${loan.code}`} style={styles.allLoanRow}>
-              <Text style={styles.allLoanName}>{loan.title}</Text>
+              <View style={styles.allLoanLeft}>
+                <Text style={styles.allLoanName}>{loan.title}</Text>
+                <Text style={styles.allLoanDue}>
+                  Due Date: {formatDueDate(loan.dueDate)}
+                </Text>
+              </View>
+
               <Text style={styles.allLoanAmount}>{formatCurrency(loan.balance)}</Text>
             </View>
           ))}
@@ -445,11 +482,21 @@ const styles = StyleSheet.create({
     borderTopColor: "#eadfca",
   },
 
+  allLoanLeft: {
+    flex: 1,
+    paddingRight: 10,
+  },
+
   allLoanName: {
     color: theme.text,
     fontSize: 13,
     fontWeight: "700",
-    flex: 1,
+  },
+
+  allLoanDue: {
+    color: theme.muted,
+    fontSize: 11,
+    marginTop: 4,
   },
 
   allLoanAmount: {
@@ -490,4 +537,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
   },
-});
+});n

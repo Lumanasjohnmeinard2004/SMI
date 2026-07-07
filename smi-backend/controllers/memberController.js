@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const pool = require("../db");
 
 function toNumber(value) {
-  const parsed = Number(value);
+  const parsed = Number(value || 0);
 
   if (Number.isNaN(parsed)) {
     return 0;
@@ -12,6 +12,56 @@ function toNumber(value) {
 
   return parsed;
 }
+
+function cleanDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = String(value).trim();
+
+  if (!cleaned) {
+    return null;
+  }
+
+  return cleaned;
+}
+
+const financialSelectFields = `
+  COALESCE(f.share_capital, 0) AS share_capital,
+  COALESCE(f.savings, 0) AS savings,
+  COALESCE(f.special_savings, 0) AS special_savings,
+
+  COALESCE(f.regular_loan, 0) AS regular_loan,
+  COALESCE(f.regular_loan_diminishing, 0) AS regular_loan_diminishing,
+  COALESCE(f.educational_loan, 0) AS educational_loan,
+  COALESCE(f.educational_loan_diminishing, 0) AS educational_loan_diminishing,
+  COALESCE(f.short_term_loan, 0) AS short_term_loan,
+  COALESCE(f.short_term_loan_diminishing, 0) AS short_term_loan_diminishing,
+  COALESCE(f.appliance_loan, 0) AS appliance_loan,
+  COALESCE(f.appliance_loan_diminishing, 0) AS appliance_loan_diminishing,
+  COALESCE(f.medical_loan, 0) AS medical_loan,
+  COALESCE(f.medical_loan_diminishing, 0) AS medical_loan_diminishing,
+  COALESCE(f.petty_cash_loan, 0) AS petty_cash_loan,
+  COALESCE(f.vehicle_loan, 0) AS vehicle_loan,
+  COALESCE(f.inter_trading_loan, 0) AS inter_trading_loan,
+
+  COALESCE(f.dividend_amount, 0) AS dividend_amount,
+
+  f.regular_loan_due_date,
+  f.regular_loan_diminishing_due_date,
+  f.educational_loan_due_date,
+  f.educational_loan_diminishing_due_date,
+  f.short_term_loan_due_date,
+  f.short_term_loan_diminishing_due_date,
+  f.appliance_loan_due_date,
+  f.appliance_loan_diminishing_due_date,
+  f.medical_loan_due_date,
+  f.medical_loan_diminishing_due_date,
+  f.petty_cash_loan_due_date,
+  f.vehicle_loan_due_date,
+  f.inter_trading_loan_due_date
+`;
 
 const getMembers = async (req, res) => {
   try {
@@ -24,31 +74,7 @@ const getMembers = async (req, res) => {
         m.username,
         m.status,
         m.created_at,
-
-        COALESCE(f.savings, 0) AS savings,
-        COALESCE(f.share_capital, 0) AS share_capital,
-        COALESCE(f.special_savings, 0) AS special_savings,
-
-        COALESCE(f.regular_loan, 0) AS regular_loan,
-        COALESCE(f.regular_loan_diminishing, 0) AS regular_loan_diminishing,
-
-        COALESCE(f.educational_loan, 0) AS educational_loan,
-        COALESCE(f.educational_loan_diminishing, 0) AS educational_loan_diminishing,
-
-        COALESCE(f.short_term_loan, 0) AS short_term_loan,
-        COALESCE(f.short_term_loan_diminishing, 0) AS short_term_loan_diminishing,
-
-        COALESCE(f.appliance_loan, 0) AS appliance_loan,
-        COALESCE(f.appliance_loan_diminishing, 0) AS appliance_loan_diminishing,
-
-        COALESCE(f.medical_loan, 0) AS medical_loan,
-        COALESCE(f.medical_loan_diminishing, 0) AS medical_loan_diminishing,
-
-        COALESCE(f.petty_cash_loan, 0) AS petty_cash_loan,
-        COALESCE(f.vehicle_loan, 0) AS vehicle_loan,
-        COALESCE(f.inter_trading_loan, 0) AS inter_trading_loan,
-
-        COALESCE(f.dividend_amount, 0) AS dividend_amount
+        ${financialSelectFields}
       FROM members m
       LEFT JOIN member_financials f
       ON f.member_id = m.id
@@ -57,20 +83,17 @@ const getMembers = async (req, res) => {
     );
 
     res.json({
-      message: "Members loaded successfully",
       members: result.rows,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Failed to load members",
+      message: "Failed to fetch members",
       error: error.message,
     });
   }
 };
 
 const addMember = async (req, res) => {
-  const client = await pool.connect();
-
   try {
     const { member_id, full_name, username, password } = req.body;
 
@@ -80,37 +103,23 @@ const addMember = async (req, res) => {
       });
     }
 
-    await client.query("BEGIN");
-
-    const existingMember = await client.query(
-      `
-      SELECT id
-      FROM members
-      WHERE member_id = $1 OR username = $2
-      `,
-      [member_id, username]
+    const existingMember = await pool.query(
+      "SELECT * FROM members WHERE username = $1 OR member_id = $2",
+      [username, member_id]
     );
 
     if (existingMember.rows.length > 0) {
-      await client.query("ROLLBACK");
-
       return res.status(409).json({
-        message: "Member ID or username already exists",
+        message: "Member username or member ID already exists",
       });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const memberResult = await client.query(
+    const memberResult = await pool.query(
       `
-      INSERT INTO members (
-        member_id,
-        full_name,
-        username,
-        password_hash,
-        status
-      )
-      VALUES ($1, $2, $3, $4, 'Active')
+      INSERT INTO members (member_id, full_name, username, password_hash)
+      VALUES ($1, $2, $3, $4)
       RETURNING id, member_id, full_name, username, status, created_at
       `,
       [member_id, full_name, username, passwordHash]
@@ -118,83 +127,47 @@ const addMember = async (req, res) => {
 
     const member = memberResult.rows[0];
 
-    await client.query(
+    await pool.query(
       `
-      INSERT INTO member_financials (
-        member_id,
-        savings,
-        share_capital,
-        special_savings,
-        regular_loan,
-        regular_loan_diminishing,
-        educational_loan,
-        educational_loan_diminishing,
-        short_term_loan,
-        short_term_loan_diminishing,
-        appliance_loan,
-        appliance_loan_diminishing,
-        medical_loan,
-        medical_loan_diminishing,
-        petty_cash_loan,
-        vehicle_loan,
-        inter_trading_loan,
-        dividend_amount
-      )
-      VALUES (
-        $1,
-        0, 0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0,
-        0, 0, 0,
-        0
-      )
+      INSERT INTO member_financials (member_id)
+      VALUES ($1)
+      ON CONFLICT (member_id) DO NOTHING
       `,
       [member.id]
     );
 
-    await client.query("COMMIT");
+    const fullMemberResult = await pool.query(
+      `
+      SELECT
+        m.id,
+        m.member_id,
+        m.full_name,
+        m.username,
+        m.status,
+        m.created_at,
+        ${financialSelectFields}
+      FROM members m
+      LEFT JOIN member_financials f
+      ON f.member_id = m.id
+      WHERE m.id = $1
+      LIMIT 1
+      `,
+      [member.id]
+    );
 
     res.status(201).json({
       message: "Member added successfully",
-      member: {
-        ...member,
-        savings: 0,
-        share_capital: 0,
-        special_savings: 0,
-        regular_loan: 0,
-        regular_loan_diminishing: 0,
-        educational_loan: 0,
-        educational_loan_diminishing: 0,
-        short_term_loan: 0,
-        short_term_loan_diminishing: 0,
-        appliance_loan: 0,
-        appliance_loan_diminishing: 0,
-        medical_loan: 0,
-        medical_loan_diminishing: 0,
-        petty_cash_loan: 0,
-        vehicle_loan: 0,
-        inter_trading_loan: 0,
-        dividend_amount: 0,
-      },
+      member: fullMemberResult.rows[0],
     });
   } catch (error) {
-    await client.query("ROLLBACK");
-
     res.status(500).json({
       message: "Failed to add member",
       error: error.message,
     });
-  } finally {
-    client.release();
   }
 };
 
 const saveManualFinancialRecord = async (req, res) => {
-  const client = await pool.connect();
-
   try {
     const {
       member_identifier,
@@ -202,6 +175,7 @@ const saveManualFinancialRecord = async (req, res) => {
       share_capital,
       savings,
       special_savings,
+      dividend_amount,
 
       regular_loan,
       regular_loan_diminishing,
@@ -216,130 +190,162 @@ const saveManualFinancialRecord = async (req, res) => {
       petty_cash_loan,
       vehicle_loan,
       inter_trading_loan,
-      dividend_amount,
+
+      regular_loan_due_date,
+      regular_loan_diminishing_due_date,
+      educational_loan_due_date,
+      educational_loan_diminishing_due_date,
+      short_term_loan_due_date,
+      short_term_loan_diminishing_due_date,
+      appliance_loan_due_date,
+      appliance_loan_diminishing_due_date,
+      medical_loan_due_date,
+      medical_loan_diminishing_due_date,
+      petty_cash_loan_due_date,
+      vehicle_loan_due_date,
+      inter_trading_loan_due_date,
     } = req.body;
 
     if (!member_identifier) {
       return res.status(400).json({
-        message: "Member ID or username is required",
+        message: "Member username or member ID is required",
       });
     }
 
-    await client.query("BEGIN");
-
-    const memberResult = await client.query(
+    const memberResult = await pool.query(
       `
       SELECT id, member_id, full_name, username, status
       FROM members
-      WHERE member_id = $1 OR username = $1
+      WHERE id::TEXT = $1 OR member_id = $1 OR username = $1
       LIMIT 1
       `,
-      [member_identifier.trim()]
+      [String(member_identifier).trim()]
     );
 
     if (memberResult.rows.length === 0) {
-      await client.query("ROLLBACK");
-
       return res.status(404).json({
-        message: "Member not found. Use an existing Member ID or username.",
+        message: "Member not found",
       });
     }
 
     const member = memberResult.rows[0];
 
-    await client.query(
+    await pool.query(
       `
-      INSERT INTO member_financials (
-        member_id,
-        share_capital,
-        savings,
-        special_savings,
-        regular_loan,
-        regular_loan_diminishing,
-        educational_loan,
-        educational_loan_diminishing,
-        short_term_loan,
-        short_term_loan_diminishing,
-        appliance_loan,
-        appliance_loan_diminishing,
-        medical_loan,
-        medical_loan_diminishing,
-        petty_cash_loan,
-        vehicle_loan,
-        inter_trading_loan,
-        dividend_amount,
-        updated_at
-      )
-      VALUES (
-        $1,
-        $2, $3, $4,
-        $5, $6,
-        $7, $8,
-        $9, $10,
-        $11, $12,
-        $13, $14,
-        $15, $16, $17,
-        $18,
-        CURRENT_TIMESTAMP
-      )
-      ON CONFLICT (member_id)
-      DO UPDATE SET
-        share_capital = EXCLUDED.share_capital,
-        savings = EXCLUDED.savings,
-        special_savings = EXCLUDED.special_savings,
-
-        regular_loan = EXCLUDED.regular_loan,
-        regular_loan_diminishing = EXCLUDED.regular_loan_diminishing,
-
-        educational_loan = EXCLUDED.educational_loan,
-        educational_loan_diminishing = EXCLUDED.educational_loan_diminishing,
-
-        short_term_loan = EXCLUDED.short_term_loan,
-        short_term_loan_diminishing = EXCLUDED.short_term_loan_diminishing,
-
-        appliance_loan = EXCLUDED.appliance_loan,
-        appliance_loan_diminishing = EXCLUDED.appliance_loan_diminishing,
-
-        medical_loan = EXCLUDED.medical_loan,
-        medical_loan_diminishing = EXCLUDED.medical_loan_diminishing,
-
-        petty_cash_loan = EXCLUDED.petty_cash_loan,
-        vehicle_loan = EXCLUDED.vehicle_loan,
-        inter_trading_loan = EXCLUDED.inter_trading_loan,
-
-        dividend_amount = EXCLUDED.dividend_amount,
-        updated_at = CURRENT_TIMESTAMP
+      INSERT INTO member_financials (member_id)
+      VALUES ($1)
+      ON CONFLICT (member_id) DO NOTHING
       `,
-      [
-        member.id,
-        toNumber(share_capital),
-        toNumber(savings),
-        toNumber(special_savings),
-
-        toNumber(regular_loan),
-        toNumber(regular_loan_diminishing),
-
-        toNumber(educational_loan),
-        toNumber(educational_loan_diminishing),
-
-        toNumber(short_term_loan),
-        toNumber(short_term_loan_diminishing),
-
-        toNumber(appliance_loan),
-        toNumber(appliance_loan_diminishing),
-
-        toNumber(medical_loan),
-        toNumber(medical_loan_diminishing),
-
-        toNumber(petty_cash_loan),
-        toNumber(vehicle_loan),
-        toNumber(inter_trading_loan),
-
-        toNumber(dividend_amount),
-      ]
+      [member.id]
     );
 
-    const updatedResult = await client.query(
+    const values = [
+      member.id,
+
+      toNumber(share_capital),
+      toNumber(savings),
+      toNumber(special_savings),
+      toNumber(dividend_amount),
+
+      toNumber(regular_loan),
+      toNumber(regular_loan_diminishing),
+      toNumber(educational_loan),
+      toNumber(educational_loan_diminishing),
+      toNumber(short_term_loan),
+      toNumber(short_term_loan_diminishing),
+      toNumber(appliance_loan),
+      toNumber(appliance_loan_diminishing),
+      toNumber(medical_loan),
+      toNumber(medical_loan_diminishing),
+      toNumber(petty_cash_loan),
+      toNumber(vehicle_loan),
+      toNumber(inter_trading_loan),
+
+      cleanDate(regular_loan_due_date),
+      cleanDate(regular_loan_diminishing_due_date),
+      cleanDate(educational_loan_due_date),
+      cleanDate(educational_loan_diminishing_due_date),
+      cleanDate(short_term_loan_due_date),
+      cleanDate(short_term_loan_diminishing_due_date),
+      cleanDate(appliance_loan_due_date),
+      cleanDate(appliance_loan_diminishing_due_date),
+      cleanDate(medical_loan_due_date),
+      cleanDate(medical_loan_diminishing_due_date),
+      cleanDate(petty_cash_loan_due_date),
+      cleanDate(vehicle_loan_due_date),
+      cleanDate(inter_trading_loan_due_date),
+    ];
+
+    const financialResult = await pool.query(
+      `
+      UPDATE member_financials
+      SET
+        share_capital = COALESCE(share_capital, 0) + $2,
+        savings = COALESCE(savings, 0) + $3,
+        special_savings = COALESCE(special_savings, 0) + $4,
+        dividend_amount = COALESCE(dividend_amount, 0) + $5,
+
+        regular_loan = COALESCE(regular_loan, 0) + $6,
+        regular_loan_diminishing = COALESCE(regular_loan_diminishing, 0) + $7,
+        educational_loan = COALESCE(educational_loan, 0) + $8,
+        educational_loan_diminishing = COALESCE(educational_loan_diminishing, 0) + $9,
+        short_term_loan = COALESCE(short_term_loan, 0) + $10,
+        short_term_loan_diminishing = COALESCE(short_term_loan_diminishing, 0) + $11,
+        appliance_loan = COALESCE(appliance_loan, 0) + $12,
+        appliance_loan_diminishing = COALESCE(appliance_loan_diminishing, 0) + $13,
+        medical_loan = COALESCE(medical_loan, 0) + $14,
+        medical_loan_diminishing = COALESCE(medical_loan_diminishing, 0) + $15,
+        petty_cash_loan = COALESCE(petty_cash_loan, 0) + $16,
+        vehicle_loan = COALESCE(vehicle_loan, 0) + $17,
+        inter_trading_loan = COALESCE(inter_trading_loan, 0) + $18,
+
+        regular_loan_due_date =
+          CASE WHEN $19::date IS NULL THEN regular_loan_due_date ELSE $19::date END,
+
+        regular_loan_diminishing_due_date =
+          CASE WHEN $20::date IS NULL THEN regular_loan_diminishing_due_date ELSE $20::date END,
+
+        educational_loan_due_date =
+          CASE WHEN $21::date IS NULL THEN educational_loan_due_date ELSE $21::date END,
+
+        educational_loan_diminishing_due_date =
+          CASE WHEN $22::date IS NULL THEN educational_loan_diminishing_due_date ELSE $22::date END,
+
+        short_term_loan_due_date =
+          CASE WHEN $23::date IS NULL THEN short_term_loan_due_date ELSE $23::date END,
+
+        short_term_loan_diminishing_due_date =
+          CASE WHEN $24::date IS NULL THEN short_term_loan_diminishing_due_date ELSE $24::date END,
+
+        appliance_loan_due_date =
+          CASE WHEN $25::date IS NULL THEN appliance_loan_due_date ELSE $25::date END,
+
+        appliance_loan_diminishing_due_date =
+          CASE WHEN $26::date IS NULL THEN appliance_loan_diminishing_due_date ELSE $26::date END,
+
+        medical_loan_due_date =
+          CASE WHEN $27::date IS NULL THEN medical_loan_due_date ELSE $27::date END,
+
+        medical_loan_diminishing_due_date =
+          CASE WHEN $28::date IS NULL THEN medical_loan_diminishing_due_date ELSE $28::date END,
+
+        petty_cash_loan_due_date =
+          CASE WHEN $29::date IS NULL THEN petty_cash_loan_due_date ELSE $29::date END,
+
+        vehicle_loan_due_date =
+          CASE WHEN $30::date IS NULL THEN vehicle_loan_due_date ELSE $30::date END,
+
+        inter_trading_loan_due_date =
+          CASE WHEN $31::date IS NULL THEN inter_trading_loan_due_date ELSE $31::date END,
+
+        updated_at = CURRENT_TIMESTAMP
+      WHERE member_id = $1
+      RETURNING *
+      `,
+      values
+    );
+
+    const updatedMemberResult = await pool.query(
       `
       SELECT
         m.id,
@@ -347,55 +353,27 @@ const saveManualFinancialRecord = async (req, res) => {
         m.full_name,
         m.username,
         m.status,
-
-        COALESCE(f.savings, 0) AS savings,
-        COALESCE(f.share_capital, 0) AS share_capital,
-        COALESCE(f.special_savings, 0) AS special_savings,
-
-        COALESCE(f.regular_loan, 0) AS regular_loan,
-        COALESCE(f.regular_loan_diminishing, 0) AS regular_loan_diminishing,
-
-        COALESCE(f.educational_loan, 0) AS educational_loan,
-        COALESCE(f.educational_loan_diminishing, 0) AS educational_loan_diminishing,
-
-        COALESCE(f.short_term_loan, 0) AS short_term_loan,
-        COALESCE(f.short_term_loan_diminishing, 0) AS short_term_loan_diminishing,
-
-        COALESCE(f.appliance_loan, 0) AS appliance_loan,
-        COALESCE(f.appliance_loan_diminishing, 0) AS appliance_loan_diminishing,
-
-        COALESCE(f.medical_loan, 0) AS medical_loan,
-        COALESCE(f.medical_loan_diminishing, 0) AS medical_loan_diminishing,
-
-        COALESCE(f.petty_cash_loan, 0) AS petty_cash_loan,
-        COALESCE(f.vehicle_loan, 0) AS vehicle_loan,
-        COALESCE(f.inter_trading_loan, 0) AS inter_trading_loan,
-
-        COALESCE(f.dividend_amount, 0) AS dividend_amount,
-        f.updated_at
+        m.created_at,
+        ${financialSelectFields}
       FROM members m
       LEFT JOIN member_financials f
       ON f.member_id = m.id
       WHERE m.id = $1
+      LIMIT 1
       `,
       [member.id]
     );
 
-    await client.query("COMMIT");
-
     res.json({
-      message: "Manual financial record saved successfully",
-      member: updatedResult.rows[0],
+      message: "Financial record added successfully",
+      financial_record: financialResult.rows[0],
+      member: updatedMemberResult.rows[0],
     });
   } catch (error) {
-    await client.query("ROLLBACK");
-
     res.status(500).json({
       message: "Failed to save manual financial record",
       error: error.message,
     });
-  } finally {
-    client.release();
   }
 };
 
@@ -411,32 +389,8 @@ const getMemberFinancials = async (req, res) => {
         m.full_name,
         m.username,
         m.status,
-
-        COALESCE(f.savings, 0) AS savings,
-        COALESCE(f.share_capital, 0) AS share_capital,
-        COALESCE(f.special_savings, 0) AS special_savings,
-
-        COALESCE(f.regular_loan, 0) AS regular_loan,
-        COALESCE(f.regular_loan_diminishing, 0) AS regular_loan_diminishing,
-
-        COALESCE(f.educational_loan, 0) AS educational_loan,
-        COALESCE(f.educational_loan_diminishing, 0) AS educational_loan_diminishing,
-
-        COALESCE(f.short_term_loan, 0) AS short_term_loan,
-        COALESCE(f.short_term_loan_diminishing, 0) AS short_term_loan_diminishing,
-
-        COALESCE(f.appliance_loan, 0) AS appliance_loan,
-        COALESCE(f.appliance_loan_diminishing, 0) AS appliance_loan_diminishing,
-
-        COALESCE(f.medical_loan, 0) AS medical_loan,
-        COALESCE(f.medical_loan_diminishing, 0) AS medical_loan_diminishing,
-
-        COALESCE(f.petty_cash_loan, 0) AS petty_cash_loan,
-        COALESCE(f.vehicle_loan, 0) AS vehicle_loan,
-        COALESCE(f.inter_trading_loan, 0) AS inter_trading_loan,
-
-        COALESCE(f.dividend_amount, 0) AS dividend_amount,
-        f.updated_at
+        m.created_at,
+        ${financialSelectFields}
       FROM members m
       LEFT JOIN member_financials f
       ON f.member_id = m.id
@@ -453,12 +407,11 @@ const getMemberFinancials = async (req, res) => {
     }
 
     res.json({
-      message: "Member financial record loaded successfully",
       member: result.rows[0],
     });
   } catch (error) {
     res.status(500).json({
-      message: "Failed to load member financial record",
+      message: "Failed to fetch member financial record",
       error: error.message,
     });
   }

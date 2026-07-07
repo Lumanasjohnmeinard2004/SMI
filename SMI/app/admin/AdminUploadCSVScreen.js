@@ -33,6 +33,43 @@ function currency(value) {
   })}`;
 }
 
+const emptyForm = {
+  memberIdentifier: "",
+
+  shareCapital: "",
+  savings: "",
+  specialSavings: "",
+  dividendAmount: "",
+
+  regularLoan: "",
+  regularLoanDiminishing: "",
+  educationalLoan: "",
+  educationalLoanDiminishing: "",
+  shortTermLoan: "",
+  shortTermLoanDiminishing: "",
+  applianceLoan: "",
+  applianceLoanDiminishing: "",
+  medicalLoan: "",
+  medicalLoanDiminishing: "",
+  pettyCashLoan: "",
+  vehicleLoan: "",
+  interTradingLoan: "",
+
+  regularLoanDueDate: "",
+  regularLoanDiminishingDueDate: "",
+  educationalLoanDueDate: "",
+  educationalLoanDiminishingDueDate: "",
+  shortTermLoanDueDate: "",
+  shortTermLoanDiminishingDueDate: "",
+  applianceLoanDueDate: "",
+  applianceLoanDiminishingDueDate: "",
+  medicalLoanDueDate: "",
+  medicalLoanDiminishingDueDate: "",
+  pettyCashLoanDueDate: "",
+  vehicleLoanDueDate: "",
+  interTradingLoanDueDate: "",
+};
+
 export default function AdminUploadCSVScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
@@ -44,28 +81,7 @@ export default function AdminUploadCSVScreen() {
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
 
-  const [formData, setFormData] = useState({
-    memberIdentifier: "",
-
-    shareCapital: "",
-    savings: "",
-    specialSavings: "",
-    dividendAmount: "",
-
-    regularLoan: "",
-    regularLoanDiminishing: "",
-    educationalLoan: "",
-    educationalLoanDiminishing: "",
-    shortTermLoan: "",
-    shortTermLoanDiminishing: "",
-    applianceLoan: "",
-    applianceLoanDiminishing: "",
-    medicalLoan: "",
-    medicalLoanDiminishing: "",
-    pettyCashLoan: "",
-    vehicleLoan: "",
-    interTradingLoan: "",
-  });
+  const [formData, setFormData] = useState(emptyForm);
 
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -126,29 +142,7 @@ export default function AdminUploadCSVScreen() {
   }
 
   function clearManualForm() {
-    setFormData({
-      memberIdentifier: "",
-
-      shareCapital: "",
-      savings: "",
-      specialSavings: "",
-      dividendAmount: "",
-
-      regularLoan: "",
-      regularLoanDiminishing: "",
-      educationalLoan: "",
-      educationalLoanDiminishing: "",
-      shortTermLoan: "",
-      shortTermLoanDiminishing: "",
-      applianceLoan: "",
-      applianceLoanDiminishing: "",
-      medicalLoan: "",
-      medicalLoanDiminishing: "",
-      pettyCashLoan: "",
-      vehicleLoan: "",
-      interTradingLoan: "",
-    });
-
+    setFormData(emptyForm);
     setMessage("");
     setIsError(false);
   }
@@ -192,10 +186,32 @@ export default function AdminUploadCSVScreen() {
         petty_cash_loan: formData.pettyCashLoan,
         vehicle_loan: formData.vehicleLoan,
         inter_trading_loan: formData.interTradingLoan,
+
+        regular_loan_due_date: formData.regularLoanDueDate,
+        regular_loan_diminishing_due_date: formData.regularLoanDiminishingDueDate,
+
+        educational_loan_due_date: formData.educationalLoanDueDate,
+        educational_loan_diminishing_due_date: formData.educationalLoanDiminishingDueDate,
+
+        short_term_loan_due_date: formData.shortTermLoanDueDate,
+        short_term_loan_diminishing_due_date: formData.shortTermLoanDiminishingDueDate,
+
+        appliance_loan_due_date: formData.applianceLoanDueDate,
+        appliance_loan_diminishing_due_date: formData.applianceLoanDiminishingDueDate,
+
+        medical_loan_due_date: formData.medicalLoanDueDate,
+        medical_loan_diminishing_due_date: formData.medicalLoanDiminishingDueDate,
+
+        petty_cash_loan_due_date: formData.pettyCashLoanDueDate,
+        vehicle_loan_due_date: formData.vehicleLoanDueDate,
+        inter_trading_loan_due_date: formData.interTradingLoanDueDate,
       });
 
       setIsError(false);
-      setMessage(`${data.member.full_name}'s financial record was saved successfully.`);
+      setMessage(
+        `${data.member.full_name}'s financial record was added successfully.`
+      );
+
       await loadMembers();
     } catch (error) {
       setIsError(true);
@@ -424,7 +440,8 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
           <Text style={styles.uploadTitle}>Select CSV or Excel File</Text>
 
           <Text style={styles.uploadSub}>
-            Upload member records, savings, share capital, special savings, and loan balances.
+            Upload member records, savings, share capital, special savings,
+            loan balances, and loan due dates.
           </Text>
 
           <TouchableOpacity style={styles.chooseButton} onPress={pickCSVFile}>
@@ -471,13 +488,14 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
           <InfoLine text="Member ID or username" />
           <InfoLine text="Share Capital, Savings, Special Savings" />
           <InfoLine text="All loan type balances" />
+          <InfoLine text="Loan due dates in YYYY-MM-DD format" />
           <InfoLine text="Dividend Amount" />
         </View>
 
         <View style={styles.noteBox}>
           <Feather name="info" size={18} color={GOLD} />
           <Text style={styles.noteText}>
-            CSV processing UI is ready. Backend parser can be connected next.
+            Manual input now adds new values to existing balances. Due date fields update only when filled.
           </Text>
         </View>
       </View>
@@ -514,7 +532,7 @@ function ManualContent({
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Select Existing Member</Text>
         <Text style={styles.sectionSub}>
-          Enter the member ID or username. The record will update that member.
+          Enter the member ID or username. New values will be added to the current record.
         </Text>
 
         <InputField
@@ -552,7 +570,9 @@ function ManualContent({
 
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Savings Information</Text>
-        <Text style={styles.sectionSub}>Savings, share capital, and dividend amount</Text>
+        <Text style={styles.sectionSub}>
+          These amounts will be added to the member's existing balances.
+        </Text>
 
         <View style={isDesktopWeb ? styles.formGridFour : null}>
           <InputField
@@ -591,118 +611,53 @@ function ManualContent({
 
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Loan Balances</Text>
-        <Text style={styles.sectionSub}>Encode all loan balances for this member</Text>
+        <Text style={styles.sectionSub}>
+          These loan amounts will be added to the existing loan balances.
+        </Text>
 
         <View style={isDesktopWeb ? styles.formGridFour : null}>
-          <InputField
-            label="Regular Loan"
-            value={formData.regularLoan}
-            onChangeText={(value) => updateField("regularLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
+          <InputField label="Regular Loan" value={formData.regularLoan} onChangeText={(value) => updateField("regularLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Regular Loan - Diminishing" value={formData.regularLoanDiminishing} onChangeText={(value) => updateField("regularLoanDiminishing", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Educational Loan" value={formData.educationalLoan} onChangeText={(value) => updateField("educationalLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Educational Loan - Diminishing" value={formData.educationalLoanDiminishing} onChangeText={(value) => updateField("educationalLoanDiminishing", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Short-term Loan" value={formData.shortTermLoan} onChangeText={(value) => updateField("shortTermLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Short-term Loan - Diminishing" value={formData.shortTermLoanDiminishing} onChangeText={(value) => updateField("shortTermLoanDiminishing", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Appliance Loan" value={formData.applianceLoan} onChangeText={(value) => updateField("applianceLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Appliance Loan - Diminishing" value={formData.applianceLoanDiminishing} onChangeText={(value) => updateField("applianceLoanDiminishing", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Medical Loan" value={formData.medicalLoan} onChangeText={(value) => updateField("medicalLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Medical Loan - Diminishing" value={formData.medicalLoanDiminishing} onChangeText={(value) => updateField("medicalLoanDiminishing", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Petty Cash Loan" value={formData.pettyCashLoan} onChangeText={(value) => updateField("pettyCashLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Vehicle Loan" value={formData.vehicleLoan} onChangeText={(value) => updateField("vehicleLoan", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Inter-Trading Loan" value={formData.interTradingLoan} onChangeText={(value) => updateField("interTradingLoan", value)} placeholder="0.00" keyboardType="numeric" />
+        </View>
+      </View>
 
-          <InputField
-            label="Regular Loan - Diminishing"
-            value={formData.regularLoanDiminishing}
-            onChangeText={(value) => updateField("regularLoanDiminishing", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
+      <View style={styles.panelCard}>
+        <Text style={styles.sectionTitle}>Loan Due Dates</Text>
+        <Text style={styles.sectionSub}>
+          Use YYYY-MM-DD format. Blank fields will keep the old due date.
+        </Text>
 
-          <InputField
-            label="Educational Loan"
-            value={formData.educationalLoan}
-            onChangeText={(value) => updateField("educationalLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Educational Loan - Diminishing"
-            value={formData.educationalLoanDiminishing}
-            onChangeText={(value) => updateField("educationalLoanDiminishing", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Short-term Loan"
-            value={formData.shortTermLoan}
-            onChangeText={(value) => updateField("shortTermLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Short-term Loan - Diminishing"
-            value={formData.shortTermLoanDiminishing}
-            onChangeText={(value) => updateField("shortTermLoanDiminishing", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Appliance Loan"
-            value={formData.applianceLoan}
-            onChangeText={(value) => updateField("applianceLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Appliance Loan - Diminishing"
-            value={formData.applianceLoanDiminishing}
-            onChangeText={(value) => updateField("applianceLoanDiminishing", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Medical Loan"
-            value={formData.medicalLoan}
-            onChangeText={(value) => updateField("medicalLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Medical Loan - Diminishing"
-            value={formData.medicalLoanDiminishing}
-            onChangeText={(value) => updateField("medicalLoanDiminishing", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Petty Cash Loan"
-            value={formData.pettyCashLoan}
-            onChangeText={(value) => updateField("pettyCashLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Vehicle Loan"
-            value={formData.vehicleLoan}
-            onChangeText={(value) => updateField("vehicleLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Inter-Trading Loan"
-            value={formData.interTradingLoan}
-            onChangeText={(value) => updateField("interTradingLoan", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
+        <View style={isDesktopWeb ? styles.formGridFour : null}>
+          <InputField label="Regular Loan Due Date" value={formData.regularLoanDueDate} onChangeText={(value) => updateField("regularLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Regular Diminishing Due Date" value={formData.regularLoanDiminishingDueDate} onChangeText={(value) => updateField("regularLoanDiminishingDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Educational Loan Due Date" value={formData.educationalLoanDueDate} onChangeText={(value) => updateField("educationalLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Educational Diminishing Due Date" value={formData.educationalLoanDiminishingDueDate} onChangeText={(value) => updateField("educationalLoanDiminishingDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Short-term Loan Due Date" value={formData.shortTermLoanDueDate} onChangeText={(value) => updateField("shortTermLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Short-term Diminishing Due Date" value={formData.shortTermLoanDiminishingDueDate} onChangeText={(value) => updateField("shortTermLoanDiminishingDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Appliance Loan Due Date" value={formData.applianceLoanDueDate} onChangeText={(value) => updateField("applianceLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Appliance Diminishing Due Date" value={formData.applianceLoanDiminishingDueDate} onChangeText={(value) => updateField("applianceLoanDiminishingDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Medical Loan Due Date" value={formData.medicalLoanDueDate} onChangeText={(value) => updateField("medicalLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Medical Diminishing Due Date" value={formData.medicalLoanDiminishingDueDate} onChangeText={(value) => updateField("medicalLoanDiminishingDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Petty Cash Due Date" value={formData.pettyCashLoanDueDate} onChangeText={(value) => updateField("pettyCashLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Vehicle Loan Due Date" value={formData.vehicleLoanDueDate} onChangeText={(value) => updateField("vehicleLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+          <InputField label="Inter-Trading Due Date" value={formData.interTradingLoanDueDate} onChangeText={(value) => updateField("interTradingLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
         </View>
       </View>
 
       <View style={isDesktopWeb ? styles.actionGrid : null}>
         <View style={styles.totalCard}>
-          <Text style={styles.totalLabel}>TOTAL LOAN BALANCE</Text>
+          <Text style={styles.totalLabel}>NEW LOAN AMOUNT TO ADD</Text>
           <Text style={styles.totalAmount}>{currency(totalLoanBalance)}</Text>
         </View>
 
