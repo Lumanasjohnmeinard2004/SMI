@@ -6,7 +6,9 @@ const {
   getMembers,
   addMember,
   saveManualFinancialRecord,
+  importExcelFinancialRecords,
   getMemberFinancials,
+  updateMemberProfileImage,
 } = require("../controllers/memberController");
 
 const router = express.Router();
@@ -14,6 +16,8 @@ const router = express.Router();
 router.get("/", getMembers);
 router.post("/", addMember);
 router.post("/manual-financial-record", saveManualFinancialRecord);
+router.post("/import-excel-records", importExcelFinancialRecords);
+router.patch("/:identifier/profile-image", updateMemberProfileImage);
 router.get("/:identifier/financials", getMemberFinancials);
 
 module.exports = router;

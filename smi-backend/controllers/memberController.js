@@ -4,7 +4,7 @@ const bcrypt = require("bcryptjs");
 const pool = require("../db");
 
 function toNumber(value) {
-  const parsed = Number(value || 0);
+  const parsed = Number(String(value || "").replace(/,/g, "").trim());
 
   if (Number.isNaN(parsed)) {
     return 0;
@@ -25,6 +25,84 @@ function cleanDate(value) {
   }
 
   return cleaned;
+}
+
+function cleanName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function toTitleCase(value) {
+  return cleanName(value)
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function buildFullName(firstName, middleInitial, lastName) {
+  const first = toTitleCase(firstName);
+  const middle = cleanName(middleInitial).replace(".", "").toUpperCase();
+  const last = toTitleCase(lastName);
+
+  if (middle) {
+    return `${first} ${middle}. ${last}`.replace(/\s+/g, " ").trim();
+  }
+
+  return `${first} ${last}`.replace(/\s+/g, " ").trim();
+}
+
+function buildUsername(firstName, lastName, number) {
+  const first = String(firstName || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  const last = String(lastName || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  const fallback = `member${number || Date.now()}`;
+
+  return `${first}${last}` || fallback;
+}
+
+async function getUniqueMemberId(preferredId, client = pool) {
+  let baseId = preferredId || "SMI-001";
+  let candidate = baseId;
+  let counter = 1;
+
+  while (true) {
+    const result = await client.query(
+      "SELECT id FROM members WHERE member_id = $1 LIMIT 1",
+      [candidate]
+    );
+
+    if (result.rows.length === 0) {
+      return candidate;
+    }
+
+    counter += 1;
+    candidate = `${baseId}-${counter}`;
+  }
+}
+
+async function getUniqueUsername(preferredUsername, client = pool) {
+  let baseUsername = preferredUsername || "member";
+  let candidate = baseUsername;
+  let counter = 1;
+
+  while (true) {
+    const result = await client.query(
+      "SELECT id FROM members WHERE username = $1 LIMIT 1",
+      [candidate]
+    );
+
+    if (result.rows.length === 0) {
+      return candidate;
+    }
+
+    counter += 1;
+    candidate = `${baseUsername}${counter}`;
+  }
 }
 
 const financialSelectFields = `
@@ -73,6 +151,7 @@ const getMembers = async (req, res) => {
         m.full_name,
         m.username,
         m.status,
+        m.profile_image,
         m.created_at,
         ${financialSelectFields}
       FROM members m
@@ -120,7 +199,7 @@ const addMember = async (req, res) => {
       `
       INSERT INTO members (member_id, full_name, username, password_hash)
       VALUES ($1, $2, $3, $4)
-      RETURNING id, member_id, full_name, username, status, created_at
+      RETURNING id, member_id, full_name, username, status, profile_image, created_at
       `,
       [member_id, full_name, username, passwordHash]
     );
@@ -144,6 +223,7 @@ const addMember = async (req, res) => {
         m.full_name,
         m.username,
         m.status,
+        m.profile_image,
         m.created_at,
         ${financialSelectFields}
       FROM members m
@@ -214,7 +294,7 @@ const saveManualFinancialRecord = async (req, res) => {
 
     const memberResult = await pool.query(
       `
-      SELECT id, member_id, full_name, username, status
+      SELECT id, member_id, full_name, username, status, profile_image
       FROM members
       WHERE id::TEXT = $1 OR member_id = $1 OR username = $1
       LIMIT 1
@@ -301,40 +381,28 @@ const saveManualFinancialRecord = async (req, res) => {
 
         regular_loan_due_date =
           CASE WHEN $19::date IS NULL THEN regular_loan_due_date ELSE $19::date END,
-
         regular_loan_diminishing_due_date =
           CASE WHEN $20::date IS NULL THEN regular_loan_diminishing_due_date ELSE $20::date END,
-
         educational_loan_due_date =
           CASE WHEN $21::date IS NULL THEN educational_loan_due_date ELSE $21::date END,
-
         educational_loan_diminishing_due_date =
           CASE WHEN $22::date IS NULL THEN educational_loan_diminishing_due_date ELSE $22::date END,
-
         short_term_loan_due_date =
           CASE WHEN $23::date IS NULL THEN short_term_loan_due_date ELSE $23::date END,
-
         short_term_loan_diminishing_due_date =
           CASE WHEN $24::date IS NULL THEN short_term_loan_diminishing_due_date ELSE $24::date END,
-
         appliance_loan_due_date =
           CASE WHEN $25::date IS NULL THEN appliance_loan_due_date ELSE $25::date END,
-
         appliance_loan_diminishing_due_date =
           CASE WHEN $26::date IS NULL THEN appliance_loan_diminishing_due_date ELSE $26::date END,
-
         medical_loan_due_date =
           CASE WHEN $27::date IS NULL THEN medical_loan_due_date ELSE $27::date END,
-
         medical_loan_diminishing_due_date =
           CASE WHEN $28::date IS NULL THEN medical_loan_diminishing_due_date ELSE $28::date END,
-
         petty_cash_loan_due_date =
           CASE WHEN $29::date IS NULL THEN petty_cash_loan_due_date ELSE $29::date END,
-
         vehicle_loan_due_date =
           CASE WHEN $30::date IS NULL THEN vehicle_loan_due_date ELSE $30::date END,
-
         inter_trading_loan_due_date =
           CASE WHEN $31::date IS NULL THEN inter_trading_loan_due_date ELSE $31::date END,
 
@@ -353,6 +421,7 @@ const saveManualFinancialRecord = async (req, res) => {
         m.full_name,
         m.username,
         m.status,
+        m.profile_image,
         m.created_at,
         ${financialSelectFields}
       FROM members m
@@ -377,6 +446,163 @@ const saveManualFinancialRecord = async (req, res) => {
   }
 };
 
+const importExcelFinancialRecords = async (req, res) => {
+  const client = await pool.connect();
+
+  try {
+    const { records } = req.body;
+
+    if (!Array.isArray(records) || records.length === 0) {
+      return res.status(400).json({
+        message: "No Excel records received",
+      });
+    }
+
+    await client.query("BEGIN");
+
+    const defaultPasswordHash = await bcrypt.hash("member123", 10);
+
+    let createdCount = 0;
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    for (const row of records) {
+      const rowNumber = row.no;
+      const firstName = cleanName(row.first_name);
+      const middleInitial = cleanName(row.middle_initial);
+      const lastName = cleanName(row.last_name);
+
+      if (!firstName || !lastName) {
+        skippedCount += 1;
+        continue;
+      }
+
+      const fullName = buildFullName(firstName, middleInitial, lastName);
+
+      let memberResult = await client.query(
+        `
+        SELECT id, member_id, full_name, username, status, profile_image
+        FROM members
+        WHERE LOWER(full_name) = LOWER($1)
+        LIMIT 1
+        `,
+        [fullName]
+      );
+
+      let member;
+
+      if (memberResult.rows.length > 0) {
+        member = memberResult.rows[0];
+        updatedCount += 1;
+      } else {
+        const preferredMemberId = `SMI-${String(rowNumber || Date.now()).padStart(3, "0")}`;
+        const uniqueMemberId = await getUniqueMemberId(preferredMemberId, client);
+        const uniqueUsername = await getUniqueUsername(
+          buildUsername(firstName, lastName, rowNumber),
+          client
+        );
+
+        const createdMemberResult = await client.query(
+          `
+          INSERT INTO members (
+            member_id,
+            full_name,
+            username,
+            password_hash,
+            status
+          )
+          VALUES ($1, $2, $3, $4, 'Active')
+          RETURNING id, member_id, full_name, username, status, profile_image
+          `,
+          [uniqueMemberId, fullName, uniqueUsername, defaultPasswordHash]
+        );
+
+        member = createdMemberResult.rows[0];
+        createdCount += 1;
+      }
+
+      await client.query(
+        `
+        INSERT INTO member_financials (member_id)
+        VALUES ($1)
+        ON CONFLICT (member_id) DO NOTHING
+        `,
+        [member.id]
+      );
+
+      await client.query(
+        `
+        UPDATE member_financials
+        SET
+          share_capital = $2,
+          savings = $3,
+          special_savings = $4,
+
+          regular_loan = $5,
+          regular_loan_diminishing = $6,
+          educational_loan = $7,
+          educational_loan_diminishing = $8,
+          short_term_loan = $9,
+          short_term_loan_diminishing = $10,
+          appliance_loan = $11,
+          appliance_loan_diminishing = $12,
+          medical_loan = $13,
+          medical_loan_diminishing = $14,
+          petty_cash_loan = $15,
+          vehicle_loan = $16,
+          inter_trading_loan = $17,
+
+          dividend_amount = $18,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE member_id = $1
+        `,
+        [
+          member.id,
+
+          toNumber(row.share_capital),
+          toNumber(row.savings),
+          toNumber(row.special_savings),
+
+          toNumber(row.regular_loan),
+          toNumber(row.regular_loan_diminishing),
+          toNumber(row.educational_loan),
+          toNumber(row.educational_loan_diminishing),
+          toNumber(row.short_term_loan),
+          toNumber(row.short_term_loan_diminishing),
+          toNumber(row.appliance_loan),
+          toNumber(row.appliance_loan_diminishing),
+          toNumber(row.medical_loan),
+          toNumber(row.medical_loan_diminishing),
+          toNumber(row.petty_cash_loan),
+          toNumber(row.vehicle_loan),
+          toNumber(row.inter_trading_loan),
+
+          toNumber(row.dividend_amount),
+        ]
+      );
+    }
+
+    await client.query("COMMIT");
+
+    res.json({
+      message: "Excel records imported successfully",
+      created_count: createdCount,
+      updated_count: updatedCount,
+      skipped_count: skippedCount,
+      total_received: records.length,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+
+    res.status(500).json({
+      message: "Failed to import Excel records",
+      error: error.message,
+    });
+  } finally {
+    client.release();
+  }
+};
+
 const getMemberFinancials = async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -389,6 +615,7 @@ const getMemberFinancials = async (req, res) => {
         m.full_name,
         m.username,
         m.status,
+        m.profile_image,
         m.created_at,
         ${financialSelectFields}
       FROM members m
@@ -417,9 +644,50 @@ const getMemberFinancials = async (req, res) => {
   }
 };
 
+const updateMemberProfileImage = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { profile_image } = req.body;
+
+    if (!profile_image) {
+      return res.status(400).json({
+        message: "Profile image is required",
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE members
+      SET profile_image = $1
+      WHERE id::TEXT = $2 OR member_id = $2 OR username = $2
+      RETURNING id, member_id, full_name, username, status, profile_image, created_at
+      `,
+      [profile_image, identifier]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found",
+      });
+    }
+
+    res.json({
+      message: "Profile picture saved successfully",
+      member: result.rows[0],
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to save profile picture",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getMembers,
   addMember,
   saveManualFinancialRecord,
+  importExcelFinancialRecords,
   getMemberFinancials,
+  updateMemberProfileImage,
 };

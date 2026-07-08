@@ -15,6 +15,8 @@ import {
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system";
+import * as XLSX from "xlsx";
 import SmiLogo from "../../components/SmiLogo";
 import { apiRequest } from "../../config/api";
 
@@ -31,6 +33,63 @@ function currency(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+function numberValue(value) {
+  const cleaned = String(value ?? "")
+    .replace(/,/g, "")
+    .replace(/₱/g, "")
+    .trim();
+
+  const parsed = Number(cleaned);
+
+  if (Number.isNaN(parsed)) {
+    return 0;
+  }
+
+  return parsed;
+}
+
+function cellValue(row, index) {
+  return row[index] === undefined || row[index] === null ? "" : row[index];
+}
+
+function parseExcelRows(rows) {
+  return rows
+    .slice(2)
+    .filter((row) => {
+      return cellValue(row, 1) || cellValue(row, 3);
+    })
+    .map((row) => {
+      return {
+        no: numberValue(cellValue(row, 0)),
+
+        first_name: String(cellValue(row, 1)).trim(),
+        middle_initial: String(cellValue(row, 2)).trim(),
+        last_name: String(cellValue(row, 3)).trim(),
+
+        share_capital: numberValue(cellValue(row, 4)),
+        savings: numberValue(cellValue(row, 5)),
+        special_savings: numberValue(cellValue(row, 6)),
+
+        regular_loan: numberValue(cellValue(row, 7)),
+        regular_loan_diminishing: numberValue(cellValue(row, 8)),
+        educational_loan: numberValue(cellValue(row, 9)),
+        educational_loan_diminishing: numberValue(cellValue(row, 10)),
+        short_term_loan: numberValue(cellValue(row, 11)),
+        short_term_loan_diminishing: numberValue(cellValue(row, 12)),
+        appliance_loan: numberValue(cellValue(row, 13)),
+        appliance_loan_diminishing: numberValue(cellValue(row, 14)),
+        medical_loan: numberValue(cellValue(row, 15)),
+        medical_loan_diminishing: numberValue(cellValue(row, 16)),
+        petty_cash_loan: numberValue(cellValue(row, 17)),
+        vehicle_loan: numberValue(cellValue(row, 18)),
+        inter_trading_loan: numberValue(cellValue(row, 19)),
+
+        total_loan_balance: numberValue(cellValue(row, 20)),
+        dividend_amount: numberValue(cellValue(row, 21)),
+      };
+    });
 }
 
 const emptyForm = {
@@ -77,9 +136,11 @@ export default function AdminUploadCSVScreen() {
   const isDesktopWeb = Platform.OS === "web" && width >= 900;
 
   const [selectedFile, setSelectedFile] = useState(null);
-  const [mode, setMode] = useState("manual");
+  const [parsedRecords, setParsedRecords] = useState([]);
+  const [mode, setMode] = useState("upload");
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [processingFile, setProcessingFile] = useState(false);
 
   const [formData, setFormData] = useState(emptyForm);
 
@@ -126,18 +187,103 @@ export default function AdminUploadCSVScreen() {
     }));
   }
 
-  async function pickCSVFile() {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: [
-        "text/csv",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      ],
-      copyToCacheDirectory: true,
+  async function readWorkbookFromAsset(asset) {
+    if (Platform.OS === "web" && asset.file) {
+      const arrayBuffer = await asset.file.arrayBuffer();
+
+      return XLSX.read(arrayBuffer, {
+        type: "array",
+      });
+    }
+
+    const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+      encoding: FileSystem.EncodingType.Base64,
     });
 
-    if (!result.canceled) {
-      setSelectedFile(result.assets[0]);
+    return XLSX.read(base64, {
+      type: "base64",
+    });
+  }
+
+  async function pickExcelFile() {
+    try {
+      setMessage("");
+      setIsError(false);
+      setParsedRecords([]);
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "text/csv",
+        ],
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      const asset = result.assets[0];
+
+      setSelectedFile(asset);
+
+      const workbook = await readWorkbookFromAsset(asset);
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+
+      const rows = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        defval: "",
+      });
+
+      const records = parseExcelRows(rows);
+
+      if (records.length === 0) {
+        setIsError(true);
+        setMessage("No valid member rows found in the Excel file.");
+        return;
+      }
+
+      setParsedRecords(records);
+      setIsError(false);
+      setMessage(`${records.length} member records detected from Excel.`);
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message || "Failed to read Excel file.");
+      setSelectedFile(null);
+      setParsedRecords([]);
+    }
+  }
+
+  async function uploadParsedExcelRecords() {
+    try {
+      setMessage("");
+      setIsError(false);
+
+      if (!selectedFile || parsedRecords.length === 0) {
+        setIsError(true);
+        setMessage("Please choose a valid Excel file first.");
+        return;
+      }
+
+      setProcessingFile(true);
+
+      const data = await apiRequest("/members/import-excel-records", "POST", {
+        records: parsedRecords,
+      });
+
+      setIsError(false);
+      setMessage(
+        `Excel imported successfully. Created: ${data.created_count}, Updated: ${data.updated_count}, Skipped: ${data.skipped_count}.`
+      );
+
+      await loadMembers();
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message || "Failed to import Excel records.");
+    } finally {
+      setProcessingFile(false);
     }
   }
 
@@ -160,7 +306,7 @@ export default function AdminUploadCSVScreen() {
 
       setSaving(true);
 
-      const data = await apiRequest("/members/manual-financial-record", "POST", {
+      const payload = {
         member_identifier: formData.memberIdentifier.trim(),
 
         share_capital: formData.shareCapital,
@@ -170,48 +316,41 @@ export default function AdminUploadCSVScreen() {
 
         regular_loan: formData.regularLoan,
         regular_loan_diminishing: formData.regularLoanDiminishing,
-
         educational_loan: formData.educationalLoan,
         educational_loan_diminishing: formData.educationalLoanDiminishing,
-
         short_term_loan: formData.shortTermLoan,
         short_term_loan_diminishing: formData.shortTermLoanDiminishing,
-
         appliance_loan: formData.applianceLoan,
         appliance_loan_diminishing: formData.applianceLoanDiminishing,
-
         medical_loan: formData.medicalLoan,
         medical_loan_diminishing: formData.medicalLoanDiminishing,
-
         petty_cash_loan: formData.pettyCashLoan,
         vehicle_loan: formData.vehicleLoan,
         inter_trading_loan: formData.interTradingLoan,
 
         regular_loan_due_date: formData.regularLoanDueDate,
         regular_loan_diminishing_due_date: formData.regularLoanDiminishingDueDate,
-
         educational_loan_due_date: formData.educationalLoanDueDate,
         educational_loan_diminishing_due_date: formData.educationalLoanDiminishingDueDate,
-
         short_term_loan_due_date: formData.shortTermLoanDueDate,
         short_term_loan_diminishing_due_date: formData.shortTermLoanDiminishingDueDate,
-
         appliance_loan_due_date: formData.applianceLoanDueDate,
         appliance_loan_diminishing_due_date: formData.applianceLoanDiminishingDueDate,
-
         medical_loan_due_date: formData.medicalLoanDueDate,
         medical_loan_diminishing_due_date: formData.medicalLoanDiminishingDueDate,
-
         petty_cash_loan_due_date: formData.pettyCashLoanDueDate,
         vehicle_loan_due_date: formData.vehicleLoanDueDate,
         inter_trading_loan_due_date: formData.interTradingLoanDueDate,
-      });
+      };
 
-      setIsError(false);
-      setMessage(
-        `${data.member.full_name}'s financial record was added successfully.`
+      const data = await apiRequest(
+        "/members/manual-financial-record",
+        "POST",
+        payload
       );
 
+      setIsError(false);
+      setMessage(`${data.member.full_name}'s financial record was added successfully.`);
       await loadMembers();
     } catch (error) {
       setIsError(true);
@@ -244,6 +383,19 @@ export default function AdminUploadCSVScreen() {
             ]}
             showsVerticalScrollIndicator={false}
           >
+            {message ? (
+              <View style={isError ? styles.errorBox : styles.successBox}>
+                <Feather
+                  name={isError ? "alert-circle" : "check-circle"}
+                  size={17}
+                  color={isError ? "#991b1b" : "#047857"}
+                />
+                <Text style={isError ? styles.errorText : styles.successText}>
+                  {message}
+                </Text>
+              </View>
+            ) : null}
+
             <View style={styles.modeTabs}>
               <TouchableOpacity
                 style={mode === "upload" ? styles.modeTabActive : styles.modeTab}
@@ -255,7 +407,7 @@ export default function AdminUploadCSVScreen() {
                   color={mode === "upload" ? "#ffffff" : MAIN_GREEN}
                 />
                 <Text style={mode === "upload" ? styles.modeTextActive : styles.modeText}>
-                  CSV Upload
+                  Excel Upload
                 </Text>
               </TouchableOpacity>
 
@@ -277,7 +429,10 @@ export default function AdminUploadCSVScreen() {
             {mode === "upload" ? (
               <UploadContent
                 selectedFile={selectedFile}
-                pickCSVFile={pickCSVFile}
+                parsedRecords={parsedRecords}
+                pickExcelFile={pickExcelFile}
+                uploadParsedExcelRecords={uploadParsedExcelRecords}
+                processingFile={processingFile}
                 isDesktopWeb={isDesktopWeb}
               />
             ) : (
@@ -288,8 +443,6 @@ export default function AdminUploadCSVScreen() {
                 totalLoanBalance={totalLoanBalance}
                 saveManualRecord={saveManualRecord}
                 saving={saving}
-                message={message}
-                isError={isError}
                 members={members}
                 loadingMembers={loadingMembers}
                 isDesktopWeb={isDesktopWeb}
@@ -413,7 +566,7 @@ function TopHeader({ router, isDesktopWeb }) {
 
         <Text style={styles.topTitle}>Upload Records</Text>
         <Text style={styles.topSubtitle}>
-          Import CSV files or manually encode member financial data
+          Import Excel files or manually encode member financial data
         </Text>
       </View>
 
@@ -428,7 +581,14 @@ function TopHeader({ router, isDesktopWeb }) {
   );
 }
 
-function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
+function UploadContent({
+  selectedFile,
+  parsedRecords,
+  pickExcelFile,
+  uploadParsedExcelRecords,
+  processingFile,
+  isDesktopWeb,
+}) {
   return (
     <View style={isDesktopWeb ? styles.uploadGrid : null}>
       <View style={[styles.panelCard, isDesktopWeb && styles.uploadMainPanel]}>
@@ -437,16 +597,16 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
             <Feather name="upload-cloud" size={44} color={MAIN_GREEN} />
           </View>
 
-          <Text style={styles.uploadTitle}>Select CSV or Excel File</Text>
+          <Text style={styles.uploadTitle}>Select Excel File</Text>
 
           <Text style={styles.uploadSub}>
-            Upload member records, savings, share capital, special savings,
-            loan balances, and loan due dates.
+            Upload the member account Excel file using the format: First Name,
+            Middle Initial, Last Name, savings, loan balances, and dividend.
           </Text>
 
-          <TouchableOpacity style={styles.chooseButton} onPress={pickCSVFile}>
+          <TouchableOpacity style={styles.chooseButton} onPress={pickExcelFile}>
             <Feather name="file-plus" size={18} color="#ffffff" />
-            <Text style={styles.chooseText}>Choose File</Text>
+            <Text style={styles.chooseText}>Choose Excel File</Text>
           </TouchableOpacity>
         </View>
 
@@ -463,6 +623,9 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
                   ? `${(selectedFile.size / 1024).toFixed(2)} KB`
                   : "File selected"}
               </Text>
+              <Text style={styles.fileRecords}>
+                {parsedRecords.length} valid member rows detected
+              </Text>
             </View>
 
             <Ionicons name="checkmark-circle" size={24} color={MAIN_GREEN} />
@@ -470,32 +633,43 @@ function UploadContent({ selectedFile, pickCSVFile, isDesktopWeb }) {
         )}
 
         <TouchableOpacity
-          style={[styles.uploadButton, !selectedFile && styles.uploadDisabled]}
-          disabled={!selectedFile}
+          style={[
+            styles.uploadButton,
+            (!selectedFile || parsedRecords.length === 0) && styles.uploadDisabled,
+          ]}
+          disabled={!selectedFile || parsedRecords.length === 0 || processingFile}
+          onPress={uploadParsedExcelRecords}
         >
-          <Feather name="upload" size={18} color="#ffffff" />
-          <Text style={styles.uploadButtonText}>Upload and Process File</Text>
+          {processingFile ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <>
+              <Feather name="database" size={18} color="#ffffff" />
+              <Text style={styles.uploadButtonText}>Import to Member Database</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
 
       <View style={[styles.panelCard, isDesktopWeb && styles.uploadSidePanel]}>
-        <Text style={styles.sectionTitle}>Required CSV Columns</Text>
+        <Text style={styles.sectionTitle}>Expected Excel Format</Text>
         <Text style={styles.sectionSub}>
-          Make sure your uploaded file follows this structure.
+          The system reads the uploaded file using this column order.
         </Text>
 
         <View style={styles.infoList}>
-          <InfoLine text="Member ID or username" />
+          <InfoLine text="No., First Name, Middle Initial, Last Name" />
           <InfoLine text="Share Capital, Savings, Special Savings" />
-          <InfoLine text="All loan type balances" />
-          <InfoLine text="Loan due dates in YYYY-MM-DD format" />
-          <InfoLine text="Dividend Amount" />
+          <InfoLine text="Regular, Educational, Short-term, Appliance, Medical loans" />
+          <InfoLine text="Petty Cash, Vehicle, and Inter-Trading Loan" />
+          <InfoLine text="Total Loan Balance column is ignored because totals are computed" />
+          <InfoLine text="Dividend 2026 is saved as Dividend Amount" />
         </View>
 
         <View style={styles.noteBox}>
           <Feather name="info" size={18} color={GOLD} />
           <Text style={styles.noteText}>
-            Manual input now adds new values to existing balances. Due date fields update only when filled.
+            Excel upload sets the exact balances from the file. It will not add duplicate values when uploaded again.
           </Text>
         </View>
       </View>
@@ -510,25 +684,12 @@ function ManualContent({
   totalLoanBalance,
   saveManualRecord,
   saving,
-  message,
-  isError,
   members,
   loadingMembers,
   isDesktopWeb,
 }) {
   return (
     <View>
-      {message ? (
-        <View style={isError ? styles.errorBox : styles.successBox}>
-          <Feather
-            name={isError ? "alert-circle" : "check-circle"}
-            size={17}
-            color={isError ? "#991b1b" : "#047857"}
-          />
-          <Text style={isError ? styles.errorText : styles.successText}>{message}</Text>
-        </View>
-      ) : null}
-
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Select Existing Member</Text>
         <Text style={styles.sectionSub}>
@@ -635,7 +796,7 @@ function ManualContent({
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Loan Due Dates</Text>
         <Text style={styles.sectionSub}>
-          Use YYYY-MM-DD format. Blank fields will keep the old due date.
+          Use YYYY-MM-DD format. Blank fields will keep the previous due date.
         </Text>
 
         <View style={isDesktopWeb ? styles.formGridFour : null}>
@@ -1181,6 +1342,13 @@ const styles = StyleSheet.create({
   fileSize: {
     color: "#64748b",
     fontSize: 11,
+    marginTop: 4,
+  },
+
+  fileRecords: {
+    color: MAIN_GREEN,
+    fontSize: 11,
+    fontWeight: "900",
     marginTop: 4,
   },
 
