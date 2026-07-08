@@ -1,3 +1,5 @@
+// app/member/_layout.js
+
 import { Stack } from "expo-router";
 
 export default function MemberLayout() {
@@ -5,6 +7,9 @@ export default function MemberLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
+        animation: "none",
+        animationDuration: 0,
+        gestureEnabled: false,
       }}
     />
   );
