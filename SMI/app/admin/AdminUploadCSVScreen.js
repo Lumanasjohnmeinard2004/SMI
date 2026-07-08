@@ -26,6 +26,14 @@ const MAIN_GREEN = "#009060";
 const LIGHT_GREEN = "#e6fff2";
 const PAGE_BG = "#f6fbf8";
 
+function getCurrentMonth() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+}
+
 function currency(value) {
   const numberValue = Number(value || 0);
 
@@ -141,6 +149,7 @@ export default function AdminUploadCSVScreen() {
   const [members, setMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [processingFile, setProcessingFile] = useState(false);
+  const [recordMonth, setRecordMonth] = useState(getCurrentMonth());
 
   const [formData, setFormData] = useState(emptyForm);
 
@@ -267,15 +276,22 @@ export default function AdminUploadCSVScreen() {
         return;
       }
 
+      if (!/^\d{4}-\d{2}$/.test(recordMonth.trim())) {
+        setIsError(true);
+        setMessage("Record Month must use YYYY-MM format, example: 2026-06.");
+        return;
+      }
+
       setProcessingFile(true);
 
       const data = await apiRequest("/members/import-excel-records", "POST", {
+        record_month: recordMonth.trim(),
         records: parsedRecords,
       });
 
       setIsError(false);
       setMessage(
-        `Excel imported successfully. Created: ${data.created_count}, Updated: ${data.updated_count}, Skipped: ${data.skipped_count}.`
+        `Excel imported for ${recordMonth}. Created: ${data.created_count}, Updated: ${data.updated_count}, Skipped: ${data.skipped_count}.`
       );
 
       await loadMembers();
@@ -304,9 +320,16 @@ export default function AdminUploadCSVScreen() {
         return;
       }
 
+      if (!/^\d{4}-\d{2}$/.test(recordMonth.trim())) {
+        setIsError(true);
+        setMessage("Record Month must use YYYY-MM format, example: 2026-06.");
+        return;
+      }
+
       setSaving(true);
 
       const payload = {
+        record_month: recordMonth.trim(),
         member_identifier: formData.memberIdentifier.trim(),
 
         share_capital: formData.shareCapital,
@@ -350,7 +373,9 @@ export default function AdminUploadCSVScreen() {
       );
 
       setIsError(false);
-      setMessage(`${data.member.full_name}'s financial record was added successfully.`);
+      setMessage(
+        `${data.member.full_name}'s ${recordMonth} financial record was saved successfully.`
+      );
       await loadMembers();
     } catch (error) {
       setIsError(true);
@@ -396,6 +421,22 @@ export default function AdminUploadCSVScreen() {
               </View>
             ) : null}
 
+            <View style={styles.monthPanel}>
+              <Text style={styles.inputLabel}>Record Month</Text>
+              <TextInput
+                style={styles.input}
+                value={recordMonth}
+                onChangeText={setRecordMonth}
+                placeholder="YYYY-MM"
+                placeholderTextColor="#94a3b8"
+                maxLength={7}
+              />
+              <Text style={styles.monthHelp}>
+                Use this to save the upload or manual entry under a specific month.
+                Example: 2026-06 for June 2026.
+              </Text>
+            </View>
+
             <View style={styles.modeTabs}>
               <TouchableOpacity
                 style={mode === "upload" ? styles.modeTabActive : styles.modeTab}
@@ -434,6 +475,7 @@ export default function AdminUploadCSVScreen() {
                 uploadParsedExcelRecords={uploadParsedExcelRecords}
                 processingFile={processingFile}
                 isDesktopWeb={isDesktopWeb}
+                recordMonth={recordMonth}
               />
             ) : (
               <ManualContent
@@ -446,6 +488,7 @@ export default function AdminUploadCSVScreen() {
                 members={members}
                 loadingMembers={loadingMembers}
                 isDesktopWeb={isDesktopWeb}
+                recordMonth={recordMonth}
               />
             )}
           </ScrollView>
@@ -499,7 +542,7 @@ function Sidebar({ router }) {
           icon="clipboard"
           label="Loan Requests"
           active={false}
-          badge="1"
+          badge="!"
           onPress={() =>
             router.push({
               pathname: "/admin/AdminDashboardScreen",
@@ -588,6 +631,7 @@ function UploadContent({
   uploadParsedExcelRecords,
   processingFile,
   isDesktopWeb,
+  recordMonth,
 }) {
   return (
     <View style={isDesktopWeb ? styles.uploadGrid : null}>
@@ -600,8 +644,7 @@ function UploadContent({
           <Text style={styles.uploadTitle}>Select Excel File</Text>
 
           <Text style={styles.uploadSub}>
-            Upload the member account Excel file using the format: First Name,
-            Middle Initial, Last Name, savings, loan balances, and dividend.
+            This upload will be saved under {recordMonth}. Make sure the month is correct before importing.
           </Text>
 
           <TouchableOpacity style={styles.chooseButton} onPress={pickExcelFile}>
@@ -665,13 +708,6 @@ function UploadContent({
           <InfoLine text="Total Loan Balance column is ignored because totals are computed" />
           <InfoLine text="Dividend 2026 is saved as Dividend Amount" />
         </View>
-
-        <View style={styles.noteBox}>
-          <Feather name="info" size={18} color={GOLD} />
-          <Text style={styles.noteText}>
-            Excel upload sets the exact balances from the file. It will not add duplicate values when uploaded again.
-          </Text>
-        </View>
       </View>
     </View>
   );
@@ -687,13 +723,14 @@ function ManualContent({
   members,
   loadingMembers,
   isDesktopWeb,
+  recordMonth,
 }) {
   return (
     <View>
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Select Existing Member</Text>
         <Text style={styles.sectionSub}>
-          Enter the member ID or username. New values will be added to the current record.
+          This manual entry will be saved under {recordMonth}.
         </Text>
 
         <InputField
@@ -731,50 +768,17 @@ function ManualContent({
 
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Savings Information</Text>
-        <Text style={styles.sectionSub}>
-          These amounts will be added to the member's existing balances.
-        </Text>
 
         <View style={isDesktopWeb ? styles.formGridFour : null}>
-          <InputField
-            label="Share Capital"
-            value={formData.shareCapital}
-            onChangeText={(value) => updateField("shareCapital", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Savings"
-            value={formData.savings}
-            onChangeText={(value) => updateField("savings", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Special Savings"
-            value={formData.specialSavings}
-            onChangeText={(value) => updateField("specialSavings", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
-
-          <InputField
-            label="Dividend Amount"
-            value={formData.dividendAmount}
-            onChangeText={(value) => updateField("dividendAmount", value)}
-            placeholder="0.00"
-            keyboardType="numeric"
-          />
+          <InputField label="Share Capital" value={formData.shareCapital} onChangeText={(value) => updateField("shareCapital", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Savings" value={formData.savings} onChangeText={(value) => updateField("savings", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Special Savings" value={formData.specialSavings} onChangeText={(value) => updateField("specialSavings", value)} placeholder="0.00" keyboardType="numeric" />
+          <InputField label="Dividend Amount" value={formData.dividendAmount} onChangeText={(value) => updateField("dividendAmount", value)} placeholder="0.00" keyboardType="numeric" />
         </View>
       </View>
 
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Loan Balances</Text>
-        <Text style={styles.sectionSub}>
-          These loan amounts will be added to the existing loan balances.
-        </Text>
 
         <View style={isDesktopWeb ? styles.formGridFour : null}>
           <InputField label="Regular Loan" value={formData.regularLoan} onChangeText={(value) => updateField("regularLoan", value)} placeholder="0.00" keyboardType="numeric" />
@@ -795,9 +799,6 @@ function ManualContent({
 
       <View style={styles.panelCard}>
         <Text style={styles.sectionTitle}>Loan Due Dates</Text>
-        <Text style={styles.sectionSub}>
-          Use YYYY-MM-DD format. Blank fields will keep the previous due date.
-        </Text>
 
         <View style={isDesktopWeb ? styles.formGridFour : null}>
           <InputField label="Regular Loan Due Date" value={formData.regularLoanDueDate} onChangeText={(value) => updateField("regularLoanDueDate", value)} placeholder="YYYY-MM-DD" maxLength={10} />
@@ -910,7 +911,7 @@ function BottomNav({ router }) {
         icon="clipboard"
         label="Reqs"
         active={false}
-        badge="1"
+        badge="!"
         onPress={() =>
           router.push({
             pathname: "/admin/AdminDashboardScreen",
@@ -1187,6 +1188,23 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
+  monthPanel: {
+    backgroundColor: "#ffffff",
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#efe2bd",
+    marginBottom: 14,
+  },
+
+  monthHelp: {
+    color: "#64748b",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 8,
+    fontWeight: "700",
+  },
+
   modeTabs: {
     backgroundColor: "#ffffff",
     borderRadius: 18,
@@ -1403,24 +1421,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  noteBox: {
-    backgroundColor: "#fff8e1",
-    borderWidth: 1,
-    borderColor: "#e5d4a2",
-    borderRadius: 14,
-    padding: 14,
-    flexDirection: "row",
-    marginTop: 12,
-  },
-
-  noteText: {
-    flex: 1,
-    color: "#795700",
-    fontSize: 13,
-    lineHeight: 19,
-    marginLeft: 9,
-  },
-
   formGridFour: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1449,6 +1449,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     color: "#052e1d",
     fontSize: 14,
+    outlineStyle: "none",
   },
 
   memberHintBox: {

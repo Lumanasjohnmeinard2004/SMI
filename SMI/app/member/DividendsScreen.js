@@ -1,7 +1,14 @@
 // app/member/DividendsScreen.js
 
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  TouchableOpacity,
+  ScrollView,
+} from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import {
   MemberScreen,
@@ -22,32 +29,87 @@ function formatCurrency(value) {
   })}`;
 }
 
+function formatMonthLabel(value) {
+  if (!value) {
+    return "Current Month";
+  }
+
+  const [year, month] = String(value).split("-");
+  const date = new Date(Number(year), Number(month) - 1, 1);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString("en-PH", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function mergeMemberAndMonthlyRecord(member, financialRecord) {
+  if (!financialRecord) {
+    return member;
+  }
+
+  return {
+    ...member,
+    dividend_amount: financialRecord.dividend_amount,
+  };
+}
+
 export default function DividendsScreen() {
   const params = useLocalSearchParams();
 
   const identifier =
     params.member_id || params.username || params.id || params.userId || "msantos";
 
+  const initialMonth = params.selected_month || "";
+
   const [member, setMember] = useState(null);
+  const [availableMonths, setAvailableMonths] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth);
   const [loading, setLoading] = useState(true);
+  const [monthLoading, setMonthLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    loadDividends();
+    loadDividends(initialMonth);
   }, [identifier]);
 
-  async function loadDividends() {
+  async function loadDividends(month = "") {
     try {
-      setLoading(true);
+      if (!member) {
+        setLoading(true);
+      } else {
+        setMonthLoading(true);
+      }
+
       setErrorMessage("");
 
-      const data = await apiRequest(`/members/${identifier}/financials`, "GET");
-      setMember(data.member);
+      const endpoint = month
+        ? `/members/${identifier}/monthly-financials?month=${month}`
+        : `/members/${identifier}/monthly-financials`;
+
+      const data = await apiRequest(endpoint, "GET");
+
+      setMember(mergeMemberAndMonthlyRecord(data.member, data.financial_record));
+      setAvailableMonths(data.available_months || []);
+      setSelectedMonth(data.selected_month || month || "");
     } catch (error) {
       setErrorMessage(error.message || "Failed to load dividends.");
     } finally {
       setLoading(false);
+      setMonthLoading(false);
     }
+  }
+
+  function selectMonth(month) {
+    if (month === selectedMonth) {
+      return;
+    }
+
+    loadDividends(month);
   }
 
   if (loading) {
@@ -69,7 +131,10 @@ export default function DividendsScreen() {
         <SectionCard title="Unable to Load Dividends">
           <Text style={styles.errorText}>{errorMessage}</Text>
 
-          <TouchableOpacity style={styles.retryButton} onPress={loadDividends}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => loadDividends(selectedMonth)}
+          >
             <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </SectionCard>
@@ -82,34 +147,68 @@ export default function DividendsScreen() {
       active="Dividend"
       title="Dividends"
       subtitle="Interest on Share Capital"
-      member={member}
     >
+      <SectionCard title="View by Month">
+        <Text style={styles.monthSubtitle}>
+          Showing records for {formatMonthLabel(selectedMonth)}
+        </Text>
+
+        {availableMonths.length === 0 ? (
+          <Text style={styles.noMonthText}>No monthly records available.</Text>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.monthRow}>
+              {availableMonths.map((month) => (
+                <TouchableOpacity
+                  key={month}
+                  style={
+                    selectedMonth === month
+                      ? styles.monthChipActive
+                      : styles.monthChip
+                  }
+                  onPress={() => selectMonth(month)}
+                >
+                  <Text
+                    style={
+                      selectedMonth === month
+                        ? styles.monthChipTextActive
+                        : styles.monthChipText
+                    }
+                  >
+                    {formatMonthLabel(month)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        )}
+
+        {monthLoading ? (
+          <View style={styles.monthLoadingRow}>
+            <ActivityIndicator color={theme.green} size="small" />
+            <Text style={styles.monthLoadingText}>Updating month view...</Text>
+          </View>
+        ) : null}
+      </SectionCard>
+
       <Notice
         title="Dividend record loaded"
-        subtitle="This amount comes from the cooperative database."
+        subtitle="This amount comes from the selected monthly cooperative database record."
       />
 
       <PrimaryCard
         label="TOTAL DIVIDENDS EARNED"
         amount={formatCurrency(member.dividend_amount)}
-        sub="Latest recorded dividend amount"
+        sub={formatMonthLabel(selectedMonth)}
       />
 
       <SectionCard title="Dividend History">
         <DividendItem
-          year="Latest Record"
+          year={formatMonthLabel(selectedMonth)}
           status="Recorded"
           statusType="paid"
-          details="Saved from admin manual input"
+          details="Saved from admin monthly record"
           amount={formatCurrency(member.dividend_amount)}
-        />
-
-        <DividendItem
-          year="FY 2024"
-          status="Pending"
-          statusType="pending"
-          details="Rate and release date to be updated by admin"
-          amount="—"
         />
       </SectionCard>
     </MemberScreen>
@@ -206,5 +305,70 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 13,
     fontWeight: "900",
+  },
+
+  monthSubtitle: {
+    color: theme.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+
+  noMonthText: {
+    color: theme.muted,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+
+  monthRow: {
+    flexDirection: "row",
+    paddingBottom: 4,
+  },
+
+  monthChip: {
+    height: 36,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: "#fffdf5",
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+
+  monthChipActive: {
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: theme.green,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+
+  monthChipText: {
+    color: theme.greenDark,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  monthChipTextActive: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
+  monthLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 12,
+  },
+
+  monthLoadingText: {
+    color: theme.muted,
+    fontSize: 12,
+    fontWeight: "700",
+    marginLeft: 8,
   },
 });

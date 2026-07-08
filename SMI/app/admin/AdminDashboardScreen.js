@@ -51,6 +51,14 @@ function formatDate(value) {
   return `${year}-${month}-${day}`;
 }
 
+function getCurrentMonth() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+}
+
 function getTotalSavings(member) {
   return (
     Number(member.savings || 0) +
@@ -135,15 +143,25 @@ function mapDbMember(member) {
     inter_trading_loan: Number(member.inter_trading_loan || 0),
 
     regular_loan_due_date: formatDate(member.regular_loan_due_date),
-    regular_loan_diminishing_due_date: formatDate(member.regular_loan_diminishing_due_date),
+    regular_loan_diminishing_due_date: formatDate(
+      member.regular_loan_diminishing_due_date
+    ),
     educational_loan_due_date: formatDate(member.educational_loan_due_date),
-    educational_loan_diminishing_due_date: formatDate(member.educational_loan_diminishing_due_date),
+    educational_loan_diminishing_due_date: formatDate(
+      member.educational_loan_diminishing_due_date
+    ),
     short_term_loan_due_date: formatDate(member.short_term_loan_due_date),
-    short_term_loan_diminishing_due_date: formatDate(member.short_term_loan_diminishing_due_date),
+    short_term_loan_diminishing_due_date: formatDate(
+      member.short_term_loan_diminishing_due_date
+    ),
     appliance_loan_due_date: formatDate(member.appliance_loan_due_date),
-    appliance_loan_diminishing_due_date: formatDate(member.appliance_loan_diminishing_due_date),
+    appliance_loan_diminishing_due_date: formatDate(
+      member.appliance_loan_diminishing_due_date
+    ),
     medical_loan_due_date: formatDate(member.medical_loan_due_date),
-    medical_loan_diminishing_due_date: formatDate(member.medical_loan_diminishing_due_date),
+    medical_loan_diminishing_due_date: formatDate(
+      member.medical_loan_diminishing_due_date
+    ),
     petty_cash_loan_due_date: formatDate(member.petty_cash_loan_due_date),
     vehicle_loan_due_date: formatDate(member.vehicle_loan_due_date),
     inter_trading_loan_due_date: formatDate(member.inter_trading_loan_due_date),
@@ -876,6 +894,384 @@ function MembersContent({
   );
 }
 
+function RequestsContent({ isDesktopWeb }) {
+  const [selectedLoanType, setSelectedLoanType] = useState("All Loan Types");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [requests, setRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsError, setRequestsError] = useState("");
+
+  const [decisionModal, setDecisionModal] = useState({
+    visible: false,
+    request: null,
+    status: "",
+  });
+
+  const [remarks, setRemarks] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [recordMonth, setRecordMonth] = useState(getCurrentMonth());
+  const [savingDecision, setSavingDecision] = useState(false);
+  const [decisionMessage, setDecisionMessage] = useState("");
+
+  useEffect(() => {
+    loadLoanRequests();
+  }, []);
+
+  async function loadLoanRequests() {
+    try {
+      setRequestsLoading(true);
+      setRequestsError("");
+
+      const data = await apiRequest("/requests", "GET");
+
+      setRequests(data.requests || []);
+    } catch (error) {
+      setRequestsError(error.message || "Failed to load loan requests.");
+    } finally {
+      setRequestsLoading(false);
+    }
+  }
+
+  function openDecisionModal(request, status) {
+    setDecisionModal({
+      visible: true,
+      request,
+      status,
+    });
+
+    setRemarks(status === "Approved" ? "Approved by admin." : "Rejected by admin.");
+    setDueDate("");
+    setRecordMonth(getCurrentMonth());
+    setDecisionMessage("");
+  }
+
+  function closeDecisionModal() {
+    setDecisionModal({
+      visible: false,
+      request: null,
+      status: "",
+    });
+
+    setRemarks("");
+    setDueDate("");
+    setRecordMonth(getCurrentMonth());
+    setDecisionMessage("");
+    setSavingDecision(false);
+  }
+
+  async function submitDecision() {
+    try {
+      setDecisionMessage("");
+
+      if (!remarks.trim()) {
+        setDecisionMessage("Please provide admin remarks.");
+        return;
+      }
+
+      if (decisionModal.status === "Approved") {
+        if (!/^\d{4}-\d{2}$/.test(recordMonth.trim())) {
+          setDecisionMessage("Record Month must use YYYY-MM format. Example: 2026-06.");
+          return;
+        }
+
+        if (dueDate.trim() && !/^\d{4}-\d{2}-\d{2}$/.test(dueDate.trim())) {
+          setDecisionMessage("Due Date must use YYYY-MM-DD format. Example: 2026-08-15.");
+          return;
+        }
+      }
+
+      setSavingDecision(true);
+
+      await apiRequest(`/requests/${decisionModal.request.id}/status`, "PATCH", {
+        status: decisionModal.status,
+        admin_remarks: remarks.trim(),
+        due_date: dueDate.trim(),
+        record_month: recordMonth.trim(),
+      });
+
+      await loadLoanRequests();
+      closeDecisionModal();
+    } catch (error) {
+      setDecisionMessage(error.message || "Failed to update loan request.");
+    } finally {
+      setSavingDecision(false);
+    }
+  }
+
+  const loanTypeOptions = [
+    "All Loan Types",
+    "Regular Loan",
+    "Regular Loan - Diminishing",
+    "Educational Loan",
+    "Educational Loan - Diminishing",
+    "Short-term Loan",
+    "Short-term Loan - Diminishing",
+    "Appliance Loan",
+    "Appliance Loan - Diminishing",
+    "Medical Loan",
+    "Medical Loan - Diminishing",
+    "Petty Cash Loan",
+    "Vehicle Loan",
+    "Inter-Trading Loan",
+  ];
+
+  const statusOptions = ["All", "Pending", "Approved", "Rejected"];
+
+  const filteredRequests = requests.filter((request) => {
+    const matchesLoanType =
+      selectedLoanType === "All Loan Types" ||
+      request.loan_type === selectedLoanType;
+
+    const matchesStatus =
+      statusFilter === "All" || request.status === statusFilter;
+
+    return matchesLoanType && matchesStatus;
+  });
+
+  const pendingCount = requests.filter(
+    (request) => request.status === "Pending"
+  ).length;
+
+  return (
+    <View>
+      <View style={styles.filterPanel}>
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Loan Type</Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {loanTypeOptions.map((item) => (
+              <FilterChip
+                key={item}
+                label={item}
+                active={selectedLoanType === item}
+                onPress={() => setSelectedLoanType(item)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Status</Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {statusOptions.map((item) => (
+              <FilterChip
+                key={item}
+                label={item}
+                active={statusFilter === item}
+                onPress={() => setStatusFilter(item)}
+              />
+            ))}
+          </ScrollView>
+        </View>
+      </View>
+
+      {requestsLoading && (
+        <View style={styles.noticeBox}>
+          <ActivityIndicator color={MAIN_GREEN} />
+          <Text style={styles.noticeText}>Loading loan requests...</Text>
+        </View>
+      )}
+
+      {requestsError ? (
+        <View style={styles.errorBox}>
+          <Feather name="alert-circle" size={16} color="#991b1b" />
+          <Text style={styles.errorText}>{requestsError}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.panelCard}>
+        <View style={styles.panelHeader}>
+          <View>
+            <Text style={styles.sectionTitle}>Request Queue</Text>
+            <Text style={styles.sectionSub}>
+              {pendingCount} pending · {filteredRequests.length} shown
+            </Text>
+          </View>
+
+          <TouchableOpacity style={styles.refreshButton} onPress={loadLoanRequests}>
+            <Feather name="refresh-cw" size={17} color={MAIN_GREEN} />
+          </TouchableOpacity>
+        </View>
+
+        {filteredRequests.length === 0 && !requestsLoading ? (
+          <Text style={styles.emptyText}>No loan requests found.</Text>
+        ) : isDesktopWeb ? (
+          <View style={styles.table}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.th, { flex: 1.3 }]}>Member</Text>
+              <Text style={styles.th}>Loan Type</Text>
+              <Text style={styles.th}>Amount</Text>
+              <Text style={styles.th}>Purpose</Text>
+              <Text style={styles.th}>Status</Text>
+              <Text style={styles.th}>Action</Text>
+            </View>
+
+            {filteredRequests.map((request) => (
+              <RequestTableRow
+                key={request.id}
+                request={request}
+                onApprove={() => openDecisionModal(request, "Approved")}
+                onReject={() => openDecisionModal(request, "Rejected")}
+              />
+            ))}
+          </View>
+        ) : (
+          filteredRequests.map((request) => (
+            <RequestCard
+              key={request.id}
+              request={request}
+              onApprove={() => openDecisionModal(request, "Approved")}
+              onReject={() => openDecisionModal(request, "Rejected")}
+            />
+          ))
+        )}
+      </View>
+
+      <RequestDecisionModal
+        visible={decisionModal.visible}
+        request={decisionModal.request}
+        status={decisionModal.status}
+        remarks={remarks}
+        setRemarks={setRemarks}
+        dueDate={dueDate}
+        setDueDate={setDueDate}
+        recordMonth={recordMonth}
+        setRecordMonth={setRecordMonth}
+        message={decisionMessage}
+        saving={savingDecision}
+        onClose={closeDecisionModal}
+        onSubmit={submitDecision}
+      />
+    </View>
+  );
+}
+
+function RequestDecisionModal({
+  visible,
+  request,
+  status,
+  remarks,
+  setRemarks,
+  dueDate,
+  setDueDate,
+  recordMonth,
+  setRecordMonth,
+  message,
+  saving,
+  onClose,
+  onSubmit,
+}) {
+  if (!request) {
+    return null;
+  }
+
+  const isApprove = status === "Approved";
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.addMemberModal}>
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitle}>
+                {isApprove ? "Approve Loan Request" : "Reject Loan Request"}
+              </Text>
+
+              <Text style={styles.modalSubtitle}>
+                {request.full_name} · {request.loan_type} · {formatCurrency(request.amount)}
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
+              <Feather name="x" size={20} color="#334155" />
+            </TouchableOpacity>
+          </View>
+
+          {message ? (
+            <View style={styles.errorBox}>
+              <Feather name="alert-circle" size={16} color="#991b1b" />
+              <Text style={styles.errorText}>{message}</Text>
+            </View>
+          ) : null}
+
+          {isApprove ? (
+            <>
+              <View style={styles.modalInputGroup}>
+                <Text style={styles.modalInputLabel}>Record Month</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={recordMonth}
+                  onChangeText={setRecordMonth}
+                  placeholder="YYYY-MM"
+                  placeholderTextColor="#94a3b8"
+                  maxLength={7}
+                />
+              </View>
+
+              <View style={styles.modalInputGroup}>
+                <Text style={styles.modalInputLabel}>Loan Due Date</Text>
+                <TextInput
+                  style={styles.modalInput}
+                  value={dueDate}
+                  onChangeText={setDueDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#94a3b8"
+                  maxLength={10}
+                />
+              </View>
+            </>
+          ) : null}
+
+          <View style={styles.modalInputGroup}>
+            <Text style={styles.modalInputLabel}>Admin Remarks</Text>
+            <TextInput
+              style={styles.decisionTextArea}
+              value={remarks}
+              onChangeText={setRemarks}
+              placeholder={
+                isApprove
+                  ? "Example: Approved based on member eligibility."
+                  : "Example: Rejected due to incomplete requirements."
+              }
+              placeholderTextColor="#94a3b8"
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelMemberButton} onPress={onClose}>
+              <Text style={styles.cancelMemberText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={isApprove ? styles.decisionApproveButton : styles.decisionRejectButton}
+              onPress={onSubmit}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Feather
+                    name={isApprove ? "check" : "x"}
+                    size={17}
+                    color="#ffffff"
+                  />
+                  <Text style={styles.saveMemberText}>
+                    {isApprove ? "Approve" : "Reject"}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function AddMemberModal({ visible, onClose, onMemberAdded }) {
   const [form, setForm] = useState({
     member_id: "",
@@ -1040,6 +1436,8 @@ function EditMemberModal({ visible, member, onClose, onSaved }) {
   useEffect(() => {
     if (member) {
       setForm({
+        record_month: getCurrentMonth(),
+
         full_name: member.name || "",
         member_id: member.id || "",
         username: member.rawUsername || "",
@@ -1107,7 +1505,15 @@ function EditMemberModal({ visible, member, onClose, onSaved }) {
         return;
       }
 
+      if (!/^\d{4}-\d{2}$/.test(form.record_month.trim())) {
+        setIsError(true);
+        setMessage("Record Month must use YYYY-MM format. Example: 2026-06.");
+        return;
+      }
+
       await apiRequest(`/members/${member.dbId}/financials`, "PATCH", {
+        record_month: form.record_month.trim(),
+
         full_name: form.full_name.trim(),
         member_id: form.member_id.trim(),
         username: form.username.trim(),
@@ -1192,6 +1598,18 @@ function EditMemberModal({ visible, member, onClose, onSaved }) {
           ) : null}
 
           <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.editSectionTitle}>Record Month</Text>
+
+            <View style={styles.modalGrid}>
+              <ModalInput
+                label="Record Month"
+                value={form.record_month}
+                onChangeText={(value) => updateField("record_month", value)}
+                placeholder="YYYY-MM"
+                maxLength={7}
+              />
+            </View>
+
             <Text style={styles.editSectionTitle}>Member Information</Text>
 
             <View style={styles.modalGrid}>
@@ -1255,19 +1673,19 @@ function EditMemberModal({ visible, member, onClose, onSaved }) {
             <Text style={styles.editSectionTitle}>Loan Due Dates</Text>
 
             <View style={styles.modalGrid}>
-              <ModalInput label="Regular Loan Due Date" value={form.regular_loan_due_date} onChangeText={(value) => updateField("regular_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Regular Diminishing Due Date" value={form.regular_loan_diminishing_due_date} onChangeText={(value) => updateField("regular_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Educational Loan Due Date" value={form.educational_loan_due_date} onChangeText={(value) => updateField("educational_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Educational Diminishing Due Date" value={form.educational_loan_diminishing_due_date} onChangeText={(value) => updateField("educational_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Short-term Loan Due Date" value={form.short_term_loan_due_date} onChangeText={(value) => updateField("short_term_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Short-term Diminishing Due Date" value={form.short_term_loan_diminishing_due_date} onChangeText={(value) => updateField("short_term_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Appliance Loan Due Date" value={form.appliance_loan_due_date} onChangeText={(value) => updateField("appliance_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Appliance Diminishing Due Date" value={form.appliance_loan_diminishing_due_date} onChangeText={(value) => updateField("appliance_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Medical Loan Due Date" value={form.medical_loan_due_date} onChangeText={(value) => updateField("medical_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Medical Diminishing Due Date" value={form.medical_loan_diminishing_due_date} onChangeText={(value) => updateField("medical_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Petty Cash Due Date" value={form.petty_cash_loan_due_date} onChangeText={(value) => updateField("petty_cash_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Vehicle Loan Due Date" value={form.vehicle_loan_due_date} onChangeText={(value) => updateField("vehicle_loan_due_date", value)} placeholder="YYYY-MM-DD" />
-              <ModalInput label="Inter-Trading Due Date" value={form.inter_trading_loan_due_date} onChangeText={(value) => updateField("inter_trading_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Regular Loan Due Date" value={form.regular_loan_due_date} onChangeText={(value) => updateField("regular_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Regular Diminishing Due Date" value={form.regular_loan_diminishing_due_date} onChangeText={(value) => updateField("regular_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Educational Loan Due Date" value={form.educational_loan_due_date} onChangeText={(value) => updateField("educational_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Educational Diminishing Due Date" value={form.educational_loan_diminishing_due_date} onChangeText={(value) => updateField("educational_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Short-term Loan Due Date" value={form.short_term_loan_due_date} onChangeText={(value) => updateField("short_term_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Short-term Diminishing Due Date" value={form.short_term_loan_diminishing_due_date} onChangeText={(value) => updateField("short_term_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Appliance Loan Due Date" value={form.appliance_loan_due_date} onChangeText={(value) => updateField("appliance_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Appliance Diminishing Due Date" value={form.appliance_loan_diminishing_due_date} onChangeText={(value) => updateField("appliance_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Medical Loan Due Date" value={form.medical_loan_due_date} onChangeText={(value) => updateField("medical_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Medical Diminishing Due Date" value={form.medical_loan_diminishing_due_date} onChangeText={(value) => updateField("medical_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Petty Cash Due Date" value={form.petty_cash_loan_due_date} onChangeText={(value) => updateField("petty_cash_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Vehicle Loan Due Date" value={form.vehicle_loan_due_date} onChangeText={(value) => updateField("vehicle_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
+              <ModalInput label="Inter-Trading Due Date" value={form.inter_trading_loan_due_date} onChangeText={(value) => updateField("inter_trading_loan_due_date", value)} placeholder="YYYY-MM-DD" maxLength={10} />
             </View>
           </ScrollView>
 
@@ -1305,6 +1723,7 @@ function ModalInput({
   secureTextEntry,
   autoCapitalize = "words",
   keyboardType = "default",
+  maxLength,
 }) {
   return (
     <View style={styles.modalInputGroup}>
@@ -1319,140 +1738,8 @@ function ModalInput({
         secureTextEntry={secureTextEntry}
         autoCapitalize={autoCapitalize}
         keyboardType={keyboardType}
+        maxLength={maxLength}
       />
-    </View>
-  );
-}
-
-function RequestsContent({ isDesktopWeb }) {
-  const [selectedLoanType, setSelectedLoanType] = useState("All Loan Types");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [requests, setRequests] = useState([]);
-  const [requestsLoading, setRequestsLoading] = useState(false);
-  const [requestsError, setRequestsError] = useState("");
-
-  useEffect(() => {
-    loadLoanRequests();
-  }, []);
-
-  async function loadLoanRequests() {
-    try {
-      setRequestsLoading(true);
-      setRequestsError("");
-
-      const data = await apiRequest("/requests", "GET");
-
-      setRequests(data.requests || []);
-    } catch (error) {
-      setRequestsError(error.message || "Failed to load loan requests.");
-    } finally {
-      setRequestsLoading(false);
-    }
-  }
-
-  const loanTypeOptions = [
-    "All Loan Types",
-    "Regular Loan",
-    "Educational Loan",
-    "Medical Loan",
-    "Vehicle Loan",
-  ];
-
-  const statusOptions = ["All", "Pending", "Approved", "Rejected"];
-
-  const filteredRequests = requests.filter((request) => {
-    const matchesLoanType =
-      selectedLoanType === "All Loan Types" ||
-      request.loan_type === selectedLoanType;
-
-    const matchesStatus =
-      statusFilter === "All" || request.status === statusFilter;
-
-    return matchesLoanType && matchesStatus;
-  });
-
-  return (
-    <View>
-      <View style={styles.filterPanel}>
-        <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Loan Type</Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {loanTypeOptions.map((item) => (
-              <FilterChip
-                key={item}
-                label={item}
-                active={selectedLoanType === item}
-                onPress={() => setSelectedLoanType(item)}
-              />
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.filterGroup}>
-          <Text style={styles.filterLabel}>Status</Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {statusOptions.map((item) => (
-              <FilterChip
-                key={item}
-                label={item}
-                active={statusFilter === item}
-                onPress={() => setStatusFilter(item)}
-              />
-            ))}
-          </ScrollView>
-        </View>
-      </View>
-
-      {requestsLoading && (
-        <View style={styles.noticeBox}>
-          <ActivityIndicator color={MAIN_GREEN} />
-          <Text style={styles.noticeText}>Loading loan requests...</Text>
-        </View>
-      )}
-
-      {requestsError ? (
-        <View style={styles.errorBox}>
-          <Feather name="alert-circle" size={16} color="#991b1b" />
-          <Text style={styles.errorText}>{requestsError}</Text>
-        </View>
-      ) : null}
-
-      <View style={styles.panelCard}>
-        <View style={styles.panelHeader}>
-          <View>
-            <Text style={styles.sectionTitle}>Request Queue</Text>
-            <Text style={styles.sectionSub}>{filteredRequests.length} total requests</Text>
-          </View>
-
-          <TouchableOpacity style={styles.refreshButton} onPress={loadLoanRequests}>
-            <Feather name="refresh-cw" size={17} color={MAIN_GREEN} />
-          </TouchableOpacity>
-        </View>
-
-        {filteredRequests.length === 0 && !requestsLoading ? (
-          <Text style={styles.emptyText}>No loan requests found.</Text>
-        ) : isDesktopWeb ? (
-          <View style={styles.table}>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.th, { flex: 1.3 }]}>Member</Text>
-              <Text style={styles.th}>Loan Type</Text>
-              <Text style={styles.th}>Amount</Text>
-              <Text style={styles.th}>Purpose</Text>
-              <Text style={styles.th}>Status</Text>
-            </View>
-
-            {filteredRequests.map((request) => (
-              <RequestTableRow key={request.id} request={request} />
-            ))}
-          </View>
-        ) : (
-          filteredRequests.map((request) => (
-            <RequestCard key={request.id} request={request} />
-          ))
-        )}
-      </View>
     </View>
   );
 }
@@ -1611,19 +1898,40 @@ function MemberCard({
   );
 }
 
-function RequestTableRow({ request }) {
+function RequestTableRow({ request, onApprove, onReject }) {
   return (
     <View style={styles.tableRow}>
       <Text style={[styles.tdStrong, { flex: 1.3 }]}>{request.full_name}</Text>
       <Text style={styles.td}>{request.loan_type}</Text>
       <Text style={styles.tdGreen}>{formatCurrency(request.amount)}</Text>
       <Text style={styles.td}>{request.purpose}</Text>
+
       <StatusBadge status={request.status} />
+
+      <View style={styles.actionCell}>
+        {request.status === "Pending" ? (
+          <>
+            <TouchableOpacity style={styles.approveMini} onPress={onApprove}>
+              <Feather name="check" size={14} color={MAIN_GREEN} />
+              <Text style={styles.actionMiniTextGreen}>Accept</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.rejectMini} onPress={onReject}>
+              <Feather name="x" size={14} color="#dc2626" />
+              <Text style={styles.actionMiniTextRed}>Deny</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={styles.tableSub} numberOfLines={1}>
+            {request.admin_remarks || "Processed"}
+          </Text>
+        )}
+      </View>
     </View>
   );
 }
 
-function RequestCard({ request }) {
+function RequestCard({ request, onApprove, onReject }) {
   return (
     <View style={styles.requestCard}>
       <View style={styles.requestCardHeader}>
@@ -1640,6 +1948,20 @@ function RequestCard({ request }) {
 
       {request.admin_remarks ? (
         <InfoBlock label="Admin Remarks" value={request.admin_remarks} />
+      ) : null}
+
+      {request.status === "Pending" ? (
+        <View style={styles.requestActionRow}>
+          <TouchableOpacity style={styles.approveButton} onPress={onApprove}>
+            <Feather name="check-square" size={16} color={MAIN_GREEN} />
+            <Text style={styles.approveButtonText}>Accept</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.rejectButton} onPress={onReject}>
+            <Feather name="x-circle" size={16} color="#ff4b4b" />
+            <Text style={styles.rejectButtonText}>Deny</Text>
+          </TouchableOpacity>
+        </View>
       ) : null}
     </View>
   );
@@ -2700,6 +3022,51 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
+  actionCell: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  approveMini: {
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: "#e6fff2",
+    borderWidth: 1,
+    borderColor: "#86efac",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    paddingHorizontal: 10,
+    marginRight: 8,
+  },
+
+  rejectMini: {
+    height: 32,
+    borderRadius: 9,
+    backgroundColor: "#fee2e2",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    paddingHorizontal: 10,
+  },
+
+  actionMiniTextGreen: {
+    color: MAIN_GREEN,
+    fontSize: 11,
+    fontWeight: "900",
+    marginLeft: 5,
+  },
+
+  actionMiniTextRed: {
+    color: "#dc2626",
+    fontSize: 11,
+    fontWeight: "900",
+    marginLeft: 5,
+  },
+
   requestCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -2747,6 +3114,50 @@ const styles = StyleSheet.create({
     color: MAIN_GREEN,
     fontSize: 17,
     fontWeight: "900",
+  },
+
+  requestActionRow: {
+    flexDirection: "row",
+    marginTop: 4,
+  },
+
+  approveButton: {
+    flex: 1,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#e6fff2",
+    borderWidth: 1,
+    borderColor: "#86efac",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+    marginRight: 10,
+  },
+
+  approveButtonText: {
+    color: MAIN_GREEN,
+    fontSize: 13,
+    fontWeight: "900",
+    marginLeft: 7,
+  },
+
+  rejectButton: {
+    flex: 1,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#fff7f7",
+    borderWidth: 1,
+    borderColor: "#fecaca",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  rejectButtonText: {
+    color: "#ff4b4b",
+    fontSize: 13,
+    fontWeight: "900",
+    marginLeft: 7,
   },
 
   profileGrid: {
@@ -2975,6 +3386,19 @@ const styles = StyleSheet.create({
     outlineStyle: "none",
   },
 
+  decisionTextArea: {
+    minHeight: 110,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
+    backgroundColor: "#fffdf5",
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    color: "#052e1d",
+    fontSize: 14,
+    outlineStyle: "none",
+  },
+
   modalActions: {
     flexDirection: "row",
     marginTop: 12,
@@ -3003,6 +3427,26 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 13,
     backgroundColor: MAIN_GREEN,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  decisionApproveButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    backgroundColor: MAIN_GREEN,
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+
+  decisionRejectButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 13,
+    backgroundColor: "#dc2626",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
