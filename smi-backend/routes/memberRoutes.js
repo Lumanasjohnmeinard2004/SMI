@@ -9,6 +9,7 @@ const {
   importExcelFinancialRecords,
   updateMemberFinancialRecord,
   getMemberFinancials,
+  getMemberMonthlyFinancials,
   updateMemberProfileImage,
 } = require("../controllers/memberController");
 
@@ -19,6 +20,7 @@ router.post("/", addMember);
 router.post("/manual-financial-record", saveManualFinancialRecord);
 router.post("/import-excel-records", importExcelFinancialRecords);
 router.patch("/:identifier/financials", updateMemberFinancialRecord);
+router.get("/:identifier/monthly-financials", getMemberMonthlyFinancials);
 router.patch("/:identifier/profile-image", updateMemberProfileImage);
 router.get("/:identifier/financials", getMemberFinancials);
 

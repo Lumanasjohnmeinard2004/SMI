@@ -65,6 +65,30 @@ function buildUsername(firstName, lastName, number) {
   return `${first}${last}` || fallback;
 }
 
+function getCurrentMonth() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+
+  return `${year}-${month}`;
+}
+
+function cleanMonth(value) {
+  const currentMonth = getCurrentMonth();
+
+  if (!value) {
+    return currentMonth;
+  }
+
+  const cleaned = String(value).trim();
+
+  if (!/^\d{4}-\d{2}$/.test(cleaned)) {
+    return currentMonth;
+  }
+
+  return cleaned;
+}
+
 async function getUniqueMemberId(preferredId, client = pool) {
   let baseId = preferredId || "SMI-001";
   let candidate = baseId;
@@ -103,6 +127,91 @@ async function getUniqueUsername(preferredUsername, client = pool) {
     counter += 1;
     candidate = `${baseUsername}${counter}`;
   }
+}
+
+async function saveMonthlySnapshot(memberId, data, client = pool) {
+  const recordMonth = cleanMonth(data.record_month);
+
+  await client.query(
+    `
+    INSERT INTO member_monthly_financials (
+      member_id,
+      record_month,
+
+      share_capital,
+      savings,
+      special_savings,
+
+      regular_loan,
+      regular_loan_diminishing,
+      educational_loan,
+      educational_loan_diminishing,
+      short_term_loan,
+      short_term_loan_diminishing,
+      appliance_loan,
+      appliance_loan_diminishing,
+      medical_loan,
+      medical_loan_diminishing,
+      petty_cash_loan,
+      vehicle_loan,
+      inter_trading_loan,
+
+      dividend_amount
+    )
+    VALUES (
+      $1, $2,
+      $3, $4, $5,
+      $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+      $19
+    )
+    ON CONFLICT (member_id, record_month)
+    DO UPDATE SET
+      share_capital = EXCLUDED.share_capital,
+      savings = EXCLUDED.savings,
+      special_savings = EXCLUDED.special_savings,
+
+      regular_loan = EXCLUDED.regular_loan,
+      regular_loan_diminishing = EXCLUDED.regular_loan_diminishing,
+      educational_loan = EXCLUDED.educational_loan,
+      educational_loan_diminishing = EXCLUDED.educational_loan_diminishing,
+      short_term_loan = EXCLUDED.short_term_loan,
+      short_term_loan_diminishing = EXCLUDED.short_term_loan_diminishing,
+      appliance_loan = EXCLUDED.appliance_loan,
+      appliance_loan_diminishing = EXCLUDED.appliance_loan_diminishing,
+      medical_loan = EXCLUDED.medical_loan,
+      medical_loan_diminishing = EXCLUDED.medical_loan_diminishing,
+      petty_cash_loan = EXCLUDED.petty_cash_loan,
+      vehicle_loan = EXCLUDED.vehicle_loan,
+      inter_trading_loan = EXCLUDED.inter_trading_loan,
+
+      dividend_amount = EXCLUDED.dividend_amount,
+      updated_at = CURRENT_TIMESTAMP
+    `,
+    [
+      memberId,
+      recordMonth,
+
+      toNumber(data.share_capital),
+      toNumber(data.savings),
+      toNumber(data.special_savings),
+
+      toNumber(data.regular_loan),
+      toNumber(data.regular_loan_diminishing),
+      toNumber(data.educational_loan),
+      toNumber(data.educational_loan_diminishing),
+      toNumber(data.short_term_loan),
+      toNumber(data.short_term_loan_diminishing),
+      toNumber(data.appliance_loan),
+      toNumber(data.appliance_loan_diminishing),
+      toNumber(data.medical_loan),
+      toNumber(data.medical_loan_diminishing),
+      toNumber(data.petty_cash_loan),
+      toNumber(data.vehicle_loan),
+      toNumber(data.inter_trading_loan),
+
+      toNumber(data.dividend_amount),
+    ]
+  );
 }
 
 const financialSelectFields = `
@@ -215,6 +324,8 @@ const addMember = async (req, res) => {
       [member.id]
     );
 
+    await saveMonthlySnapshot(member.id, {});
+
     const fullMemberResult = await pool.query(
       `
       SELECT
@@ -251,6 +362,7 @@ const saveManualFinancialRecord = async (req, res) => {
   try {
     const {
       member_identifier,
+      record_month,
 
       share_capital,
       savings,
@@ -413,6 +525,32 @@ const saveManualFinancialRecord = async (req, res) => {
       values
     );
 
+    const currentRecord = financialResult.rows[0];
+
+    await saveMonthlySnapshot(member.id, {
+      record_month,
+
+      share_capital: currentRecord.share_capital,
+      savings: currentRecord.savings,
+      special_savings: currentRecord.special_savings,
+
+      regular_loan: currentRecord.regular_loan,
+      regular_loan_diminishing: currentRecord.regular_loan_diminishing,
+      educational_loan: currentRecord.educational_loan,
+      educational_loan_diminishing: currentRecord.educational_loan_diminishing,
+      short_term_loan: currentRecord.short_term_loan,
+      short_term_loan_diminishing: currentRecord.short_term_loan_diminishing,
+      appliance_loan: currentRecord.appliance_loan,
+      appliance_loan_diminishing: currentRecord.appliance_loan_diminishing,
+      medical_loan: currentRecord.medical_loan,
+      medical_loan_diminishing: currentRecord.medical_loan_diminishing,
+      petty_cash_loan: currentRecord.petty_cash_loan,
+      vehicle_loan: currentRecord.vehicle_loan,
+      inter_trading_loan: currentRecord.inter_trading_loan,
+
+      dividend_amount: currentRecord.dividend_amount,
+    });
+
     const updatedMemberResult = await pool.query(
       `
       SELECT
@@ -435,7 +573,7 @@ const saveManualFinancialRecord = async (req, res) => {
 
     res.json({
       message: "Financial record added successfully",
-      financial_record: financialResult.rows[0],
+      financial_record: currentRecord,
       member: updatedMemberResult.rows[0],
     });
   } catch (error) {
@@ -450,7 +588,7 @@ const importExcelFinancialRecords = async (req, res) => {
   const client = await pool.connect();
 
   try {
-    const { records } = req.body;
+    const { records, record_month } = req.body;
 
     if (!Array.isArray(records) || records.length === 0) {
       return res.status(400).json({
@@ -580,6 +718,34 @@ const importExcelFinancialRecords = async (req, res) => {
           toNumber(row.dividend_amount),
         ]
       );
+
+      await saveMonthlySnapshot(
+        member.id,
+        {
+          record_month: row.record_month || record_month,
+
+          share_capital: row.share_capital,
+          savings: row.savings,
+          special_savings: row.special_savings,
+
+          regular_loan: row.regular_loan,
+          regular_loan_diminishing: row.regular_loan_diminishing,
+          educational_loan: row.educational_loan,
+          educational_loan_diminishing: row.educational_loan_diminishing,
+          short_term_loan: row.short_term_loan,
+          short_term_loan_diminishing: row.short_term_loan_diminishing,
+          appliance_loan: row.appliance_loan,
+          appliance_loan_diminishing: row.appliance_loan_diminishing,
+          medical_loan: row.medical_loan,
+          medical_loan_diminishing: row.medical_loan_diminishing,
+          petty_cash_loan: row.petty_cash_loan,
+          vehicle_loan: row.vehicle_loan,
+          inter_trading_loan: row.inter_trading_loan,
+
+          dividend_amount: row.dividend_amount,
+        },
+        client
+      );
     }
 
     await client.query("COMMIT");
@@ -608,6 +774,8 @@ const updateMemberFinancialRecord = async (req, res) => {
     const { identifier } = req.params;
 
     const {
+      record_month,
+
       full_name,
       member_id,
       username,
@@ -794,6 +962,29 @@ const updateMemberFinancialRecord = async (req, res) => {
       ]
     );
 
+    await saveMonthlySnapshot(member.id, {
+      record_month,
+
+      share_capital,
+      savings,
+      special_savings,
+      dividend_amount,
+
+      regular_loan,
+      regular_loan_diminishing,
+      educational_loan,
+      educational_loan_diminishing,
+      short_term_loan,
+      short_term_loan_diminishing,
+      appliance_loan,
+      appliance_loan_diminishing,
+      medical_loan,
+      medical_loan_diminishing,
+      petty_cash_loan,
+      vehicle_loan,
+      inter_trading_loan,
+    });
+
     const updatedMemberResult = await pool.query(
       `
       SELECT
@@ -867,6 +1058,67 @@ const getMemberFinancials = async (req, res) => {
   }
 };
 
+const getMemberMonthlyFinancials = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+    const { month } = req.query;
+
+    const memberResult = await pool.query(
+      `
+      SELECT id, member_id, full_name, username, status, profile_image, created_at
+      FROM members
+      WHERE id::TEXT = $1 OR member_id = $1 OR username = $1
+      LIMIT 1
+      `,
+      [identifier]
+    );
+
+    if (memberResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found",
+      });
+    }
+
+    const member = memberResult.rows[0];
+
+    const monthsResult = await pool.query(
+      `
+      SELECT DISTINCT record_month
+      FROM member_monthly_financials
+      WHERE member_id = $1
+      ORDER BY record_month DESC
+      `,
+      [member.id]
+    );
+
+    const selectedMonth =
+      month || monthsResult.rows[0]?.record_month || getCurrentMonth();
+
+    const recordResult = await pool.query(
+      `
+      SELECT *
+      FROM member_monthly_financials
+      WHERE member_id = $1
+      AND record_month = $2
+      LIMIT 1
+      `,
+      [member.id, selectedMonth]
+    );
+
+    res.json({
+      member,
+      selected_month: selectedMonth,
+      available_months: monthsResult.rows.map((row) => row.record_month),
+      financial_record: recordResult.rows[0] || null,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch monthly financial records",
+      error: error.message,
+    });
+  }
+};
+
 const updateMemberProfileImage = async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -913,5 +1165,6 @@ module.exports = {
   importExcelFinancialRecords,
   updateMemberFinancialRecord,
   getMemberFinancials,
+  getMemberMonthlyFinancials,
   updateMemberProfileImage,
 };
