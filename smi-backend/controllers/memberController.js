@@ -603,6 +603,229 @@ const importExcelFinancialRecords = async (req, res) => {
   }
 };
 
+const updateMemberFinancialRecord = async (req, res) => {
+  try {
+    const { identifier } = req.params;
+
+    const {
+      full_name,
+      member_id,
+      username,
+      status,
+
+      share_capital,
+      savings,
+      special_savings,
+      dividend_amount,
+
+      regular_loan,
+      regular_loan_diminishing,
+      educational_loan,
+      educational_loan_diminishing,
+      short_term_loan,
+      short_term_loan_diminishing,
+      appliance_loan,
+      appliance_loan_diminishing,
+      medical_loan,
+      medical_loan_diminishing,
+      petty_cash_loan,
+      vehicle_loan,
+      inter_trading_loan,
+
+      regular_loan_due_date,
+      regular_loan_diminishing_due_date,
+      educational_loan_due_date,
+      educational_loan_diminishing_due_date,
+      short_term_loan_due_date,
+      short_term_loan_diminishing_due_date,
+      appliance_loan_due_date,
+      appliance_loan_diminishing_due_date,
+      medical_loan_due_date,
+      medical_loan_diminishing_due_date,
+      petty_cash_loan_due_date,
+      vehicle_loan_due_date,
+      inter_trading_loan_due_date,
+    } = req.body;
+
+    if (!full_name || !member_id || !username) {
+      return res.status(400).json({
+        message: "Full name, member ID, and username are required",
+      });
+    }
+
+    const memberResult = await pool.query(
+      `
+      SELECT id
+      FROM members
+      WHERE id::TEXT = $1 OR member_id = $1 OR username = $1
+      LIMIT 1
+      `,
+      [String(identifier).trim()]
+    );
+
+    if (memberResult.rows.length === 0) {
+      return res.status(404).json({
+        message: "Member not found",
+      });
+    }
+
+    const member = memberResult.rows[0];
+
+    const duplicateResult = await pool.query(
+      `
+      SELECT id
+      FROM members
+      WHERE (member_id = $1 OR username = $2)
+      AND id <> $3
+      LIMIT 1
+      `,
+      [member_id.trim(), username.trim(), member.id]
+    );
+
+    if (duplicateResult.rows.length > 0) {
+      return res.status(409).json({
+        message: "Member ID or username already belongs to another member",
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE members
+      SET
+        full_name = $1,
+        member_id = $2,
+        username = $3,
+        status = $4
+      WHERE id = $5
+      `,
+      [
+        full_name.trim(),
+        member_id.trim(),
+        username.trim(),
+        status || "Active",
+        member.id,
+      ]
+    );
+
+    await pool.query(
+      `
+      INSERT INTO member_financials (member_id)
+      VALUES ($1)
+      ON CONFLICT (member_id) DO NOTHING
+      `,
+      [member.id]
+    );
+
+    await pool.query(
+      `
+      UPDATE member_financials
+      SET
+        share_capital = $2,
+        savings = $3,
+        special_savings = $4,
+        dividend_amount = $5,
+
+        regular_loan = $6,
+        regular_loan_diminishing = $7,
+        educational_loan = $8,
+        educational_loan_diminishing = $9,
+        short_term_loan = $10,
+        short_term_loan_diminishing = $11,
+        appliance_loan = $12,
+        appliance_loan_diminishing = $13,
+        medical_loan = $14,
+        medical_loan_diminishing = $15,
+        petty_cash_loan = $16,
+        vehicle_loan = $17,
+        inter_trading_loan = $18,
+
+        regular_loan_due_date = NULLIF($19, '')::date,
+        regular_loan_diminishing_due_date = NULLIF($20, '')::date,
+        educational_loan_due_date = NULLIF($21, '')::date,
+        educational_loan_diminishing_due_date = NULLIF($22, '')::date,
+        short_term_loan_due_date = NULLIF($23, '')::date,
+        short_term_loan_diminishing_due_date = NULLIF($24, '')::date,
+        appliance_loan_due_date = NULLIF($25, '')::date,
+        appliance_loan_diminishing_due_date = NULLIF($26, '')::date,
+        medical_loan_due_date = NULLIF($27, '')::date,
+        medical_loan_diminishing_due_date = NULLIF($28, '')::date,
+        petty_cash_loan_due_date = NULLIF($29, '')::date,
+        vehicle_loan_due_date = NULLIF($30, '')::date,
+        inter_trading_loan_due_date = NULLIF($31, '')::date,
+
+        updated_at = CURRENT_TIMESTAMP
+      WHERE member_id = $1
+      `,
+      [
+        member.id,
+
+        toNumber(share_capital),
+        toNumber(savings),
+        toNumber(special_savings),
+        toNumber(dividend_amount),
+
+        toNumber(regular_loan),
+        toNumber(regular_loan_diminishing),
+        toNumber(educational_loan),
+        toNumber(educational_loan_diminishing),
+        toNumber(short_term_loan),
+        toNumber(short_term_loan_diminishing),
+        toNumber(appliance_loan),
+        toNumber(appliance_loan_diminishing),
+        toNumber(medical_loan),
+        toNumber(medical_loan_diminishing),
+        toNumber(petty_cash_loan),
+        toNumber(vehicle_loan),
+        toNumber(inter_trading_loan),
+
+        regular_loan_due_date || "",
+        regular_loan_diminishing_due_date || "",
+        educational_loan_due_date || "",
+        educational_loan_diminishing_due_date || "",
+        short_term_loan_due_date || "",
+        short_term_loan_diminishing_due_date || "",
+        appliance_loan_due_date || "",
+        appliance_loan_diminishing_due_date || "",
+        medical_loan_due_date || "",
+        medical_loan_diminishing_due_date || "",
+        petty_cash_loan_due_date || "",
+        vehicle_loan_due_date || "",
+        inter_trading_loan_due_date || "",
+      ]
+    );
+
+    const updatedMemberResult = await pool.query(
+      `
+      SELECT
+        m.id,
+        m.member_id,
+        m.full_name,
+        m.username,
+        m.status,
+        m.profile_image,
+        m.created_at,
+        ${financialSelectFields}
+      FROM members m
+      LEFT JOIN member_financials f
+      ON f.member_id = m.id
+      WHERE m.id = $1
+      LIMIT 1
+      `,
+      [member.id]
+    );
+
+    res.json({
+      message: "Member record updated successfully",
+      member: updatedMemberResult.rows[0],
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to update member record",
+      error: error.message,
+    });
+  }
+};
+
 const getMemberFinancials = async (req, res) => {
   try {
     const { identifier } = req.params;
@@ -688,6 +911,7 @@ module.exports = {
   addMember,
   saveManualFinancialRecord,
   importExcelFinancialRecords,
+  updateMemberFinancialRecord,
   getMemberFinancials,
   updateMemberProfileImage,
 };

@@ -35,20 +35,20 @@ function formatCurrency(value) {
 
 function formatDate(value) {
   if (!value) {
-    return "Not set";
+    return "";
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "Not set";
+    return "";
   }
 
-  return date.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-  });
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function getTotalSavings(member) {
@@ -77,6 +77,18 @@ function getTotalLoan(member) {
   );
 }
 
+function getSmartBarHeight(value, maxValue, maxHeight) {
+  const numericValue = Number(value || 0);
+
+  if (numericValue <= 0 || maxValue <= 0) {
+    return 0;
+  }
+
+  const scaled = Math.sqrt(numericValue / maxValue) * maxHeight;
+
+  return Math.max(8, scaled);
+}
+
 function getInitials(name) {
   if (!name) {
     return "?";
@@ -102,13 +114,46 @@ function mapDbMember(member) {
     username: `@${member.username}`,
     rawUsername: member.username,
     id: member.member_id,
+    status: member.status || "Active",
+
+    share_capital: Number(member.share_capital || 0),
+    savings_value: Number(member.savings || 0),
+    special_savings: Number(member.special_savings || 0),
+
+    regular_loan: Number(member.regular_loan || 0),
+    regular_loan_diminishing: Number(member.regular_loan_diminishing || 0),
+    educational_loan: Number(member.educational_loan || 0),
+    educational_loan_diminishing: Number(member.educational_loan_diminishing || 0),
+    short_term_loan: Number(member.short_term_loan || 0),
+    short_term_loan_diminishing: Number(member.short_term_loan_diminishing || 0),
+    appliance_loan: Number(member.appliance_loan || 0),
+    appliance_loan_diminishing: Number(member.appliance_loan_diminishing || 0),
+    medical_loan: Number(member.medical_loan || 0),
+    medical_loan_diminishing: Number(member.medical_loan_diminishing || 0),
+    petty_cash_loan: Number(member.petty_cash_loan || 0),
+    vehicle_loan: Number(member.vehicle_loan || 0),
+    inter_trading_loan: Number(member.inter_trading_loan || 0),
+
+    regular_loan_due_date: formatDate(member.regular_loan_due_date),
+    regular_loan_diminishing_due_date: formatDate(member.regular_loan_diminishing_due_date),
+    educational_loan_due_date: formatDate(member.educational_loan_due_date),
+    educational_loan_diminishing_due_date: formatDate(member.educational_loan_diminishing_due_date),
+    short_term_loan_due_date: formatDate(member.short_term_loan_due_date),
+    short_term_loan_diminishing_due_date: formatDate(member.short_term_loan_diminishing_due_date),
+    appliance_loan_due_date: formatDate(member.appliance_loan_due_date),
+    appliance_loan_diminishing_due_date: formatDate(member.appliance_loan_diminishing_due_date),
+    medical_loan_due_date: formatDate(member.medical_loan_due_date),
+    medical_loan_diminishing_due_date: formatDate(member.medical_loan_diminishing_due_date),
+    petty_cash_loan_due_date: formatDate(member.petty_cash_loan_due_date),
+    vehicle_loan_due_date: formatDate(member.vehicle_loan_due_date),
+    inter_trading_loan_due_date: formatDate(member.inter_trading_loan_due_date),
+
     rawSavings,
     rawLoan,
     rawDividend,
     savings: formatCurrency(rawSavings),
     loan: formatCurrency(rawLoan),
     dividend: formatCurrency(rawDividend),
-    status: member.status || "Active",
   };
 }
 
@@ -188,15 +233,7 @@ export default function AdminDashboardScreen() {
       return <ProfileContent router={router} />;
     }
 
-    return (
-      <OverviewContent
-        members={members}
-        membersLoading={membersLoading}
-        membersError={membersError}
-        onRefresh={loadMembersFromDatabase}
-        isDesktopWeb={isDesktopWeb}
-      />
-    );
+    return null;
   }
 
   return (
@@ -514,7 +551,7 @@ function MinimalMemberChart({ members, loading, onRefresh, onOpenFullGraph }) {
       <View style={styles.chartTopRow}>
         <View>
           <Text style={styles.sectionTitle}>Member Balance Overview</Text>
-          <Text style={styles.sectionSub}>Minimal view of savings and loans</Text>
+          <Text style={styles.sectionSub}>Smart-scaled view of savings and loans</Text>
         </View>
 
         <View style={styles.chartActions}>
@@ -548,33 +585,56 @@ function MinimalMemberChart({ members, loading, onRefresh, onOpenFullGraph }) {
       ) : previewMembers.length === 0 ? (
         <Text style={styles.emptyText}>No graph data available.</Text>
       ) : (
-        <View style={styles.minimalChartArea}>
-          {previewMembers.map((member) => {
-            const savingsHeight = `${Math.max(
-              4,
-              (Number(member.rawSavings || 0) / maxValue) * 100
-            )}%`;
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.minimalChartArea}>
+            {previewMembers.map((member) => {
+              const savingsHeight = getSmartBarHeight(
+                member.rawSavings,
+                maxValue,
+                118
+              );
 
-            const loanHeight = `${Math.max(
-              4,
-              (Number(member.rawLoan || 0) / maxValue) * 100
-            )}%`;
+              const loanHeight = getSmartBarHeight(
+                member.rawLoan,
+                maxValue,
+                118
+              );
 
-            return (
-              <View key={`${member.id}-mini-chart`} style={styles.minimalColumn}>
-                <View style={styles.minimalBarsWrap}>
-                  <View style={[styles.minimalSavingsBar, { height: savingsHeight }]} />
-                  <View style={[styles.minimalLoanBar, { height: loanHeight }]} />
+              return (
+                <View key={`${member.id}-mini-chart`} style={styles.minimalColumn}>
+                  <View style={styles.minimalBarsWrap}>
+                    <View
+                      style={[
+                        styles.minimalSavingsBar,
+                        {
+                          height: savingsHeight,
+                        },
+                      ]}
+                    />
+
+                    <View
+                      style={[
+                        styles.minimalLoanBar,
+                        {
+                          height: loanHeight,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <Text style={styles.minimalChartLabel} numberOfLines={1}>
+                    {getInitials(member.name)}
+                  </Text>
                 </View>
-
-                <Text style={styles.minimalChartLabel} numberOfLines={1}>
-                  {getInitials(member.name)}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
+              );
+            })}
+          </View>
+        </ScrollView>
       )}
+
+      <Text style={styles.graphNote}>
+        Smaller balances are enlarged visually so they remain visible beside very large accounts.
+      </Text>
     </View>
   );
 }
@@ -622,15 +682,17 @@ function FullGraphModal({ visible, members, onClose }) {
                 <Text style={styles.emptyText}>No graph data available.</Text>
               ) : (
                 members.map((member) => {
-                  const savingsHeight = `${Math.max(
-                    4,
-                    (Number(member.rawSavings || 0) / maxValue) * 100
-                  )}%`;
+                  const savingsHeight = getSmartBarHeight(
+                    member.rawSavings,
+                    maxValue,
+                    220
+                  );
 
-                  const loanHeight = `${Math.max(
-                    4,
-                    (Number(member.rawLoan || 0) / maxValue) * 100
-                  )}%`;
+                  const loanHeight = getSmartBarHeight(
+                    member.rawLoan,
+                    maxValue,
+                    220
+                  );
 
                   return (
                     <View key={`${member.id}-full-chart`} style={styles.fullGraphColumn}>
@@ -638,13 +700,18 @@ function FullGraphModal({ visible, members, onClose }) {
                         <View
                           style={[
                             styles.fullGraphSavingsBar,
-                            { height: savingsHeight },
+                            {
+                              height: savingsHeight,
+                            },
                           ]}
                         />
+
                         <View
                           style={[
                             styles.fullGraphLoanBar,
-                            { height: loanHeight },
+                            {
+                              height: loanHeight,
+                            },
                           ]}
                         />
                       </View>
@@ -652,12 +719,14 @@ function FullGraphModal({ visible, members, onClose }) {
                       <Text style={styles.fullGraphName} numberOfLines={1}>
                         {member.name}
                       </Text>
+
                       <Text style={styles.fullGraphId}>{member.id}</Text>
 
                       <View style={styles.fullGraphValues}>
                         <Text style={styles.fullGraphSavingsText}>
                           S: {formatCurrency(member.rawSavings)}
                         </Text>
+
                         <Text style={styles.fullGraphLoanText}>
                           L: {formatCurrency(member.rawLoan)}
                         </Text>
@@ -668,6 +737,10 @@ function FullGraphModal({ visible, members, onClose }) {
               )}
             </View>
           </ScrollView>
+
+          <Text style={styles.graphNote}>
+            This is a balance comparison graph. Smaller balances are scaled visually so they remain visible beside very large accounts.
+          </Text>
         </View>
       </View>
     </Modal>
@@ -683,13 +756,35 @@ function MembersContent({
   onRefresh,
 }) {
   const [showAddMember, setShowAddMember] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [searchText, setSearchText] = useState("");
+
+  const filteredMembers = members.filter((member) => {
+    const search = searchText.trim().toLowerCase();
+
+    if (!search) {
+      return true;
+    }
+
+    return (
+      String(member.name || "").toLowerCase().includes(search) ||
+      String(member.id || "").toLowerCase().includes(search) ||
+      String(member.username || "").toLowerCase().includes(search)
+    );
+  });
 
   return (
     <View>
       <View style={styles.searchPanel}>
         <View style={styles.searchBox}>
           <Feather name="search" size={17} color="#64748b" />
-          <Text style={styles.searchText}>Search by name, ID, or username...</Text>
+          <TextInput
+            style={styles.searchInput}
+            value={searchText}
+            onChangeText={setSearchText}
+            placeholder="Search by name, ID, or username..."
+            placeholderTextColor="#64748b"
+          />
         </View>
 
         <TouchableOpacity style={styles.refreshButton} onPress={onRefresh}>
@@ -723,11 +818,13 @@ function MembersContent({
         <View style={styles.panelHeader}>
           <View>
             <Text style={styles.sectionTitle}>Member List</Text>
-            <Text style={styles.sectionSub}>{members.length} registered members</Text>
+            <Text style={styles.sectionSub}>
+              {filteredMembers.length} registered members
+            </Text>
           </View>
         </View>
 
-        {members.length === 0 && !membersLoading ? (
+        {filteredMembers.length === 0 && !membersLoading ? (
           <Text style={styles.emptyText}>No members found in the database.</Text>
         ) : isDesktopWeb ? (
           <View style={styles.table}>
@@ -741,13 +838,21 @@ function MembersContent({
               <Text style={styles.th}>Action</Text>
             </View>
 
-            {members.map((member) => (
-              <MemberFullTableRow key={`${member.id}-${member.username}`} {...member} />
+            {filteredMembers.map((member) => (
+              <MemberFullTableRow
+                key={`${member.id}-${member.username}`}
+                member={member}
+                onView={() => setSelectedMember(member)}
+              />
             ))}
           </View>
         ) : (
-          members.map((member) => (
-            <MemberCard key={`${member.id}-${member.username}`} {...member} />
+          filteredMembers.map((member) => (
+            <MemberCard
+              key={`${member.id}-${member.username}`}
+              {...member}
+              onView={() => setSelectedMember(member)}
+            />
           ))
         )}
       </View>
@@ -756,6 +861,16 @@ function MembersContent({
         visible={showAddMember}
         onClose={() => setShowAddMember(false)}
         onMemberAdded={onMemberAdded}
+      />
+
+      <EditMemberModal
+        visible={!!selectedMember}
+        member={selectedMember}
+        onClose={() => setSelectedMember(null)}
+        onSaved={async () => {
+          setSelectedMember(null);
+          await onRefresh();
+        }}
       />
     </View>
   );
@@ -916,6 +1031,272 @@ function AddMemberModal({ visible, onClose, onMemberAdded }) {
   );
 }
 
+function EditMemberModal({ visible, member, onClose, onSaved }) {
+  const [form, setForm] = useState({});
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  useEffect(() => {
+    if (member) {
+      setForm({
+        full_name: member.name || "",
+        member_id: member.id || "",
+        username: member.rawUsername || "",
+        status: member.status || "Active",
+
+        share_capital: String(member.share_capital || ""),
+        savings: String(member.savings_value || ""),
+        special_savings: String(member.special_savings || ""),
+        dividend_amount: String(member.rawDividend || ""),
+
+        regular_loan: String(member.regular_loan || ""),
+        regular_loan_diminishing: String(member.regular_loan_diminishing || ""),
+        educational_loan: String(member.educational_loan || ""),
+        educational_loan_diminishing: String(member.educational_loan_diminishing || ""),
+        short_term_loan: String(member.short_term_loan || ""),
+        short_term_loan_diminishing: String(member.short_term_loan_diminishing || ""),
+        appliance_loan: String(member.appliance_loan || ""),
+        appliance_loan_diminishing: String(member.appliance_loan_diminishing || ""),
+        medical_loan: String(member.medical_loan || ""),
+        medical_loan_diminishing: String(member.medical_loan_diminishing || ""),
+        petty_cash_loan: String(member.petty_cash_loan || ""),
+        vehicle_loan: String(member.vehicle_loan || ""),
+        inter_trading_loan: String(member.inter_trading_loan || ""),
+
+        regular_loan_due_date: member.regular_loan_due_date || "",
+        regular_loan_diminishing_due_date: member.regular_loan_diminishing_due_date || "",
+        educational_loan_due_date: member.educational_loan_due_date || "",
+        educational_loan_diminishing_due_date: member.educational_loan_diminishing_due_date || "",
+        short_term_loan_due_date: member.short_term_loan_due_date || "",
+        short_term_loan_diminishing_due_date: member.short_term_loan_diminishing_due_date || "",
+        appliance_loan_due_date: member.appliance_loan_due_date || "",
+        appliance_loan_diminishing_due_date: member.appliance_loan_diminishing_due_date || "",
+        medical_loan_due_date: member.medical_loan_due_date || "",
+        medical_loan_diminishing_due_date: member.medical_loan_diminishing_due_date || "",
+        petty_cash_loan_due_date: member.petty_cash_loan_due_date || "",
+        vehicle_loan_due_date: member.vehicle_loan_due_date || "",
+        inter_trading_loan_due_date: member.inter_trading_loan_due_date || "",
+      });
+
+      setMessage("");
+      setIsError(false);
+    }
+  }, [member]);
+
+  if (!member) {
+    return null;
+  }
+
+  function updateField(field, value) {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }
+
+  async function saveChanges() {
+    try {
+      setSaving(true);
+      setMessage("");
+      setIsError(false);
+
+      if (!form.full_name.trim() || !form.member_id.trim() || !form.username.trim()) {
+        setIsError(true);
+        setMessage("Full name, member ID, and username are required.");
+        return;
+      }
+
+      await apiRequest(`/members/${member.dbId}/financials`, "PATCH", {
+        full_name: form.full_name.trim(),
+        member_id: form.member_id.trim(),
+        username: form.username.trim(),
+        status: form.status.trim() || "Active",
+
+        share_capital: form.share_capital,
+        savings: form.savings,
+        special_savings: form.special_savings,
+        dividend_amount: form.dividend_amount,
+
+        regular_loan: form.regular_loan,
+        regular_loan_diminishing: form.regular_loan_diminishing,
+        educational_loan: form.educational_loan,
+        educational_loan_diminishing: form.educational_loan_diminishing,
+        short_term_loan: form.short_term_loan,
+        short_term_loan_diminishing: form.short_term_loan_diminishing,
+        appliance_loan: form.appliance_loan,
+        appliance_loan_diminishing: form.appliance_loan_diminishing,
+        medical_loan: form.medical_loan,
+        medical_loan_diminishing: form.medical_loan_diminishing,
+        petty_cash_loan: form.petty_cash_loan,
+        vehicle_loan: form.vehicle_loan,
+        inter_trading_loan: form.inter_trading_loan,
+
+        regular_loan_due_date: form.regular_loan_due_date,
+        regular_loan_diminishing_due_date: form.regular_loan_diminishing_due_date,
+        educational_loan_due_date: form.educational_loan_due_date,
+        educational_loan_diminishing_due_date: form.educational_loan_diminishing_due_date,
+        short_term_loan_due_date: form.short_term_loan_due_date,
+        short_term_loan_diminishing_due_date: form.short_term_loan_diminishing_due_date,
+        appliance_loan_due_date: form.appliance_loan_due_date,
+        appliance_loan_diminishing_due_date: form.appliance_loan_diminishing_due_date,
+        medical_loan_due_date: form.medical_loan_due_date,
+        medical_loan_diminishing_due_date: form.medical_loan_diminishing_due_date,
+        petty_cash_loan_due_date: form.petty_cash_loan_due_date,
+        vehicle_loan_due_date: form.vehicle_loan_due_date,
+        inter_trading_loan_due_date: form.inter_trading_loan_due_date,
+      });
+
+      setIsError(false);
+      setMessage("Member record updated successfully.");
+
+      setTimeout(() => {
+        onSaved();
+      }, 500);
+    } catch (error) {
+      setIsError(true);
+      setMessage(error.message || "Failed to update member record.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.editMemberModal}>
+          <View style={styles.modalHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.modalTitle}>Edit Member Record</Text>
+              <Text style={styles.modalSubtitle}>
+                Update account details, savings, loans, dividends, and due dates
+              </Text>
+            </View>
+
+            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
+              <Feather name="x" size={20} color="#334155" />
+            </TouchableOpacity>
+          </View>
+
+          {message ? (
+            <View style={isError ? styles.errorBox : styles.successBox}>
+              <Feather
+                name={isError ? "alert-circle" : "check-circle"}
+                size={16}
+                color={isError ? "#991b1b" : "#047857"}
+              />
+              <Text style={isError ? styles.errorText : styles.successText}>
+                {message}
+              </Text>
+            </View>
+          ) : null}
+
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <Text style={styles.editSectionTitle}>Member Information</Text>
+
+            <View style={styles.modalGrid}>
+              <ModalInput
+                label="Full Name"
+                value={form.full_name}
+                onChangeText={(value) => updateField("full_name", value)}
+                placeholder="Full name"
+              />
+
+              <ModalInput
+                label="Member ID"
+                value={form.member_id}
+                onChangeText={(value) => updateField("member_id", value)}
+                placeholder="SMI-001"
+              />
+
+              <ModalInput
+                label="Username"
+                value={form.username}
+                onChangeText={(value) => updateField("username", value)}
+                placeholder="username"
+                autoCapitalize="none"
+              />
+
+              <ModalInput
+                label="Status"
+                value={form.status}
+                onChangeText={(value) => updateField("status", value)}
+                placeholder="Active"
+              />
+            </View>
+
+            <Text style={styles.editSectionTitle}>Savings and Dividend</Text>
+
+            <View style={styles.modalGrid}>
+              <ModalInput label="Share Capital" value={form.share_capital} onChangeText={(value) => updateField("share_capital", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Savings" value={form.savings} onChangeText={(value) => updateField("savings", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Special Savings" value={form.special_savings} onChangeText={(value) => updateField("special_savings", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Dividend Amount" value={form.dividend_amount} onChangeText={(value) => updateField("dividend_amount", value)} placeholder="0.00" keyboardType="numeric" />
+            </View>
+
+            <Text style={styles.editSectionTitle}>Loan Balances</Text>
+
+            <View style={styles.modalGrid}>
+              <ModalInput label="Regular Loan" value={form.regular_loan} onChangeText={(value) => updateField("regular_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Regular Loan - Diminishing" value={form.regular_loan_diminishing} onChangeText={(value) => updateField("regular_loan_diminishing", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Educational Loan" value={form.educational_loan} onChangeText={(value) => updateField("educational_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Educational Loan - Diminishing" value={form.educational_loan_diminishing} onChangeText={(value) => updateField("educational_loan_diminishing", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Short-term Loan" value={form.short_term_loan} onChangeText={(value) => updateField("short_term_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Short-term Loan - Diminishing" value={form.short_term_loan_diminishing} onChangeText={(value) => updateField("short_term_loan_diminishing", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Appliance Loan" value={form.appliance_loan} onChangeText={(value) => updateField("appliance_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Appliance Loan - Diminishing" value={form.appliance_loan_diminishing} onChangeText={(value) => updateField("appliance_loan_diminishing", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Medical Loan" value={form.medical_loan} onChangeText={(value) => updateField("medical_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Medical Loan - Diminishing" value={form.medical_loan_diminishing} onChangeText={(value) => updateField("medical_loan_diminishing", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Petty Cash Loan" value={form.petty_cash_loan} onChangeText={(value) => updateField("petty_cash_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Vehicle Loan" value={form.vehicle_loan} onChangeText={(value) => updateField("vehicle_loan", value)} placeholder="0.00" keyboardType="numeric" />
+              <ModalInput label="Inter-Trading Loan" value={form.inter_trading_loan} onChangeText={(value) => updateField("inter_trading_loan", value)} placeholder="0.00" keyboardType="numeric" />
+            </View>
+
+            <Text style={styles.editSectionTitle}>Loan Due Dates</Text>
+
+            <View style={styles.modalGrid}>
+              <ModalInput label="Regular Loan Due Date" value={form.regular_loan_due_date} onChangeText={(value) => updateField("regular_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Regular Diminishing Due Date" value={form.regular_loan_diminishing_due_date} onChangeText={(value) => updateField("regular_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Educational Loan Due Date" value={form.educational_loan_due_date} onChangeText={(value) => updateField("educational_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Educational Diminishing Due Date" value={form.educational_loan_diminishing_due_date} onChangeText={(value) => updateField("educational_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Short-term Loan Due Date" value={form.short_term_loan_due_date} onChangeText={(value) => updateField("short_term_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Short-term Diminishing Due Date" value={form.short_term_loan_diminishing_due_date} onChangeText={(value) => updateField("short_term_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Appliance Loan Due Date" value={form.appliance_loan_due_date} onChangeText={(value) => updateField("appliance_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Appliance Diminishing Due Date" value={form.appliance_loan_diminishing_due_date} onChangeText={(value) => updateField("appliance_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Medical Loan Due Date" value={form.medical_loan_due_date} onChangeText={(value) => updateField("medical_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Medical Diminishing Due Date" value={form.medical_loan_diminishing_due_date} onChangeText={(value) => updateField("medical_loan_diminishing_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Petty Cash Due Date" value={form.petty_cash_loan_due_date} onChangeText={(value) => updateField("petty_cash_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Vehicle Loan Due Date" value={form.vehicle_loan_due_date} onChangeText={(value) => updateField("vehicle_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+              <ModalInput label="Inter-Trading Due Date" value={form.inter_trading_loan_due_date} onChangeText={(value) => updateField("inter_trading_loan_due_date", value)} placeholder="YYYY-MM-DD" />
+            </View>
+          </ScrollView>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity style={styles.cancelMemberButton} onPress={onClose}>
+              <Text style={styles.cancelMemberText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveMemberButton}
+              onPress={saveChanges}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <>
+                  <Feather name="save" size={17} color="#ffffff" />
+                  <Text style={styles.saveMemberText}>Save Changes</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 function ModalInput({
   label,
   value,
@@ -923,6 +1304,7 @@ function ModalInput({
   placeholder,
   secureTextEntry,
   autoCapitalize = "words",
+  keyboardType = "default",
 }) {
   return (
     <View style={styles.modalInputGroup}>
@@ -936,6 +1318,7 @@ function ModalInput({
         placeholderTextColor="#94a3b8"
         secureTextEntry={secureTextEntry}
         autoCapitalize={autoCapitalize}
+        keyboardType={keyboardType}
       />
     </View>
   );
@@ -947,16 +1330,6 @@ function RequestsContent({ isDesktopWeb }) {
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [requestsError, setRequestsError] = useState("");
-
-  const [decisionModal, setDecisionModal] = useState({
-    visible: false,
-    request: null,
-    status: "",
-  });
-
-  const [remarks, setRemarks] = useState("");
-  const [savingDecision, setSavingDecision] = useState(false);
-  const [decisionMessage, setDecisionMessage] = useState("");
 
   useEffect(() => {
     loadLoanRequests();
@@ -974,54 +1347,6 @@ function RequestsContent({ isDesktopWeb }) {
       setRequestsError(error.message || "Failed to load loan requests.");
     } finally {
       setRequestsLoading(false);
-    }
-  }
-
-  function openDecisionModal(request, status) {
-    setDecisionModal({
-      visible: true,
-      request,
-      status,
-    });
-
-    setRemarks("");
-    setDecisionMessage("");
-  }
-
-  function closeDecisionModal() {
-    setDecisionModal({
-      visible: false,
-      request: null,
-      status: "",
-    });
-
-    setRemarks("");
-    setDecisionMessage("");
-    setSavingDecision(false);
-  }
-
-  async function submitDecision() {
-    try {
-      setDecisionMessage("");
-
-      if (!remarks.trim()) {
-        setDecisionMessage("Please explain your decision before submitting.");
-        return;
-      }
-
-      setSavingDecision(true);
-
-      await apiRequest(`/requests/${decisionModal.request.id}/status`, "PATCH", {
-        status: decisionModal.status,
-        admin_remarks: remarks.trim(),
-      });
-
-      await loadLoanRequests();
-      closeDecisionModal();
-    } catch (error) {
-      setDecisionMessage(error.message || "Failed to update request.");
-    } finally {
-      setSavingDecision(false);
     }
   }
 
@@ -1045,10 +1370,6 @@ function RequestsContent({ isDesktopWeb }) {
 
     return matchesLoanType && matchesStatus;
   });
-
-  const pendingCount = requests.filter(
-    (request) => request.status === "Pending"
-  ).length;
 
   return (
     <View>
@@ -1102,9 +1423,7 @@ function RequestsContent({ isDesktopWeb }) {
         <View style={styles.panelHeader}>
           <View>
             <Text style={styles.sectionTitle}>Request Queue</Text>
-            <Text style={styles.sectionSub}>
-              {pendingCount} pending · {requests.length} total requests
-            </Text>
+            <Text style={styles.sectionSub}>{filteredRequests.length} total requests</Text>
           </View>
 
           <TouchableOpacity style={styles.refreshButton} onPress={loadLoanRequests}>
@@ -1122,136 +1441,19 @@ function RequestsContent({ isDesktopWeb }) {
               <Text style={styles.th}>Amount</Text>
               <Text style={styles.th}>Purpose</Text>
               <Text style={styles.th}>Status</Text>
-              <Text style={styles.th}>Action</Text>
             </View>
 
             {filteredRequests.map((request) => (
-              <RequestTableRow
-                key={request.id}
-                request={request}
-                onApprove={() => openDecisionModal(request, "Approved")}
-                onReject={() => openDecisionModal(request, "Rejected")}
-              />
+              <RequestTableRow key={request.id} request={request} />
             ))}
           </View>
         ) : (
           filteredRequests.map((request) => (
-            <RequestCard
-              key={request.id}
-              request={request}
-              onApprove={() => openDecisionModal(request, "Approved")}
-              onReject={() => openDecisionModal(request, "Rejected")}
-            />
+            <RequestCard key={request.id} request={request} />
           ))
         )}
       </View>
-
-      <RequestDecisionModal
-        visible={decisionModal.visible}
-        request={decisionModal.request}
-        status={decisionModal.status}
-        remarks={remarks}
-        setRemarks={setRemarks}
-        message={decisionMessage}
-        saving={savingDecision}
-        onClose={closeDecisionModal}
-        onSubmit={submitDecision}
-      />
     </View>
-  );
-}
-
-function RequestDecisionModal({
-  visible,
-  request,
-  status,
-  remarks,
-  setRemarks,
-  message,
-  saving,
-  onClose,
-  onSubmit,
-}) {
-  if (!request) {
-    return null;
-  }
-
-  const isApprove = status === "Approved";
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.addMemberModal}>
-          <View style={styles.modalHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.modalTitle}>
-                {isApprove ? "Approve Loan Request" : "Reject Loan Request"}
-              </Text>
-
-              <Text style={styles.modalSubtitle}>
-                {request.full_name} · {request.loan_type} · {formatCurrency(request.amount)}
-              </Text>
-            </View>
-
-            <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
-              <Feather name="x" size={20} color="#334155" />
-            </TouchableOpacity>
-          </View>
-
-          {message ? (
-            <View style={styles.errorBox}>
-              <Feather name="alert-circle" size={16} color="#991b1b" />
-              <Text style={styles.errorText}>{message}</Text>
-            </View>
-          ) : null}
-
-          <Text style={styles.modalInputLabel}>
-            Explain why this request is being {isApprove ? "approved" : "rejected"}
-          </Text>
-
-          <TextInput
-            style={styles.decisionTextArea}
-            value={remarks}
-            onChangeText={setRemarks}
-            placeholder={
-              isApprove
-                ? "Example: Approved based on good standing and sufficient eligibility."
-                : "Example: Rejected due to insufficient eligibility or incomplete requirements."
-            }
-            placeholderTextColor="#94a3b8"
-            multiline
-            textAlignVertical="top"
-          />
-
-          <View style={styles.modalActions}>
-            <TouchableOpacity style={styles.cancelMemberButton} onPress={onClose}>
-              <Text style={styles.cancelMemberText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={isApprove ? styles.decisionApproveButton : styles.decisionRejectButton}
-              onPress={onSubmit}
-              disabled={saving}
-            >
-              {saving ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <>
-                  <Feather
-                    name={isApprove ? "check" : "x"}
-                    size={17}
-                    color="#ffffff"
-                  />
-                  <Text style={styles.saveMemberText}>
-                    {isApprove ? "Approve" : "Reject"}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
   );
 }
 
@@ -1342,34 +1544,43 @@ function MemberTableRow({ name, username, id, savings, loan, status }) {
   );
 }
 
-function MemberFullTableRow({ name, username, id, savings, loan, dividend, status }) {
+function MemberFullTableRow({ member, onView }) {
   return (
     <View style={styles.tableRow}>
       <View style={[styles.memberCell, { flex: 1.4 }]}>
         <View style={styles.initialCircle}>
-          <Text style={styles.initialText}>{name ? name[0] : "?"}</Text>
+          <Text style={styles.initialText}>{member.name ? member.name[0] : "?"}</Text>
         </View>
 
         <View>
-          <Text style={styles.tableName}>{name}</Text>
-          <Text style={styles.tableSub}>{username}</Text>
+          <Text style={styles.tableName}>{member.name}</Text>
+          <Text style={styles.tableSub}>{member.username}</Text>
         </View>
       </View>
 
-      <Text style={styles.td}>{id}</Text>
-      <Text style={styles.tdGreen}>{savings}</Text>
-      <Text style={styles.tdGold}>{loan}</Text>
-      <Text style={styles.tdGreen}>{dividend}</Text>
-      <StatusBadge status={status} />
+      <Text style={styles.td}>{member.id}</Text>
+      <Text style={styles.tdGreen}>{member.savings}</Text>
+      <Text style={styles.tdGold}>{member.loan}</Text>
+      <Text style={styles.tdGreen}>{member.dividend}</Text>
+      <StatusBadge status={member.status} />
 
-      <TouchableOpacity style={styles.smallActionButton}>
+      <TouchableOpacity style={styles.smallActionButton} onPress={onView}>
         <Text style={styles.smallActionText}>View</Text>
       </TouchableOpacity>
     </View>
   );
 }
 
-function MemberCard({ name, username, id, savings, loan, dividend, status }) {
+function MemberCard({
+  name,
+  username,
+  id,
+  savings,
+  loan,
+  dividend,
+  status,
+  onView,
+}) {
   return (
     <View style={styles.memberCard}>
       <View style={styles.memberCardHeader}>
@@ -1392,40 +1603,27 @@ function MemberCard({ name, username, id, savings, loan, dividend, status }) {
         <RecordStat label="Loan" value={loan} color={GOLD} />
         <RecordStat label="Div" value={dividend} color={MAIN_GREEN} />
       </View>
+
+      <TouchableOpacity style={styles.mobileViewButton} onPress={onView}>
+        <Text style={styles.mobileViewText}>View and Edit Member</Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
-function RequestTableRow({ request, onApprove, onReject }) {
+function RequestTableRow({ request }) {
   return (
     <View style={styles.tableRow}>
       <Text style={[styles.tdStrong, { flex: 1.3 }]}>{request.full_name}</Text>
       <Text style={styles.td}>{request.loan_type}</Text>
       <Text style={styles.tdGreen}>{formatCurrency(request.amount)}</Text>
       <Text style={styles.td}>{request.purpose}</Text>
-
       <StatusBadge status={request.status} />
-
-      <View style={styles.actionCell}>
-        {request.status === "Pending" ? (
-          <>
-            <TouchableOpacity style={styles.approveMini} onPress={onApprove}>
-              <Feather name="check" size={14} color={MAIN_GREEN} />
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.rejectMini} onPress={onReject}>
-              <Feather name="x" size={14} color="#dc2626" />
-            </TouchableOpacity>
-          </>
-        ) : (
-          <Text style={styles.tableSub}>{request.admin_remarks || "Done"}</Text>
-        )}
-      </View>
     </View>
   );
 }
 
-function RequestCard({ request, onApprove, onReject }) {
+function RequestCard({ request }) {
   return (
     <View style={styles.requestCard}>
       <View style={styles.requestCardHeader}>
@@ -1438,26 +1636,11 @@ function RequestCard({ request, onApprove, onReject }) {
       </View>
 
       <InfoBlock label="Amount Requested" value={formatCurrency(request.amount)} highlight />
-      <InfoBlock label="Date Requested" value={formatDate(request.requested_at)} />
       <InfoBlock label="Purpose" value={request.purpose} />
 
       {request.admin_remarks ? (
         <InfoBlock label="Admin Remarks" value={request.admin_remarks} />
       ) : null}
-
-      {request.status === "Pending" && (
-        <View style={styles.requestActionRow}>
-          <TouchableOpacity style={styles.approveButton} onPress={onApprove}>
-            <Feather name="check-square" size={16} color={MAIN_GREEN} />
-            <Text style={styles.approveButtonText}>Approve</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.rejectButton} onPress={onReject}>
-            <Feather name="x-circle" size={16} color="#ff4b4b" />
-            <Text style={styles.rejectButtonText}>Reject</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 }
@@ -1978,16 +2161,15 @@ const styles = StyleSheet.create({
     height: 150,
     flexDirection: "row",
     alignItems: "flex-end",
-    justifyContent: "space-around",
     paddingTop: 12,
     paddingHorizontal: 6,
   },
 
   minimalColumn: {
-    flex: 1,
+    width: 68,
     alignItems: "center",
     justifyContent: "flex-end",
-    minWidth: 52,
+    marginRight: 12,
   },
 
   minimalBarsWrap: {
@@ -2023,6 +2205,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
+  graphNote: {
+    color: "#64748b",
+    fontSize: 11,
+    lineHeight: 17,
+    marginTop: 10,
+    fontWeight: "700",
+  },
+
   fullGraphModal: {
     width: Platform.OS === "web" ? "82%" : "100%",
     maxWidth: 980,
@@ -2048,13 +2238,13 @@ const styles = StyleSheet.create({
   },
 
   fullGraphColumn: {
-    width: 110,
+    width: 120,
     alignItems: "center",
     marginRight: 16,
   },
 
   fullGraphBarsWrap: {
-    height: 210,
+    height: 220,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "center",
@@ -2080,7 +2270,7 @@ const styles = StyleSheet.create({
   },
 
   fullGraphName: {
-    width: 100,
+    width: 110,
     color: "#052e1d",
     fontSize: 12,
     fontWeight: "900",
@@ -2257,10 +2447,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
 
-  searchText: {
-    color: "#64748b",
+  searchInput: {
+    flex: 1,
+    color: "#052e1d",
     fontSize: 13,
     marginLeft: 9,
+    height: "100%",
+    outlineStyle: "none",
   },
 
   refreshButton: {
@@ -2386,6 +2579,21 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
+  mobileViewButton: {
+    height: 42,
+    borderTopWidth: 1,
+    borderTopColor: "#efe2bd",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f7fffb",
+  },
+
+  mobileViewText: {
+    color: MAIN_GREEN,
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
   memberCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -2492,31 +2700,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
-  actionCell: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  approveMini: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: "#e6fff2",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-  },
-
-  rejectMini: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    backgroundColor: "#fee2e2",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
   requestCard: {
     backgroundColor: "#ffffff",
     borderRadius: 16,
@@ -2564,50 +2747,6 @@ const styles = StyleSheet.create({
     color: MAIN_GREEN,
     fontSize: 17,
     fontWeight: "900",
-  },
-
-  requestActionRow: {
-    flexDirection: "row",
-    marginTop: 4,
-  },
-
-  approveButton: {
-    flex: 1,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#e6fff2",
-    borderWidth: 1,
-    borderColor: "#86efac",
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-    marginRight: 10,
-  },
-
-  approveButtonText: {
-    color: MAIN_GREEN,
-    fontSize: 13,
-    fontWeight: "900",
-    marginLeft: 7,
-  },
-
-  rejectButton: {
-    flex: 1,
-    height: 38,
-    borderRadius: 10,
-    backgroundColor: "#fff7f7",
-    borderWidth: 1,
-    borderColor: "#fecaca",
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-
-  rejectButtonText: {
-    color: "#ff4b4b",
-    fontSize: 13,
-    fontWeight: "900",
-    marginLeft: 7,
   },
 
   profileGrid: {
@@ -2756,6 +2895,33 @@ const styles = StyleSheet.create({
     borderColor: GOLD,
   },
 
+  editMemberModal: {
+    width: Platform.OS === "web" ? "82%" : "100%",
+    maxWidth: 980,
+    maxHeight: "90%",
+    backgroundColor: "#ffffff",
+    borderRadius: 22,
+    padding: 22,
+    borderWidth: 2,
+    borderColor: GOLD,
+  },
+
+  editSectionTitle: {
+    color: DARK_GREEN,
+    fontSize: 15,
+    fontWeight: "900",
+    marginTop: 12,
+    marginBottom: 12,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+
+  modalGrid: {
+    flexDirection: Platform.OS === "web" ? "row" : "column",
+    flexWrap: "wrap",
+    gap: Platform.OS === "web" ? 12 : 0,
+  },
+
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -2785,6 +2951,8 @@ const styles = StyleSheet.create({
   },
 
   modalInputGroup: {
+    flex: Platform.OS === "web" ? 1 : undefined,
+    minWidth: Platform.OS === "web" ? 220 : "100%",
     marginBottom: 14,
   },
 
@@ -2804,24 +2972,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     color: "#052e1d",
     fontSize: 14,
-  },
-
-  decisionTextArea: {
-    minHeight: 110,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e5d4a2",
-    backgroundColor: "#fffdf5",
-    paddingHorizontal: 14,
-    paddingTop: 12,
-    color: "#052e1d",
-    fontSize: 14,
-    marginBottom: 14,
+    outlineStyle: "none",
   },
 
   modalActions: {
     flexDirection: "row",
-    marginTop: 8,
+    marginTop: 12,
   },
 
   cancelMemberButton: {
@@ -2847,26 +3003,6 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 13,
     backgroundColor: MAIN_GREEN,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-
-  decisionApproveButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 13,
-    backgroundColor: MAIN_GREEN,
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "row",
-  },
-
-  decisionRejectButton: {
-    flex: 1,
-    height: 48,
-    borderRadius: 13,
-    backgroundColor: "#dc2626",
     justifyContent: "center",
     alignItems: "center",
     flexDirection: "row",
