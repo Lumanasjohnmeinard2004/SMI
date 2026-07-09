@@ -3,6 +3,10 @@
 const bcrypt = require("bcryptjs");
 const pool = require("../db");
 
+const {
+  recordBalanceChanges,
+} = require("./transactionController");
+
 function toNumber(value) {
   const parsed = Number(String(value || "").replace(/,/g, "").trim());
 
@@ -250,6 +254,51 @@ const financialSelectFields = `
   f.inter_trading_loan_due_date
 `;
 
+const financialFieldNames = [
+  "share_capital",
+  "savings",
+  "special_savings",
+  "dividend_amount",
+
+  "regular_loan",
+  "regular_loan_diminishing",
+  "educational_loan",
+  "educational_loan_diminishing",
+  "short_term_loan",
+  "short_term_loan_diminishing",
+  "appliance_loan",
+  "appliance_loan_diminishing",
+  "medical_loan",
+  "medical_loan_diminishing",
+  "petty_cash_loan",
+  "vehicle_loan",
+  "inter_trading_loan",
+];
+
+function emptyFinancialRecord() {
+  const record = {};
+
+  financialFieldNames.forEach((field) => {
+    record[field] = 0;
+  });
+
+  return record;
+}
+
+async function getRawFinancialRecord(memberId, client = pool) {
+  const result = await client.query(
+    `
+    SELECT ${financialFieldNames.join(", ")}
+    FROM member_financials
+    WHERE member_id = $1
+    LIMIT 1
+    `,
+    [memberId]
+  );
+
+  return result.rows[0] || emptyFinancialRecord();
+}
+
 const getMembers = async (req, res) => {
   try {
     const result = await pool.query(
@@ -431,6 +480,8 @@ const saveManualFinancialRecord = async (req, res) => {
       [member.id]
     );
 
+    const oldFinancialRecord = await getRawFinancialRecord(member.id);
+
     const values = [
       member.id,
 
@@ -527,6 +578,17 @@ const saveManualFinancialRecord = async (req, res) => {
 
     const currentRecord = financialResult.rows[0];
 
+    const createdTransactions = await recordBalanceChanges(
+      member,
+      oldFinancialRecord,
+      currentRecord,
+      {
+        source: "Manual Financial Record",
+        record_month: cleanMonth(record_month),
+        remarks: "Manual financial record added by admin.",
+      }
+    );
+
     await saveMonthlySnapshot(member.id, {
       record_month,
 
@@ -575,6 +637,7 @@ const saveManualFinancialRecord = async (req, res) => {
       message: "Financial record added successfully",
       financial_record: currentRecord,
       member: updatedMemberResult.rows[0],
+      created_transactions: createdTransactions,
     });
   } catch (error) {
     res.status(500).json({
@@ -603,6 +666,7 @@ const importExcelFinancialRecords = async (req, res) => {
     let createdCount = 0;
     let updatedCount = 0;
     let skippedCount = 0;
+    let createdTransactionCount = 0;
 
     for (const row of records) {
       const rowNumber = row.no;
@@ -668,7 +732,9 @@ const importExcelFinancialRecords = async (req, res) => {
         [member.id]
       );
 
-      await client.query(
+      const oldFinancialRecord = await getRawFinancialRecord(member.id, client);
+
+      const updatedFinancialResult = await client.query(
         `
         UPDATE member_financials
         SET
@@ -693,6 +759,7 @@ const importExcelFinancialRecords = async (req, res) => {
           dividend_amount = $18,
           updated_at = CURRENT_TIMESTAMP
         WHERE member_id = $1
+        RETURNING *
         `,
         [
           member.id,
@@ -718,6 +785,22 @@ const importExcelFinancialRecords = async (req, res) => {
           toNumber(row.dividend_amount),
         ]
       );
+
+      const newFinancialRecord = updatedFinancialResult.rows[0];
+
+      const createdTransactions = await recordBalanceChanges(
+        member,
+        oldFinancialRecord,
+        newFinancialRecord,
+        {
+          source: "Excel Import",
+          record_month: cleanMonth(row.record_month || record_month),
+          remarks: "Financial record imported from Excel.",
+        },
+        client
+      );
+
+      createdTransactionCount += createdTransactions.length;
 
       await saveMonthlySnapshot(
         member.id,
@@ -755,6 +838,7 @@ const importExcelFinancialRecords = async (req, res) => {
       created_count: createdCount,
       updated_count: updatedCount,
       skipped_count: skippedCount,
+      created_transaction_count: createdTransactionCount,
       total_received: records.length,
     });
   } catch (error) {
@@ -884,7 +968,9 @@ const updateMemberFinancialRecord = async (req, res) => {
       [member.id]
     );
 
-    await pool.query(
+    const oldFinancialRecord = await getRawFinancialRecord(member.id);
+
+    const updatedFinancialResult = await pool.query(
       `
       UPDATE member_financials
       SET
@@ -923,6 +1009,7 @@ const updateMemberFinancialRecord = async (req, res) => {
 
         updated_at = CURRENT_TIMESTAMP
       WHERE member_id = $1
+      RETURNING *
       `,
       [
         member.id,
@@ -960,6 +1047,24 @@ const updateMemberFinancialRecord = async (req, res) => {
         vehicle_loan_due_date || "",
         inter_trading_loan_due_date || "",
       ]
+    );
+
+    const newFinancialRecord = updatedFinancialResult.rows[0];
+
+    const createdTransactions = await recordBalanceChanges(
+      {
+        id: member.id,
+        member_id: member_id.trim(),
+        full_name: full_name.trim(),
+        username: username.trim(),
+      },
+      oldFinancialRecord,
+      newFinancialRecord,
+      {
+        source: "Member Financial Update",
+        record_month: cleanMonth(record_month),
+        remarks: "Member financial record updated by admin.",
+      }
     );
 
     await saveMonthlySnapshot(member.id, {
@@ -1008,6 +1113,7 @@ const updateMemberFinancialRecord = async (req, res) => {
     res.json({
       message: "Member record updated successfully",
       member: updatedMemberResult.rows[0],
+      created_transactions: createdTransactions,
     });
   } catch (error) {
     res.status(500).json({

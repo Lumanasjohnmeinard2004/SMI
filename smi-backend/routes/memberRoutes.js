@@ -13,12 +13,16 @@ const {
   updateMemberProfileImage,
 } = require("../controllers/memberController");
 
+const { getMemberTransactions } = require("../controllers/transactionController");
+
 const router = express.Router();
 
 router.get("/", getMembers);
 router.post("/", addMember);
 router.post("/manual-financial-record", saveManualFinancialRecord);
 router.post("/import-excel-records", importExcelFinancialRecords);
+
+router.get("/:identifier/transactions", getMemberTransactions);
 router.patch("/:identifier/financials", updateMemberFinancialRecord);
 router.get("/:identifier/monthly-financials", getMemberMonthlyFinancials);
 router.patch("/:identifier/profile-image", updateMemberProfileImage);

@@ -2,6 +2,11 @@
 
 const pool = require("../db");
 
+const {
+  createTransactionRecord,
+  getBalanceFieldConfig,
+} = require("./transactionController");
+
 function toNumber(value) {
   const parsed = Number(String(value || "").replace(/,/g, "").trim());
 
@@ -395,6 +400,7 @@ const updateRequestStatus = async (req, res) => {
     );
 
     const updatedRequest = result.rows[0];
+    let createdTransaction = null;
 
     if (status === "Approved") {
       const loanColumn = loanTypeToColumn(updatedRequest.loan_type);
@@ -410,6 +416,19 @@ const updateRequestStatus = async (req, res) => {
         `,
         [updatedRequest.member_id]
       );
+
+      const beforeFinancialResult = await client.query(
+        `
+        SELECT ${loanColumn}
+        FROM member_financials
+        WHERE member_id = $1
+        LIMIT 1
+        `,
+        [updatedRequest.member_id]
+      );
+
+      const balanceBefore = toNumber(beforeFinancialResult.rows[0]?.[loanColumn]);
+      const balanceAfter = balanceBefore + approvedAmount;
 
       await client.query(
         `
@@ -427,6 +446,39 @@ const updateRequestStatus = async (req, res) => {
         [updatedRequest.member_id, approvedAmount, due_date || ""]
       );
 
+      const memberResult = await client.query(
+        `
+        SELECT id, member_id, full_name, username
+        FROM members
+        WHERE id = $1
+        LIMIT 1
+        `,
+        [updatedRequest.member_id]
+      );
+
+      const member = memberResult.rows[0];
+      const fieldConfig = getBalanceFieldConfig(loanColumn);
+
+      createdTransaction = await createTransactionRecord(
+        {
+          member,
+          transaction_type:
+            fieldConfig?.increaseType || `${updatedRequest.loan_type} Release`,
+          amount: approvedAmount,
+          direction: "credit",
+          status: "Completed",
+          source: "Loan Request Approval",
+          source_id: String(updatedRequest.id),
+          request_id: updatedRequest.id,
+          balance_field: loanColumn,
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          record_month: selectedMonth,
+          remarks: `Approved loan request: ${updatedRequest.loan_type}. ${admin_remarks.trim()}`,
+        },
+        client
+      );
+
       await saveMonthlySnapshot(updatedRequest.member_id, selectedMonth, client);
     }
 
@@ -435,9 +487,10 @@ const updateRequestStatus = async (req, res) => {
     res.json({
       message:
         status === "Approved"
-          ? "Loan request approved and member loan balance updated"
+          ? "Loan request approved, loan balance updated, and transaction recorded"
           : "Loan request rejected successfully",
       request: updatedRequest,
+      transaction: createdTransaction,
     });
   } catch (error) {
     await client.query("ROLLBACK");

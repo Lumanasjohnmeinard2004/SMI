@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   MemberScreen,
@@ -94,6 +94,17 @@ export default function ProfileScreen() {
     }
   }
 
+  function openTransactionHistory() {
+    router.push({
+      pathname: "/member/TransactionHistoryScreen",
+      params: {
+        member_id: member?.member_id || identifier,
+        username: member?.username || identifier,
+        memberName: member?.full_name || "Member",
+      },
+    });
+  }
+
   if (loading) {
     return (
       <MemberScreen
@@ -177,7 +188,10 @@ export default function ProfileScreen() {
         />
         <InfoRow label="Share Capital" value={formatCurrency(member.share_capital)} />
         <InfoRow label="Savings" value={formatCurrency(member.savings)} />
-        <InfoRow label="Special Savings" value={formatCurrency(member.special_savings)} />
+        <InfoRow
+          label="Special Savings"
+          value={formatCurrency(member.special_savings)}
+        />
         <InfoRow label="Current Loan Balance" value={formatCurrency(totalLoan)} />
         <InfoRow
           label="Total Dividends Earned"
@@ -186,6 +200,18 @@ export default function ProfileScreen() {
       </SectionCard>
 
       <SectionCard title="Settings">
+        <SettingRow
+          icon={
+            <MaterialCommunityIcons
+              name="clipboard-text-clock-outline"
+              size={20}
+              color={theme.muted}
+            />
+          }
+          label="Transaction History"
+          onPress={openTransactionHistory}
+        />
+
         <SettingRow
           icon={<Ionicons name="moon-outline" size={20} color={theme.muted} />}
           label="Dark Mode"
@@ -214,9 +240,13 @@ export default function ProfileScreen() {
   );
 }
 
-function SettingRow({ icon, label, value }) {
+function SettingRow({ icon, label, value, onPress }) {
   return (
-    <TouchableOpacity style={styles.settingRow}>
+    <TouchableOpacity
+      style={styles.settingRow}
+      activeOpacity={onPress ? 0.75 : 1}
+      onPress={onPress}
+    >
       <View style={styles.settingLeft}>
         {icon}
         <Text style={styles.settingText}>{label}</Text>
@@ -294,6 +324,7 @@ const styles = StyleSheet.create({
   settingLeft: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
   },
 
   settingText: {
