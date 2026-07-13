@@ -112,6 +112,33 @@ function getInitials(name) {
   return `${words[0][0]}${words[words.length - 1][0]}`.toUpperCase();
 }
  
+const COMPANY_OPTIONS = ["Company 1", "Company 2", "Company 3", "Company 4"];
+ 
+function getCompanySummaries(members) {
+  return COMPANY_OPTIONS.map((company) => {
+    const companyMembers = members.filter(
+      (member) => (member.company || "Company 1") === company
+    );
+ 
+    const totalSavings = companyMembers.reduce(
+      (sum, member) => sum + Number(member.rawSavings || 0),
+      0
+    );
+ 
+    const totalLoans = companyMembers.reduce(
+      (sum, member) => sum + Number(member.rawLoan || 0),
+      0
+    );
+ 
+    return {
+      company,
+      memberCount: companyMembers.length,
+      rawSavings: totalSavings,
+      rawLoan: totalLoans,
+    };
+  });
+}
+ 
 function mapDbMember(member) {
   const rawSavings = getTotalSavings(member);
   const rawLoan = getTotalLoan(member);
@@ -591,12 +618,12 @@ function OverviewContent({
 }
  
 function MinimalMemberChart({ members, loading, onRefresh, onOpenFullGraph }) {
-  const previewMembers = members.slice(0, 8);
+  const companySummaries = getCompanySummaries(members);
  
   const maxValue = Math.max(
     1,
-    ...previewMembers.map((member) =>
-      Math.max(Number(member.rawSavings || 0), Number(member.rawLoan || 0))
+    ...companySummaries.map((company) =>
+      Math.max(Number(company.rawSavings || 0), Number(company.rawLoan || 0))
     )
   );
  
@@ -604,8 +631,10 @@ function MinimalMemberChart({ members, loading, onRefresh, onOpenFullGraph }) {
     <View style={styles.chartCard}>
       <View style={styles.chartTopRow}>
         <View>
-          <Text style={styles.sectionTitle}>Member Balance Overview</Text>
-          <Text style={styles.sectionSub}>Smart-scaled view of savings and loans</Text>
+          <Text style={styles.sectionTitle}>Company Balance Overview</Text>
+          <Text style={styles.sectionSub}>
+            Combined savings and loan balances for the four companies
+          </Text>
         </View>
  
         <View style={styles.chartActions}>
@@ -627,79 +656,98 @@ function MinimalMemberChart({ members, loading, onRefresh, onOpenFullGraph }) {
  
         <View style={styles.legendItem}>
           <View style={styles.legendLoans} />
-          <Text style={styles.legendText}>Loan</Text>
+          <Text style={styles.legendText}>Loans</Text>
         </View>
       </View>
  
       {loading ? (
-        <View style={styles.chartLoadingBox}>
+        <View style={styles.companyChartLoadingBox}>
           <ActivityIndicator color={MAIN_GREEN} />
-          <Text style={styles.noticeText}>Loading chart...</Text>
+          <Text style={styles.noticeText}>Loading company graph...</Text>
         </View>
-      ) : previewMembers.length === 0 ? (
-        <Text style={styles.emptyText}>No graph data available.</Text>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.minimalChartArea}>
-            {previewMembers.map((member) => {
-              const savingsHeight = getSmartBarHeight(
-                member.rawSavings,
-                maxValue,
-                118
-              );
+        <View style={styles.companyPreviewChart}>
+          {companySummaries.map((company) => {
+            const savingsHeight = getSmartBarHeight(
+              company.rawSavings,
+              maxValue,
+              205
+            );
  
-              const loanHeight = getSmartBarHeight(
-                member.rawLoan,
-                maxValue,
-                118
-              );
+            const loanHeight = getSmartBarHeight(
+              company.rawLoan,
+              maxValue,
+              205
+            );
  
-              return (
-                <View key={`${member.id}-mini-chart`} style={styles.minimalColumn}>
-                  <View style={styles.minimalBarsWrap}>
-                    <View
-                      style={[
-                        styles.minimalSavingsBar,
-                        {
-                          height: savingsHeight,
-                        },
-                      ]}
-                    />
+            return (
+              <View key={company.company} style={styles.companyPreviewColumn}>
+                <View style={styles.companyPreviewBarsWrap}>
+                  <View
+                    style={[
+                      styles.companyPreviewSavingsBar,
+                      { height: savingsHeight },
+                    ]}
+                  />
  
-                    <View
-                      style={[
-                        styles.minimalLoanBar,
-                        {
-                          height: loanHeight,
-                        },
-                      ]}
-                    />
-                  </View>
+                  <View
+                    style={[
+                      styles.companyPreviewLoanBar,
+                      { height: loanHeight },
+                    ]}
+                  />
+                </View>
  
-                  <Text style={styles.minimalChartLabel} numberOfLines={1}>
-                    {getInitials(member.name)}
+                <Text style={styles.companyPreviewLabel}>{company.company}</Text>
+                <Text style={styles.companyPreviewCount}>
+                  {company.memberCount} {company.memberCount === 1 ? "member" : "members"}
+                </Text>
+ 
+                <View style={styles.companyPreviewValues}>
+                  <Text style={styles.companyPreviewSavingsText}>
+                    S: {formatCurrency(company.rawSavings)}
+                  </Text>
+                  <Text style={styles.companyPreviewLoanText}>
+                    L: {formatCurrency(company.rawLoan)}
                   </Text>
                 </View>
-              );
-            })}
-          </View>
-        </ScrollView>
+              </View>
+            );
+          })}
+        </View>
       )}
  
       <Text style={styles.graphNote}>
-        Smaller balances are enlarged visually so they remain visible beside very large accounts.
+        The preview now groups all members by company instead of showing individual members.
       </Text>
     </View>
   );
 }
  
 function FullGraphModal({ visible, members, onClose }) {
+  const [selectedCompany, setSelectedCompany] = useState("All Companies");
+ 
+  useEffect(() => {
+    if (!visible) {
+      setSelectedCompany("All Companies");
+    }
+  }, [visible]);
+ 
+  const filteredMembers =
+    selectedCompany === "All Companies"
+      ? members
+      : members.filter(
+          (member) => (member.company || "Company 1") === selectedCompany
+        );
+ 
   const maxValue = Math.max(
     1,
-    ...members.map((member) =>
+    ...filteredMembers.map((member) =>
       Math.max(Number(member.rawSavings || 0), Number(member.rawLoan || 0))
     )
   );
+ 
+  const companyFilters = ["All Companies", ...COMPANY_OPTIONS];
  
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -709,13 +757,27 @@ function FullGraphModal({ visible, members, onClose }) {
             <View style={{ flex: 1 }}>
               <Text style={styles.modalTitle}>Full Member Graph</Text>
               <Text style={styles.modalSubtitle}>
-                Savings and loan totals based on database records
+                Showing {selectedCompany === "All Companies" ? "all companies" : selectedCompany}
               </Text>
             </View>
  
             <TouchableOpacity style={styles.modalCloseButton} onPress={onClose}>
               <Feather name="x" size={20} color="#334155" />
             </TouchableOpacity>
+          </View>
+ 
+          <View style={styles.fullGraphCompanyFilter}>
+            <Text style={styles.fullGraphFilterLabel}>Select Company</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {companyFilters.map((company) => (
+                <FilterChip
+                  key={company}
+                  label={company}
+                  active={selectedCompany === company}
+                  onPress={() => setSelectedCompany(company)}
+                />
+              ))}
+            </ScrollView>
           </View>
  
           <View style={styles.fullGraphLegend}>
@@ -732,20 +794,25 @@ function FullGraphModal({ visible, members, onClose }) {
  
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.fullGraphScrollContent}>
-              {members.length === 0 ? (
-                <Text style={styles.emptyText}>No graph data available.</Text>
+              {filteredMembers.length === 0 ? (
+                <View style={styles.fullGraphEmptyBox}>
+                  <Feather name="users" size={28} color="#94a3b8" />
+                  <Text style={styles.emptyText}>
+                    No members are assigned to {selectedCompany}.
+                  </Text>
+                </View>
               ) : (
-                members.map((member) => {
+                filteredMembers.map((member) => {
                   const savingsHeight = getSmartBarHeight(
                     member.rawSavings,
                     maxValue,
-                    220
+                    250
                   );
  
                   const loanHeight = getSmartBarHeight(
                     member.rawLoan,
                     maxValue,
-                    220
+                    250
                   );
  
                   return (
@@ -754,18 +821,14 @@ function FullGraphModal({ visible, members, onClose }) {
                         <View
                           style={[
                             styles.fullGraphSavingsBar,
-                            {
-                              height: savingsHeight,
-                            },
+                            { height: savingsHeight },
                           ]}
                         />
  
                         <View
                           style={[
                             styles.fullGraphLoanBar,
-                            {
-                              height: loanHeight,
-                            },
+                            { height: loanHeight },
                           ]}
                         />
                       </View>
@@ -775,6 +838,7 @@ function FullGraphModal({ visible, members, onClose }) {
                       </Text>
  
                       <Text style={styles.fullGraphId}>{member.id}</Text>
+                      <Text style={styles.fullGraphCompanyName}>{member.company}</Text>
  
                       <View style={styles.fullGraphValues}>
                         <Text style={styles.fullGraphSavingsText}>
@@ -793,7 +857,7 @@ function FullGraphModal({ visible, members, onClose }) {
           </ScrollView>
  
           <Text style={styles.graphNote}>
-            This is a balance comparison graph. Smaller balances are scaled visually so they remain visible beside very large accounts.
+            Use the company filter above to view only the members from a selected company.
           </Text>
         </View>
       </View>
@@ -2681,6 +2745,119 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
  
+  companyChartLoadingBox: {
+    height: 250,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+ 
+  companyPreviewChart: {
+    minHeight: 285,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-around",
+    paddingTop: 20,
+    paddingHorizontal: 8,
+  },
+ 
+  companyPreviewColumn: {
+    flex: 1,
+    minWidth: 130,
+    maxWidth: 210,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: 8,
+  },
+ 
+  companyPreviewBarsWrap: {
+    height: 210,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
+ 
+  companyPreviewSavingsBar: {
+    width: 22,
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    backgroundColor: MAIN_GREEN,
+    marginRight: 8,
+  },
+ 
+  companyPreviewLoanBar: {
+    width: 22,
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
+    borderBottomLeftRadius: 3,
+    borderBottomRightRadius: 3,
+    backgroundColor: GOLD,
+  },
+ 
+  companyPreviewLabel: {
+    color: DARK_GREEN,
+    fontSize: 13,
+    fontWeight: "900",
+    marginTop: 10,
+    textAlign: "center",
+  },
+ 
+  companyPreviewCount: {
+    color: "#64748b",
+    fontSize: 10,
+    fontWeight: "700",
+    marginTop: 3,
+  },
+ 
+  companyPreviewValues: {
+    alignItems: "center",
+    marginTop: 7,
+  },
+ 
+  companyPreviewSavingsText: {
+    color: MAIN_GREEN,
+    fontSize: 10,
+    fontWeight: "900",
+  },
+ 
+  companyPreviewLoanText: {
+    color: GOLD,
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+ 
+  fullGraphCompanyFilter: {
+    backgroundColor: "#fffdf5",
+    borderWidth: 1,
+    borderColor: "#e5d4a2",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 14,
+  },
+ 
+  fullGraphFilterLabel: {
+    color: DARK_GREEN,
+    fontSize: 12,
+    fontWeight: "900",
+    marginBottom: 9,
+  },
+ 
+  fullGraphCompanyName: {
+    color: GOLD,
+    fontSize: 10,
+    fontWeight: "900",
+    marginTop: 3,
+  },
+ 
+  fullGraphEmptyBox: {
+    minWidth: 460,
+    minHeight: 250,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+ 
   fullGraphModal: {
     width: Platform.OS === "web" ? "82%" : "100%",
     maxWidth: 980,
@@ -2699,7 +2876,7 @@ const styles = StyleSheet.create({
   },
  
   fullGraphScrollContent: {
-    minHeight: 360,
+    minHeight: 410,
     flexDirection: "row",
     alignItems: "flex-end",
     paddingVertical: 12,
@@ -2712,7 +2889,7 @@ const styles = StyleSheet.create({
   },
  
   fullGraphBarsWrap: {
-    height: 220,
+    height: 250,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "center",
@@ -2720,20 +2897,20 @@ const styles = StyleSheet.create({
  
   fullGraphSavingsBar: {
     width: 12,
-    borderTopLeftRadius: 999,
-    borderTopRightRadius: 999,
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
     backgroundColor: MAIN_GREEN,
     marginRight: 6,
   },
  
   fullGraphLoanBar: {
     width: 12,
-    borderTopLeftRadius: 999,
-    borderTopRightRadius: 999,
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
     backgroundColor: GOLD,
   },
  
