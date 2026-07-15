@@ -2,11 +2,23 @@
 
  
 
+ 
+
+ 
+
 import React, { useEffect, useState } from "react";
 
  
 
+ 
+
+ 
+
 import {
+
+ 
+
+ 
 
  
 
@@ -14,7 +26,15 @@ import {
 
  
 
+ 
+
+ 
+
   Text,
+
+ 
+
+ 
 
  
 
@@ -22,7 +42,15 @@ import {
 
  
 
+ 
+
+ 
+
   TouchableOpacity,
+
+ 
+
+ 
 
  
 
@@ -30,7 +58,15 @@ import {
 
  
 
+ 
+
+ 
+
   Platform,
+
+ 
+
+ 
 
  
 
@@ -38,7 +74,15 @@ import {
 
  
 
+ 
+
+ 
+
   Modal,
+
+ 
+
+ 
 
  
 
@@ -46,7 +90,15 @@ import {
 
  
 
+ 
+
+ 
+
 } from "react-native";
+
+ 
+
+ 
 
  
 
@@ -54,7 +106,15 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
  
 
+ 
+
+ 
+
 import { useLocalSearchParams, useRouter } from "expo-router";
+
+ 
+
+ 
 
  
 
@@ -62,7 +122,15 @@ import * as Print from "expo-print";
 
  
 
+ 
+
+ 
+
 import * as Sharing from "expo-sharing";
+
+ 
+
+ 
 
  
 
@@ -70,7 +138,15 @@ import {
 
  
 
+ 
+
+ 
+
   MemberScreen,
+
+ 
+
+ 
 
  
 
@@ -78,7 +154,15 @@ import {
 
  
 
+ 
+
+ 
+
   InfoRow,
+
+ 
+
+ 
 
  
 
@@ -86,7 +170,15 @@ import {
 
  
 
+ 
+
+ 
+
   theme,
+
+ 
+
+ 
 
  
 
@@ -94,7 +186,15 @@ import {
 
  
 
+ 
+
+ 
+
 import { apiRequest } from "../../config/api";
+
+ 
+
+ 
 
  
 
@@ -102,7 +202,15 @@ function formatCurrency(value) {
 
  
 
+ 
+
+ 
+
   const numberValue = Number(value || 0);
+
+ 
+
+ 
 
  
 
@@ -110,7 +218,15 @@ function formatCurrency(value) {
 
  
 
+ 
+
+ 
+
     minimumFractionDigits: 2,
+
+ 
+
+ 
 
  
 
@@ -118,11 +234,23 @@ function formatCurrency(value) {
 
  
 
+ 
+
+ 
+
   })}`;
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -130,7 +258,15 @@ function formatCurrencyPlain(value) {
 
  
 
+ 
+
+ 
+
   const numberValue = Number(value || 0);
+
+ 
+
+ 
 
  
 
@@ -138,7 +274,15 @@ function formatCurrencyPlain(value) {
 
  
 
+ 
+
+ 
+
     minimumFractionDigits: 2,
+
+ 
+
+ 
 
  
 
@@ -146,11 +290,23 @@ function formatCurrencyPlain(value) {
 
  
 
+ 
+
+ 
+
   })}`;
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -158,7 +314,15 @@ function escapeHtml(value) {
 
  
 
+ 
+
+ 
+
   return String(value ?? "")
+
+ 
+
+ 
 
  
 
@@ -166,7 +330,15 @@ function escapeHtml(value) {
 
  
 
+ 
+
+ 
+
     .replace(/</g, "&lt;")
+
+ 
+
+ 
 
  
 
@@ -174,7 +346,15 @@ function escapeHtml(value) {
 
  
 
+ 
+
+ 
+
     .replace(/"/g, "&quot;")
+
+ 
+
+ 
 
  
 
@@ -182,7 +362,15 @@ function escapeHtml(value) {
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -190,7 +378,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
   if (!value) {
+
+ 
+
+ 
 
  
 
@@ -198,7 +394,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -206,7 +410,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
   if (Number.isNaN(date.getTime())) {
+
+ 
+
+ 
 
  
 
@@ -214,7 +426,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -222,7 +442,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
     year: "numeric",
+
+ 
+
+ 
 
  
 
@@ -230,7 +458,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
     day: "2-digit",
+
+ 
+
+ 
 
  
 
@@ -238,7 +474,15 @@ function formatDate(value) {
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -246,7 +490,15 @@ function initialsFromName(name) {
 
  
 
+ 
+
+ 
+
   if (!name) {
+
+ 
+
+ 
 
  
 
@@ -254,7 +506,15 @@ function initialsFromName(name) {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -262,7 +522,15 @@ function initialsFromName(name) {
 
  
 
+ 
+
+ 
+
   if (words.length === 0) {
+
+ 
+
+ 
 
  
 
@@ -270,7 +538,15 @@ function initialsFromName(name) {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -278,11 +554,23 @@ function initialsFromName(name) {
 
  
 
+ 
+
+ 
+
     return words[0].slice(0, 2).toUpperCase();
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -290,7 +578,15 @@ function initialsFromName(name) {
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -298,7 +594,15 @@ function getTotalSavings(member) {
 
  
 
+ 
+
+ 
+
   return (
+
+ 
+
+ 
 
  
 
@@ -306,7 +610,15 @@ function getTotalSavings(member) {
 
  
 
+ 
+
+ 
+
     Number(member.savings || 0) +
+
+ 
+
+ 
 
  
 
@@ -314,11 +626,23 @@ function getTotalSavings(member) {
 
  
 
+ 
+
+ 
+
   );
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -326,7 +650,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
   return (
+
+ 
+
+ 
 
  
 
@@ -334,7 +666,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
     Number(member.regular_loan_diminishing || 0) +
+
+ 
+
+ 
 
  
 
@@ -342,7 +682,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
     Number(member.educational_loan_diminishing || 0) +
+
+ 
+
+ 
 
  
 
@@ -350,7 +698,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
     Number(member.short_term_loan_diminishing || 0) +
+
+ 
+
+ 
 
  
 
@@ -358,7 +714,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
     Number(member.appliance_loan_diminishing || 0) +
+
+ 
+
+ 
 
  
 
@@ -366,7 +730,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
     Number(member.medical_loan_diminishing || 0) +
+
+ 
+
+ 
 
  
 
@@ -374,7 +746,15 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
     Number(member.vehicle_loan || 0) +
+
+ 
+
+ 
 
  
 
@@ -382,11 +762,23 @@ function getTotalLoan(member) {
 
  
 
+ 
+
+ 
+
   );
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -394,7 +786,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Regular Loan", "regular_loan", "regular_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -402,7 +802,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Educational Loan", "educational_loan", "educational_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -410,7 +818,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Short-term Loan", "short_term_loan", "short_term_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -418,7 +834,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Appliance Loan", "appliance_loan", "appliance_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -426,7 +850,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Medical Loan", "medical_loan", "medical_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -434,7 +866,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Petty Cash Loan", "petty_cash_loan", "petty_cash_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -442,7 +882,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
   ["Inter-Trading Loan", "inter_trading_loan", "inter_trading_loan_due_date"],
+
+ 
+
+ 
 
  
 
@@ -450,7 +898,15 @@ const LOAN_FIELDS = [
 
  
 
+ 
+
+ 
+
 function getActiveLoans(member) {
+
+ 
+
+ 
 
  
 
@@ -458,7 +914,15 @@ function getActiveLoans(member) {
 
  
 
+ 
+
+ 
+
     label,
+
+ 
+
+ 
 
  
 
@@ -466,7 +930,15 @@ function getActiveLoans(member) {
 
  
 
+ 
+
+ 
+
     dueDate: member[dueDateField] || "",
+
+ 
+
+ 
 
  
 
@@ -474,7 +946,15 @@ function getActiveLoans(member) {
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -482,11 +962,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   const totalSavings = getTotalSavings(member);
 
  
 
+ 
+
+ 
+
   const totalLoan = getTotalLoan(member);
+
+ 
+
+ 
 
  
 
@@ -494,7 +986,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   const reportDate = new Date().toLocaleDateString("en-PH", {
+
+ 
+
+ 
 
  
 
@@ -502,7 +1002,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     month: "long",
+
+ 
+
+ 
 
  
 
@@ -510,7 +1018,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   });
+
+ 
+
+ 
 
  
 
@@ -518,7 +1034,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     activeLoans.length > 0
+
+ 
+
+ 
 
  
 
@@ -526,7 +1050,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           .map(
+
+ 
+
+ 
 
  
 
@@ -534,7 +1066,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
               <tr>
+
+ 
+
+ 
 
  
 
@@ -542,7 +1082,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
                 <td class="money">${formatCurrencyPlain(loan.balance)}</td>
+
+ 
+
+ 
 
  
 
@@ -550,11 +1098,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
                 <td><span class="pill">Active</span></td>
 
  
 
+ 
+
+ 
+
               </tr>
+
+ 
+
+ 
 
  
 
@@ -562,7 +1122,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           )
+
+ 
+
+ 
 
  
 
@@ -570,11 +1138,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       : `
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -582,11 +1162,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           </tr>
 
  
 
+ 
+
+ 
+
         `;
+
+ 
+
+ 
 
  
 
@@ -594,7 +1186,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     monthlyRecords.length > 0
+
+ 
+
+ 
 
  
 
@@ -602,7 +1202,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           .slice(0, 12)
+
+ 
+
+ 
 
  
 
@@ -610,7 +1218,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             const monthSavings =
+
+ 
+
+ 
 
  
 
@@ -618,7 +1234,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
               Number(record.savings || 0) +
+
+ 
+
+ 
 
  
 
@@ -626,7 +1250,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             const monthLoans = getTotalLoan(record);
+
+ 
+
+ 
 
  
 
@@ -634,7 +1266,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
               <tr>
+
+ 
+
+ 
 
  
 
@@ -642,7 +1282,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
                 <td class="money">${formatCurrencyPlain(monthSavings)}</td>
+
+ 
+
+ 
 
  
 
@@ -650,7 +1298,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
                 <td class="money">${formatCurrencyPlain(record.dividend_amount || 0)}</td>
+
+ 
+
+ 
 
  
 
@@ -658,7 +1314,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             `;
+
+ 
+
+ 
 
  
 
@@ -666,7 +1330,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           .join("")
+
+ 
+
+ 
 
  
 
@@ -674,7 +1346,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -682,7 +1362,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           </tr>
+
+ 
+
+ 
 
  
 
@@ -690,7 +1378,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   return `
+
+ 
+
+ 
 
  
 
@@ -698,7 +1394,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
 <html>
+
+ 
+
+ 
 
  
 
@@ -706,7 +1410,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   <meta charset="UTF-8" />
+
+ 
+
+ 
 
  
 
@@ -714,7 +1426,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     @page {
+
+ 
+
+ 
 
  
 
@@ -722,11 +1442,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       margin: 18mm;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -734,11 +1466,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       box-sizing: border-box;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -746,7 +1490,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       margin: 0;
+
+ 
+
+ 
 
  
 
@@ -754,11 +1506,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #173526;
 
  
 
+ 
+
+ 
+
       background: #ffffff;
+
+ 
+
+ 
 
  
 
@@ -766,7 +1530,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -774,11 +1546,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       width: 100%;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -786,7 +1570,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       border-bottom: 3px solid #0b5f3a;
+
+ 
+
+ 
 
  
 
@@ -794,7 +1586,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       margin-bottom: 16px;
+
+ 
+
+ 
 
  
 
@@ -802,7 +1602,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       justify-content: space-between;
+
+ 
+
+ 
 
  
 
@@ -810,7 +1618,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -818,7 +1634,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #0b5f3a;
+
+ 
+
+ 
 
  
 
@@ -826,7 +1650,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-weight: 800;
+
+ 
+
+ 
 
  
 
@@ -834,7 +1666,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -842,7 +1682,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #b28a1d;
+
+ 
+
+ 
 
  
 
@@ -850,7 +1698,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-weight: 700;
+
+ 
+
+ 
 
  
 
@@ -858,7 +1714,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -866,7 +1730,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       text-align: right;
+
+ 
+
+ 
 
  
 
@@ -874,11 +1746,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       line-height: 1.5;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -886,7 +1770,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       border: 1px solid #b9cbbb;
+
+ 
+
+ 
 
  
 
@@ -894,7 +1786,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       padding: 16px;
+
+ 
+
+ 
 
  
 
@@ -902,7 +1802,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       display: grid;
+
+ 
+
+ 
 
  
 
@@ -910,7 +1818,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       gap: 12px;
+
+ 
+
+ 
 
  
 
@@ -918,7 +1834,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -926,7 +1850,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-size: 20px;
+
+ 
+
+ 
 
  
 
@@ -934,7 +1866,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #0b5f3a;
+
+ 
+
+ 
 
  
 
@@ -942,7 +1882,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -950,7 +1898,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #687a70;
+
+ 
+
+ 
 
  
 
@@ -958,11 +1914,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       text-transform: uppercase;
 
  
 
+ 
+
+ 
+
       font-weight: 700;
+
+ 
+
+ 
 
  
 
@@ -970,7 +1938,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -978,11 +1954,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #173526;
 
  
 
+ 
+
+ 
+
       font-weight: 700;
+
+ 
+
+ 
 
  
 
@@ -990,7 +1978,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -998,7 +1994,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       display: inline-block;
+
+ 
+
+ 
 
  
 
@@ -1006,7 +2010,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       border-radius: 10px;
+
+ 
+
+ 
 
  
 
@@ -1014,7 +2026,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       background: #e8f8ed;
+
+ 
+
+ 
 
  
 
@@ -1022,7 +2042,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-size: 9px;
+
+ 
+
+ 
 
  
 
@@ -1030,7 +2058,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1038,7 +2074,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       display: grid;
+
+ 
+
+ 
 
  
 
@@ -1046,7 +2090,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       gap: 10px;
+
+ 
+
+ 
 
  
 
@@ -1054,7 +2106,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1062,7 +2122,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       border: 1px solid #d6dfd7;
+
+ 
+
+ 
 
  
 
@@ -1070,7 +2138,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       padding: 12px;
+
+ 
+
+ 
 
  
 
@@ -1078,7 +2154,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1086,7 +2170,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       color: #687a70;
+
+ 
+
+ 
 
  
 
@@ -1094,7 +2186,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-weight: 700;
+
+ 
+
+ 
 
  
 
@@ -1102,7 +2202,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1110,11 +2218,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       margin-top: 7px;
 
  
 
+ 
+
+ 
+
       color: #0b5f3a;
+
+ 
+
+ 
 
  
 
@@ -1122,11 +2242,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-weight: 800;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1134,7 +2266,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       margin-bottom: 18px;
+
+ 
+
+ 
 
  
 
@@ -1142,7 +2282,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1150,7 +2298,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       background: #0b5f3a;
+
+ 
+
+ 
 
  
 
@@ -1158,7 +2314,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       padding: 8px 10px;
+
+ 
+
+ 
 
  
 
@@ -1166,7 +2330,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-weight: 800;
+
+ 
+
+ 
 
  
 
@@ -1174,7 +2346,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1182,7 +2362,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       width: 100%;
+
+ 
+
+ 
 
  
 
@@ -1190,7 +2378,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1198,7 +2394,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       background: #edf5ef;
+
+ 
+
+ 
 
  
 
@@ -1206,7 +2410,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       text-align: left;
+
+ 
+
+ 
 
  
 
@@ -1214,7 +2426,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       border: 1px solid #d4dfd6;
+
+ 
+
+ 
 
  
 
@@ -1222,7 +2442,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1230,7 +2458,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       padding: 8px;
+
+ 
+
+ 
 
  
 
@@ -1238,11 +2474,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       vertical-align: top;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1250,7 +2498,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       text-align: right;
+
+ 
+
+ 
 
  
 
@@ -1258,7 +2514,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1266,7 +2530,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       background: #f5faf6;
+
+ 
+
+ 
 
  
 
@@ -1274,11 +2546,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-weight: 800;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1286,7 +2570,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       text-align: center;
+
+ 
+
+ 
 
  
 
@@ -1294,11 +2586,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       padding: 14px;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1306,7 +2610,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       margin-top: 22px;
+
+ 
+
+ 
 
  
 
@@ -1314,7 +2626,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       border-top: 2px solid #0b5f3a;
+
+ 
+
+ 
 
  
 
@@ -1322,7 +2642,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       font-size: 9px;
+
+ 
+
+ 
 
  
 
@@ -1330,11 +2658,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       justify-content: space-between;
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -1342,7 +2682,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
 </head>
+
+ 
+
+ 
 
  
 
@@ -1350,7 +2698,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   <div class="report">
+
+ 
+
+ 
 
  
 
@@ -1358,7 +2714,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div>
+
+ 
+
+ 
 
  
 
@@ -1366,11 +2730,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="subtitle">Member Financial and Account Summary</div>
 
  
 
+ 
+
+ 
+
       </div>
+
+ 
+
+ 
 
  
 
@@ -1378,7 +2754,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <strong>Report Date</strong><br />
+
+ 
+
+ 
 
  
 
@@ -1386,11 +2770,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       </div>
 
  
 
+ 
+
+ 
+
     </div>
+
+ 
+
+ 
 
  
 
@@ -1398,7 +2794,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div>
+
+ 
+
+ 
 
  
 
@@ -1406,7 +2810,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="label">Member ID</div>
+
+ 
+
+ 
 
  
 
@@ -1414,7 +2826,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="label">Username</div>
+
+ 
+
+ 
 
  
 
@@ -1422,11 +2842,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       </div>
 
  
 
+ 
+
+ 
+
       <div>
+
+ 
+
+ 
 
  
 
@@ -1434,7 +2866,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="value">${escapeHtml(member.company || "Company not assigned")}</div>
+
+ 
+
+ 
 
  
 
@@ -1442,7 +2882,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="value"><span class="pill">${escapeHtml(member.status || "Active")}</span></div>
+
+ 
+
+ 
 
  
 
@@ -1450,11 +2898,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="value">${escapeHtml(formatDate(member.created_at || member.member_since))}</div>
 
  
 
+ 
+
+ 
+
       </div>
+
+ 
+
+ 
 
  
 
@@ -1462,7 +2922,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="label">Email</div>
+
+ 
+
+ 
 
  
 
@@ -1470,7 +2938,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="label">Phone</div>
+
+ 
+
+ 
 
  
 
@@ -1478,7 +2954,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="label">Address</div>
+
+ 
+
+ 
 
  
 
@@ -1486,11 +2970,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       </div>
 
  
 
+ 
+
+ 
+
     </div>
+
+ 
+
+ 
 
  
 
@@ -1498,7 +2994,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div class="summary-card">
+
+ 
+
+ 
 
  
 
@@ -1506,7 +3010,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="summary-value">${formatCurrencyPlain(totalSavings)}</div>
+
+ 
+
+ 
 
  
 
@@ -1514,7 +3026,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div class="summary-card">
+
+ 
+
+ 
 
  
 
@@ -1522,7 +3042,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="summary-value">${formatCurrencyPlain(totalLoan)}</div>
+
+ 
+
+ 
 
  
 
@@ -1530,7 +3058,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div class="summary-card">
+
+ 
+
+ 
 
  
 
@@ -1538,11 +3074,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="summary-value">${formatCurrencyPlain(member.dividend_amount || 0)}</div>
 
  
 
+ 
+
+ 
+
       </div>
+
+ 
+
+ 
 
  
 
@@ -1550,7 +3098,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <div class="summary-title">Active Loans</div>
+
+ 
+
+ 
 
  
 
@@ -1558,7 +3114,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       </div>
+
+ 
+
+ 
 
  
 
@@ -1566,7 +3130,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     <div class="section">
+
+ 
+
+ 
 
  
 
@@ -1574,7 +3146,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <table>
+
+ 
+
+ 
 
  
 
@@ -1582,7 +3162,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -1590,7 +3178,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <th style="text-align:right;">Current Balance</th>
+
+ 
+
+ 
 
  
 
@@ -1598,7 +3194,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         </thead>
+
+ 
+
+ 
 
  
 
@@ -1606,7 +3210,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -1614,7 +3226,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <td class="money">${formatCurrencyPlain(member.share_capital || 0)}</td>
+
+ 
+
+ 
 
  
 
@@ -1622,7 +3242,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -1630,7 +3258,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <td class="money">${formatCurrencyPlain(member.savings || 0)}</td>
+
+ 
+
+ 
 
  
 
@@ -1638,7 +3274,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -1646,7 +3290,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <td class="money">${formatCurrencyPlain(member.special_savings || 0)}</td>
+
+ 
+
+ 
 
  
 
@@ -1654,7 +3306,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr class="total-row">
+
+ 
+
+ 
 
  
 
@@ -1662,7 +3322,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <td class="money">${formatCurrencyPlain(totalSavings)}</td>
+
+ 
+
+ 
 
  
 
@@ -1670,7 +3338,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         </tbody>
+
+ 
+
+ 
 
  
 
@@ -1678,11 +3354,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     </div>
 
  
 
+ 
+
+ 
+
     <div class="section">
+
+ 
+
+ 
 
  
 
@@ -1690,7 +3378,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <table>
+
+ 
+
+ 
 
  
 
@@ -1698,7 +3394,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr>
+
+ 
+
+ 
 
  
 
@@ -1706,7 +3410,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <th style="text-align:right;">Current Balance</th>
+
+ 
+
+ 
 
  
 
@@ -1714,7 +3426,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <th>Status</th>
+
+ 
+
+ 
 
  
 
@@ -1722,11 +3442,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         </thead>
 
  
 
+ 
+
+ 
+
         <tbody>
+
+ 
+
+ 
 
  
 
@@ -1734,7 +3466,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           <tr class="total-row">
+
+ 
+
+ 
 
  
 
@@ -1742,15 +3482,31 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <td class="money">${formatCurrencyPlain(totalLoan)}</td>
 
  
 
-            <td>-</td>
+ 
 
  
 
             <td>-</td>
+
+ 
+
+ 
+
+ 
+
+            <td>-</td>
+
+ 
+
+ 
 
  
 
@@ -1758,7 +3514,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         </tbody>
+
+ 
+
+ 
 
  
 
@@ -1766,7 +3530,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     </div>
+
+ 
+
+ 
 
  
 
@@ -1774,7 +3546,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div class="section-title">Monthly Financial Statistics</div>
+
+ 
+
+ 
 
  
 
@@ -1782,7 +3562,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <thead>
+
+ 
+
+ 
 
  
 
@@ -1790,7 +3578,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <th>Record Month</th>
+
+ 
+
+ 
 
  
 
@@ -1798,7 +3594,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
             <th style="text-align:right;">Total Loans</th>
+
+ 
+
+ 
 
  
 
@@ -1806,7 +3610,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
           </tr>
+
+ 
+
+ 
 
  
 
@@ -1814,7 +3626,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         <tbody>
+
+ 
+
+ 
 
  
 
@@ -1822,7 +3642,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
         </tbody>
+
+ 
+
+ 
 
  
 
@@ -1830,7 +3658,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     </div>
+
+ 
+
+ 
 
  
 
@@ -1838,7 +3674,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
       <div>This report is system-generated and confidential.</div>
+
+ 
+
+ 
 
  
 
@@ -1846,7 +3690,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
     </div>
+
+ 
+
+ 
 
  
 
@@ -1854,7 +3706,15 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
 </body>
+
+ 
+
+ 
 
  
 
@@ -1862,11 +3722,23 @@ function buildReportHtml(member, monthlyRecords) {
 
  
 
+ 
+
+ 
+
   `;
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -1874,7 +3746,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const router = useRouter();
+
+ 
+
+ 
 
  
 
@@ -1882,7 +3762,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const identifier =
+
+ 
+
+ 
 
  
 
@@ -1890,7 +3778,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const [member, setMember] = useState(null);
+
+ 
+
+ 
 
  
 
@@ -1898,7 +3794,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const [loading, setLoading] = useState(true);
+
+ 
+
+ 
 
  
 
@@ -1906,7 +3810,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const [showContactEditor, setShowContactEditor] = useState(false);
+
+ 
+
+ 
 
  
 
@@ -1914,7 +3826,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const [contactMessage, setContactMessage] = useState("");
+
+ 
+
+ 
 
  
 
@@ -1922,7 +3842,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     email: "",
+
+ 
+
+ 
 
  
 
@@ -1930,7 +3858,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     address: "",
+
+ 
+
+ 
 
  
 
@@ -1938,7 +3874,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   });
+
+ 
+
+ 
 
  
 
@@ -1946,7 +3890,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   useEffect(() => {
+
+ 
+
+ 
 
  
 
@@ -1954,7 +3906,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   }, [identifier]);
+
+ 
+
+ 
 
  
 
@@ -1962,7 +3922,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     try {
+
+ 
+
+ 
 
  
 
@@ -1970,11 +3938,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       setErrorMessage("");
 
  
 
+ 
+
+ 
+
       const data = await apiRequest(
+
+ 
+
+ 
 
  
 
@@ -1982,11 +3962,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         "GET"
 
  
 
+ 
+
+ 
+
       );
+
+ 
+
+ 
 
  
 
@@ -1994,7 +3986,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       try {
+
+ 
+
+ 
 
  
 
@@ -2002,7 +4002,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           `/members/${encodeURIComponent(identifier)}/company`,
+
+ 
+
+ 
 
  
 
@@ -2010,7 +4018,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         );
+
+ 
+
+ 
 
  
 
@@ -2018,7 +4034,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           mergedMember = {
+
+ 
+
+ 
 
  
 
@@ -2026,7 +4050,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             ...companyData.member,
+
+ 
+
+ 
 
  
 
@@ -2034,7 +4066,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         }
+
+ 
+
+ 
 
  
 
@@ -2042,11 +4082,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         // Keep the financial data even when the company endpoint is unavailable.
 
  
 
+ 
+
+ 
+
       }
+
+ 
+
+ 
 
  
 
@@ -2054,7 +4106,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       setContactForm({
+
+ 
+
+ 
 
  
 
@@ -2062,7 +4122,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         phone: mergedMember.phone || mergedMember.contact_number || "",
+
+ 
+
+ 
 
  
 
@@ -2070,11 +4138,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         branch: mergedMember.branch || "Main Branch",
 
  
 
+ 
+
+ 
+
       });
+
+ 
+
+ 
 
  
 
@@ -2082,7 +4162,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         const monthlyData = await apiRequest(
+
+ 
+
+ 
 
  
 
@@ -2090,11 +4178,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           "GET"
 
  
 
+ 
+
+ 
+
         );
+
+ 
+
+ 
 
  
 
@@ -2102,7 +4202,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           monthlyData.records ||
+
+ 
+
+ 
 
  
 
@@ -2110,7 +4218,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           monthlyData.financials ||
+
+ 
+
+ 
 
  
 
@@ -2118,7 +4234,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           [];
+
+ 
+
+ 
 
  
 
@@ -2126,7 +4250,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       } catch (monthlyError) {
+
+ 
+
+ 
 
  
 
@@ -2134,11 +4266,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       }
 
  
 
+ 
+
+ 
+
     } catch (error) {
+
+ 
+
+ 
 
  
 
@@ -2146,7 +4290,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     } finally {
+
+ 
+
+ 
 
  
 
@@ -2154,11 +4306,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     }
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2166,7 +4330,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     setContactForm({
+
+ 
+
+ 
 
  
 
@@ -2174,7 +4346,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       phone: member?.phone || member?.contact_number || "",
+
+ 
+
+ 
 
  
 
@@ -2182,7 +4362,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       branch: member?.branch || "Main Branch",
+
+ 
+
+ 
 
  
 
@@ -2190,7 +4378,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     setContactMessage("");
+
+ 
+
+ 
 
  
 
@@ -2198,7 +4394,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2206,7 +4410,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     if (savingContact) {
+
+ 
+
+ 
 
  
 
@@ -2214,7 +4426,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -2222,11 +4442,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     setShowContactEditor(false);
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2234,7 +4466,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     setContactForm((current) => ({
+
+ 
+
+ 
 
  
 
@@ -2242,7 +4482,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       [field]: value,
+
+ 
+
+ 
 
  
 
@@ -2250,7 +4498,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2258,7 +4514,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     try {
+
+ 
+
+ 
 
  
 
@@ -2266,7 +4530,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       setContactMessage("");
+
+ 
+
+ 
 
  
 
@@ -2274,7 +4546,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       const phone = contactForm.phone.trim();
+
+ 
+
+ 
 
  
 
@@ -2282,7 +4562,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         setContactMessage("Please enter a valid email address.");
+
+ 
+
+ 
 
  
 
@@ -2290,7 +4578,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       }
+
+ 
+
+ 
 
  
 
@@ -2298,7 +4594,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         setContactMessage("Please enter a valid phone number.");
+
+ 
+
+ 
 
  
 
@@ -2306,7 +4610,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       }
+
+ 
+
+ 
 
  
 
@@ -2314,7 +4626,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         `/members/${encodeURIComponent(identifier)}/contact`,
+
+ 
+
+ 
 
  
 
@@ -2322,7 +4642,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         {
+
+ 
+
+ 
 
  
 
@@ -2330,7 +4658,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           phone,
+
+ 
+
+ 
 
  
 
@@ -2338,7 +4674,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           branch: contactForm.branch.trim() || "Main Branch",
+
+ 
+
+ 
 
  
 
@@ -2346,7 +4690,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       );
+
+ 
+
+ 
 
  
 
@@ -2354,7 +4706,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         ...current,
+
+ 
+
+ 
 
  
 
@@ -2362,7 +4722,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       }));
+
+ 
+
+ 
 
  
 
@@ -2370,7 +4738,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         email: data.member.email || "",
+
+ 
+
+ 
 
  
 
@@ -2378,7 +4754,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         address: data.member.address || "",
+
+ 
+
+ 
 
  
 
@@ -2386,7 +4770,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       });
+
+ 
+
+ 
 
  
 
@@ -2394,7 +4786,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     } catch (error) {
+
+ 
+
+ 
 
  
 
@@ -2402,7 +4802,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         error.message || "Failed to save contact information."
+
+ 
+
+ 
 
  
 
@@ -2410,7 +4818,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     } finally {
+
+ 
+
+ 
 
  
 
@@ -2418,11 +4834,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     }
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2430,7 +4858,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     router.push({
+
+ 
+
+ 
 
  
 
@@ -2438,7 +4874,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       params: {
+
+ 
+
+ 
 
  
 
@@ -2446,7 +4890,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         username: member?.username || identifier,
+
+ 
+
+ 
 
  
 
@@ -2454,7 +4906,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       },
+
+ 
+
+ 
 
  
 
@@ -2462,7 +4922,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2470,7 +4938,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     if (!member || printing) {
+
+ 
+
+ 
 
  
 
@@ -2478,7 +4954,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     }
+
+ 
+
+ 
 
  
 
@@ -2486,7 +4970,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       setPrinting(true);
+
+ 
+
+ 
 
  
 
@@ -2494,7 +4986,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       if (Platform.OS === "web") {
+
+ 
+
+ 
 
  
 
@@ -2502,7 +5002,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         printFrame.style.position = "fixed";
+
+ 
+
+ 
 
  
 
@@ -2510,7 +5018,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         printFrame.style.bottom = "0";
+
+ 
+
+ 
 
  
 
@@ -2518,7 +5034,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         printFrame.style.height = "0";
+
+ 
+
+ 
 
  
 
@@ -2526,7 +5050,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         printFrame.style.visibility = "hidden";
+
+ 
+
+ 
 
  
 
@@ -2534,7 +5066,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         const frameDocument =
+
+ 
+
+ 
 
  
 
@@ -2542,7 +5082,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         if (!frameDocument || !printFrame.contentWindow) {
+
+ 
+
+ 
 
  
 
@@ -2550,7 +5098,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           throw new Error("Unable to prepare the report for printing.");
+
+ 
+
+ 
 
  
 
@@ -2558,7 +5114,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         frameDocument.open();
+
+ 
+
+ 
 
  
 
@@ -2566,7 +5130,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         frameDocument.close();
+
+ 
+
+ 
 
  
 
@@ -2574,7 +5146,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           setTimeout(() => {
+
+ 
+
+ 
 
  
 
@@ -2582,7 +5162,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
               printFrame.parentNode.removeChild(printFrame);
+
+ 
+
+ 
 
  
 
@@ -2590,11 +5178,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           }, 500);
 
  
 
+ 
+
+ 
+
         };
+
+ 
+
+ 
 
  
 
@@ -2602,7 +5202,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           setTimeout(() => {
+
+ 
+
+ 
 
  
 
@@ -2610,7 +5218,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             printFrame.contentWindow.print();
+
+ 
+
+ 
 
  
 
@@ -2618,7 +5234,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         };
+
+ 
+
+ 
 
  
 
@@ -2626,7 +5250,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         setTimeout(() => {
+
+ 
+
+ 
 
  
 
@@ -2634,7 +5266,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             printFrame.contentWindow.focus();
+
+ 
+
+ 
 
  
 
@@ -2642,7 +5282,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           }
+
+ 
+
+ 
 
  
 
@@ -2650,11 +5298,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         return;
 
  
 
+ 
+
+ 
+
       }
+
+ 
+
+ 
 
  
 
@@ -2662,7 +5322,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         html,
+
+ 
+
+ 
 
  
 
@@ -2670,7 +5338,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       });
+
+ 
+
+ 
 
  
 
@@ -2678,7 +5354,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       if (sharingAvailable) {
+
+ 
+
+ 
 
  
 
@@ -2686,7 +5370,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           mimeType: "application/pdf",
+
+ 
+
+ 
 
  
 
@@ -2694,7 +5386,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           UTI: "com.adobe.pdf",
+
+ 
+
+ 
 
  
 
@@ -2702,7 +5402,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       } else {
+
+ 
+
+ 
 
  
 
@@ -2710,7 +5418,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           "PDF Created",
+
+ 
+
+ 
 
  
 
@@ -2718,7 +5434,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         );
+
+ 
+
+ 
 
  
 
@@ -2726,7 +5450,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     } catch (error) {
+
+ 
+
+ 
 
  
 
@@ -2734,7 +5466,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         "Unable to Create PDF",
+
+ 
+
+ 
 
  
 
@@ -2742,7 +5482,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       );
+
+ 
+
+ 
 
  
 
@@ -2750,7 +5498,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       setPrinting(false);
+
+ 
+
+ 
 
  
 
@@ -2758,7 +5514,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2766,7 +5530,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     return (
+
+ 
+
+ 
 
  
 
@@ -2774,7 +5546,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         active="Profile"
+
+ 
+
+ 
 
  
 
@@ -2782,11 +5562,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         subtitle="Member account information."
 
  
 
+ 
+
+ 
+
       >
+
+ 
+
+ 
 
  
 
@@ -2794,7 +5586,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <View style={styles.centerBox}>
+
+ 
+
+ 
 
  
 
@@ -2802,7 +5602,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             <Text style={styles.loadingText}>Loading profile...</Text>
+
+ 
+
+ 
 
  
 
@@ -2810,7 +5618,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         </SectionCard>
+
+ 
+
+ 
 
  
 
@@ -2818,11 +5634,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     );
 
  
 
+ 
+
+ 
+
   }
+
+ 
+
+ 
 
  
 
@@ -2830,7 +5658,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     return (
+
+ 
+
+ 
 
  
 
@@ -2838,7 +5674,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         active="Profile"
+
+ 
+
+ 
 
  
 
@@ -2846,11 +5690,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         subtitle="Member account information."
 
  
 
+ 
+
+ 
+
       >
+
+ 
+
+ 
 
  
 
@@ -2858,7 +5714,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <Text style={styles.errorText}>{errorMessage}</Text>
+
+ 
+
+ 
 
  
 
@@ -2866,7 +5730,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             <Text style={styles.retryButtonText}>Try Again</Text>
+
+ 
+
+ 
 
  
 
@@ -2874,7 +5746,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         </SectionCard>
+
+ 
+
+ 
 
  
 
@@ -2882,7 +5762,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     );
+
+ 
+
+ 
 
  
 
@@ -2890,11 +5778,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
   const totalLoan = getTotalLoan(member);
 
  
 
+ 
+
+ 
+
   return (
+
+ 
+
+ 
 
  
 
@@ -2902,7 +5802,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       active="Profile"
+
+ 
+
+ 
 
  
 
@@ -2910,11 +5818,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       subtitle="Member account information."
 
  
 
+ 
+
+ 
+
     >
+
+ 
+
+ 
 
  
 
@@ -2922,7 +5842,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <View style={styles.bigAvatar}>
+
+ 
+
+ 
 
  
 
@@ -2930,7 +5858,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             {initialsFromName(member.full_name)}
+
+ 
+
+ 
 
  
 
@@ -2938,7 +5874,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         </View>
+
+ 
+
+ 
 
  
 
@@ -2946,7 +5890,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <Text style={styles.memberName}>{member.full_name}</Text>
+
+ 
+
+ 
 
  
 
@@ -2954,7 +5906,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <View style={styles.statusWrap}>
+
+ 
+
+ 
 
  
 
@@ -2962,7 +5922,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           </View>
+
+ 
+
+ 
 
  
 
@@ -2970,11 +5938,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       </View>
 
  
 
+ 
+
+ 
+
       <TouchableOpacity
+
+ 
+
+ 
 
  
 
@@ -2982,7 +5962,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         onPress={printMemberStatistics}
+
+ 
+
+ 
 
  
 
@@ -2990,7 +5978,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       >
+
+ 
+
+ 
 
  
 
@@ -2998,7 +5994,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <ActivityIndicator color="#ffffff" />
+
+ 
+
+ 
 
  
 
@@ -3006,7 +6010,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <>
+
+ 
+
+ 
 
  
 
@@ -3014,7 +6026,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             <Text style={styles.printButtonText}>
+
+ 
+
+ 
 
  
 
@@ -3022,7 +6042,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             </Text>
+
+ 
+
+ 
 
  
 
@@ -3030,11 +6058,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         )}
 
  
 
+ 
+
+ 
+
       </TouchableOpacity>
+
+ 
+
+ 
 
  
 
@@ -3042,7 +6082,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow label="Full Name" value={member.full_name} />
+
+ 
+
+ 
 
  
 
@@ -3050,7 +6098,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow label="Username" value={member.username} />
+
+ 
+
+ 
 
  
 
@@ -3058,7 +6114,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow label="Role" value="Normal Member" />
+
+ 
+
+ 
 
  
 
@@ -3066,7 +6130,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow
+
+ 
+
+ 
 
  
 
@@ -3074,7 +6146,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           value={formatDate(member.created_at || member.member_since)}
+
+ 
+
+ 
 
  
 
@@ -3082,7 +6162,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       </SectionCard>
+
+ 
+
+ 
 
  
 
@@ -3090,7 +6178,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <TouchableOpacity
+
+ 
+
+ 
 
  
 
@@ -3098,7 +6194,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           onPress={openContactEditor}
+
+ 
+
+ 
 
  
 
@@ -3106,7 +6210,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           <Feather name="edit-3" size={16} color={theme.green} />
+
+ 
+
+ 
 
  
 
@@ -3114,7 +6226,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         </TouchableOpacity>
+
+ 
+
+ 
 
  
 
@@ -3122,7 +6242,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow
+
+ 
+
+ 
 
  
 
@@ -3130,11 +6258,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           value={member.phone || member.contact_number || "Not set"}
 
  
 
+ 
+
+ 
+
         />
+
+ 
+
+ 
 
  
 
@@ -3142,11 +6282,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow label="Branch" value={member.branch || "Main Branch"} />
 
  
 
+ 
+
+ 
+
       </SectionCard>
+
+ 
+
+ 
 
  
 
@@ -3154,7 +6306,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow
+
+ 
+
+ 
 
  
 
@@ -3162,11 +6322,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           value="Savings Mutual Intercompany Multipurpose Co-op"
 
  
 
+ 
+
+ 
+
         />
+
+ 
+
+ 
 
  
 
@@ -3174,11 +6346,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow label="Savings" value={formatCurrency(member.savings)} />
 
  
 
+ 
+
+ 
+
         <InfoRow
+
+ 
+
+ 
 
  
 
@@ -3186,11 +6370,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           value={formatCurrency(member.special_savings)}
 
  
 
+ 
+
+ 
+
         />
+
+ 
+
+ 
 
  
 
@@ -3198,7 +6394,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <InfoRow
+
+ 
+
+ 
 
  
 
@@ -3206,7 +6410,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           value={formatCurrency(member.dividend_amount)}
+
+ 
+
+ 
 
  
 
@@ -3214,7 +6426,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       </SectionCard>
+
+ 
+
+ 
 
  
 
@@ -3222,7 +6442,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <SettingRow
+
+ 
+
+ 
 
  
 
@@ -3230,7 +6458,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             <MaterialCommunityIcons
+
+ 
+
+ 
 
  
 
@@ -3238,7 +6474,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
               size={20}
+
+ 
+
+ 
 
  
 
@@ -3246,7 +6490,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
             />
+
+ 
+
+ 
 
  
 
@@ -3254,7 +6506,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           label="Transaction History"
+
+ 
+
+ 
 
  
 
@@ -3262,11 +6522,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         />
 
  
 
+ 
+
+ 
+
         <SettingRow
+
+ 
+
+ 
 
  
 
@@ -3274,7 +6546,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           label="Dark Mode"
+
+ 
+
+ 
 
  
 
@@ -3282,11 +6562,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         />
 
  
 
+ 
+
+ 
+
         <SettingRow
+
+ 
+
+ 
 
  
 
@@ -3294,11 +6586,23 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           label="Security & Privacy"
 
  
 
+ 
+
+ 
+
         />
+
+ 
+
+ 
 
  
 
@@ -3306,7 +6610,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
           icon={<Feather name="help-circle" size={20} color={theme.muted} />}
+
+ 
+
+ 
 
  
 
@@ -3314,7 +6626,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         />
+
+ 
+
+ 
 
  
 
@@ -3322,7 +6642,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       <ContactEditorModal
+
+ 
+
+ 
 
  
 
@@ -3330,7 +6658,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         form={contactForm}
+
+ 
+
+ 
 
  
 
@@ -3338,7 +6674,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         message={contactMessage}
+
+ 
+
+ 
 
  
 
@@ -3346,7 +6690,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         onClose={closeContactEditor}
+
+ 
+
+ 
 
  
 
@@ -3354,7 +6706,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       />
+
+ 
+
+ 
 
  
 
@@ -3362,7 +6722,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         style={styles.signOutButton}
+
+ 
+
+ 
 
  
 
@@ -3370,7 +6738,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
       >
+
+ 
+
+ 
 
  
 
@@ -3378,7 +6754,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
         <Text style={styles.signOutText}>Sign Out</Text>
+
+ 
+
+ 
 
  
 
@@ -3386,7 +6770,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
     </MemberScreen>
+
+ 
+
+ 
 
  
 
@@ -3394,7 +6786,15 @@ export default function ProfileScreen() {
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -3402,7 +6802,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
   visible,
+
+ 
+
+ 
 
  
 
@@ -3410,7 +6818,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
   saving,
+
+ 
+
+ 
 
  
 
@@ -3418,7 +6834,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
   onChange,
+
+ 
+
+ 
 
  
 
@@ -3426,7 +6850,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
   onSave,
+
+ 
+
+ 
 
  
 
@@ -3434,7 +6866,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
   return (
+
+ 
+
+ 
 
  
 
@@ -3442,7 +6882,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
       visible={visible}
+
+ 
+
+ 
 
  
 
@@ -3450,7 +6898,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
       animationType="fade"
+
+ 
+
+ 
 
  
 
@@ -3458,7 +6914,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
     >
+
+ 
+
+ 
 
  
 
@@ -3466,7 +6930,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
         <View style={styles.contactModalCard}>
+
+ 
+
+ 
 
  
 
@@ -3474,7 +6946,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             <View style={{ flex: 1 }}>
+
+ 
+
+ 
 
  
 
@@ -3482,7 +6962,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               <Text style={styles.contactModalSubtitle}>
+
+ 
+
+ 
 
  
 
@@ -3490,7 +6978,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               </Text>
+
+ 
+
+ 
 
  
 
@@ -3498,7 +6994,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             <TouchableOpacity
+
+ 
+
+ 
 
  
 
@@ -3506,7 +7010,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               onPress={onClose}
+
+ 
+
+ 
 
  
 
@@ -3514,7 +7026,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             >
+
+ 
+
+ 
 
  
 
@@ -3522,11 +7042,23 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             </TouchableOpacity>
 
  
 
+ 
+
+ 
+
           </View>
+
+ 
+
+ 
 
  
 
@@ -3534,7 +7066,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             <View style={styles.contactErrorBox}>
+
+ 
+
+ 
 
  
 
@@ -3542,7 +7082,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               <Text style={styles.contactErrorText}>{message}</Text>
+
+ 
+
+ 
 
  
 
@@ -3550,11 +7098,23 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
           ) : null}
 
  
 
+ 
+
+ 
+
           <ContactInput
+
+ 
+
+ 
 
  
 
@@ -3562,7 +7122,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             value={form.email}
+
+ 
+
+ 
 
  
 
@@ -3570,7 +7138,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             placeholder="example@email.com"
+
+ 
+
+ 
 
  
 
@@ -3578,7 +7154,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             autoCapitalize="none"
+
+ 
+
+ 
 
  
 
@@ -3586,7 +7170,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
           <ContactInput
+
+ 
+
+ 
 
  
 
@@ -3594,7 +7186,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             value={form.phone}
+
+ 
+
+ 
 
  
 
@@ -3602,7 +7202,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             placeholder="09XX-XXX-XXXX"
+
+ 
+
+ 
 
  
 
@@ -3610,11 +7218,23 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
           />
 
  
 
+ 
+
+ 
+
           <ContactInput
+
+ 
+
+ 
 
  
 
@@ -3622,7 +7242,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             value={form.address}
+
+ 
+
+ 
 
  
 
@@ -3630,7 +7258,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             placeholder="Complete address"
+
+ 
+
+ 
 
  
 
@@ -3638,7 +7274,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
           />
+
+ 
+
+ 
 
  
 
@@ -3646,7 +7290,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             label="Branch"
+
+ 
+
+ 
 
  
 
@@ -3654,7 +7306,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             onChangeText={(value) => onChange("branch", value)}
+
+ 
+
+ 
 
  
 
@@ -3662,7 +7322,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
           />
+
+ 
+
+ 
 
  
 
@@ -3670,7 +7338,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             <TouchableOpacity
+
+ 
+
+ 
 
  
 
@@ -3678,7 +7354,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               onPress={onClose}
+
+ 
+
+ 
 
  
 
@@ -3686,7 +7370,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             >
+
+ 
+
+ 
 
  
 
@@ -3694,7 +7386,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             </TouchableOpacity>
+
+ 
+
+ 
 
  
 
@@ -3702,7 +7402,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               style={styles.contactSaveButton}
+
+ 
+
+ 
 
  
 
@@ -3710,7 +7418,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               disabled={saving}
+
+ 
+
+ 
 
  
 
@@ -3718,7 +7434,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               {saving ? (
+
+ 
+
+ 
 
  
 
@@ -3726,7 +7450,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
               ) : (
+
+ 
+
+ 
 
  
 
@@ -3734,7 +7466,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
                   <Feather name="save" size={17} color="#ffffff" />
+
+ 
+
+ 
 
  
 
@@ -3742,7 +7482,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
                 </>
+
+ 
+
+ 
 
  
 
@@ -3750,7 +7498,15 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
             </TouchableOpacity>
+
+ 
+
+ 
 
  
 
@@ -3758,11 +7514,23 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
         </View>
 
  
 
+ 
+
+ 
+
       </View>
+
+ 
+
+ 
 
  
 
@@ -3770,11 +7538,23 @@ function ContactEditorModal({
 
  
 
+ 
+
+ 
+
   );
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -3782,7 +7562,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
   label,
+
+ 
+
+ 
 
  
 
@@ -3790,7 +7578,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
   onChangeText,
+
+ 
+
+ 
 
  
 
@@ -3798,7 +7594,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
   keyboardType = "default",
+
+ 
+
+ 
 
  
 
@@ -3806,7 +7610,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
   multiline = false,
+
+ 
+
+ 
 
  
 
@@ -3814,7 +7626,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
   return (
+
+ 
+
+ 
 
  
 
@@ -3822,7 +7642,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
       <Text style={styles.contactInputLabel}>{label}</Text>
+
+ 
+
+ 
 
  
 
@@ -3830,7 +7658,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
         style={[
+
+ 
+
+ 
 
  
 
@@ -3838,7 +7674,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
           multiline && styles.contactTextArea,
+
+ 
+
+ 
 
  
 
@@ -3846,7 +7690,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
         value={value}
+
+ 
+
+ 
 
  
 
@@ -3854,7 +7706,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
         placeholder={placeholder}
+
+ 
+
+ 
 
  
 
@@ -3862,7 +7722,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
         keyboardType={keyboardType}
+
+ 
+
+ 
 
  
 
@@ -3870,7 +7738,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
         multiline={multiline}
+
+ 
+
+ 
 
  
 
@@ -3878,7 +7754,15 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
       />
+
+ 
+
+ 
 
  
 
@@ -3886,11 +7770,23 @@ function ContactInput({
 
  
 
+ 
+
+ 
+
   );
 
  
 
+ 
+
+ 
+
 }
+
+ 
+
+ 
 
  
 
@@ -3898,7 +7794,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
   return (
+
+ 
+
+ 
 
  
 
@@ -3906,7 +7810,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
       style={styles.settingRow}
+
+ 
+
+ 
 
  
 
@@ -3914,7 +7826,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
       onPress={onPress}
+
+ 
+
+ 
 
  
 
@@ -3922,7 +7842,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
       <View style={styles.settingLeft}>
+
+ 
+
+ 
 
  
 
@@ -3930,7 +7858,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
         <Text style={styles.settingText}>{label}</Text>
+
+ 
+
+ 
 
  
 
@@ -3938,7 +7874,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
       {value ? (
+
+ 
+
+ 
 
  
 
@@ -3946,7 +7890,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
       ) : (
+
+ 
+
+ 
 
  
 
@@ -3954,7 +7906,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
       )}
+
+ 
+
+ 
 
  
 
@@ -3962,7 +7922,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
   );
+
+ 
+
+ 
 
  
 
@@ -3970,7 +7938,15 @@ function SettingRow({ icon, label, value, onPress }) {
 
  
 
+ 
+
+ 
+
 const styles = StyleSheet.create({
+
+ 
+
+ 
 
  
 
@@ -3978,7 +7954,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     backgroundColor: theme.greenDark,
+
+ 
+
+ 
 
  
 
@@ -3986,7 +7970,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     padding: 20,
+
+ 
+
+ 
 
  
 
@@ -3994,7 +7986,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4002,7 +8002,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderWidth: 1,
+
+ 
+
+ 
 
  
 
@@ -4010,7 +8018,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4018,7 +8034,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     width: 76,
+
+ 
+
+ 
 
  
 
@@ -4026,7 +8050,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderRadius: 38,
+
+ 
+
+ 
 
  
 
@@ -4034,7 +8066,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderWidth: 1,
+
+ 
+
+ 
 
  
 
@@ -4042,11 +8082,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     justifyContent: "center",
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4054,7 +8106,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4062,7 +8122,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.gold,
+
+ 
+
+ 
 
  
 
@@ -4070,11 +8138,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4082,11 +8162,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flex: 1,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4094,7 +8186,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#ffffff",
+
+ 
+
+ 
 
  
 
@@ -4102,11 +8202,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4114,7 +8226,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#d7e8dc",
+
+ 
+
+ 
 
  
 
@@ -4122,11 +8242,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginTop: 5,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4134,7 +8266,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginTop: 12,
+
+ 
+
+ 
 
  
 
@@ -4142,7 +8282,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4150,7 +8298,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     height: 50,
+
+ 
+
+ 
 
  
 
@@ -4158,7 +8314,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderRadius: 16,
+
+ 
+
+ 
 
  
 
@@ -4166,7 +8330,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4174,11 +8346,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginBottom: 16,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4186,7 +8370,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#ffffff",
+
+ 
+
+ 
 
  
 
@@ -4194,7 +8386,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
+
+ 
+
+ 
 
  
 
@@ -4202,7 +8402,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4210,7 +8418,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderTopWidth: 1,
+
+ 
+
+ 
 
  
 
@@ -4218,11 +8434,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     paddingVertical: 14,
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
+
+ 
+
+ 
 
  
 
@@ -4230,11 +8458,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     alignItems: "center",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4242,7 +8482,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
+
+ 
+
+ 
 
  
 
@@ -4250,11 +8498,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flex: 1,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4262,7 +8522,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.muted,
+
+ 
+
+ 
 
  
 
@@ -4270,7 +8538,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginLeft: 12,
+
+ 
+
+ 
 
  
 
@@ -4278,7 +8554,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4286,7 +8570,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.greenDark,
+
+ 
+
+ 
 
  
 
@@ -4294,11 +8586,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4306,11 +8610,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     minHeight: 42,
 
  
 
+ 
+
+ 
+
     borderRadius: 12,
+
+ 
+
+ 
 
  
 
@@ -4318,7 +8634,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderWidth: 1,
+
+ 
+
+ 
 
  
 
@@ -4326,7 +8650,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
+
+ 
+
+ 
 
  
 
@@ -4334,7 +8666,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     justifyContent: "center",
+
+ 
+
+ 
 
  
 
@@ -4342,7 +8682,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4350,7 +8698,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.green,
+
+ 
+
+ 
 
  
 
@@ -4358,7 +8714,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
+
+ 
+
+ 
 
  
 
@@ -4366,7 +8730,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4374,7 +8746,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flex: 1,
+
+ 
+
+ 
 
  
 
@@ -4382,11 +8762,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     justifyContent: "center",
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4394,7 +8786,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4402,7 +8802,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     width: Platform.OS === "web" ? 500 : "100%",
+
+ 
+
+ 
 
  
 
@@ -4410,7 +8818,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     maxHeight: "90%",
+
+ 
+
+ 
 
  
 
@@ -4418,7 +8834,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderRadius: 20,
+
+ 
+
+ 
 
  
 
@@ -4426,7 +8850,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderColor: theme.gold,
+
+ 
+
+ 
 
  
 
@@ -4434,7 +8866,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4442,7 +8882,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
+
+ 
+
+ 
 
  
 
@@ -4450,11 +8898,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginBottom: 16,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4462,7 +8922,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.greenDark,
+
+ 
+
+ 
 
  
 
@@ -4470,11 +8938,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4482,11 +8962,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.muted,
 
  
 
+ 
+
+ 
+
     fontSize: 12,
+
+ 
+
+ 
 
  
 
@@ -4494,11 +8986,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginTop: 5,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4506,7 +9010,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     width: 38,
+
+ 
+
+ 
 
  
 
@@ -4514,7 +9026,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderRadius: 12,
+
+ 
+
+ 
 
  
 
@@ -4522,11 +9042,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     justifyContent: "center",
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4534,7 +9066,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4542,11 +9082,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     minHeight: 42,
 
  
 
+ 
+
+ 
+
     borderRadius: 12,
+
+ 
+
+ 
 
  
 
@@ -4554,7 +9106,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderWidth: 1,
+
+ 
+
+ 
 
  
 
@@ -4562,11 +9122,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4574,11 +9146,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginBottom: 14,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4586,11 +9170,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flex: 1,
 
  
 
+ 
+
+ 
+
     color: "#b91c1c",
+
+ 
+
+ 
 
  
 
@@ -4598,7 +9194,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "700",
+
+ 
+
+ 
 
  
 
@@ -4606,7 +9210,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4614,11 +9226,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginBottom: 13,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4626,7 +9250,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.greenDark,
+
+ 
+
+ 
 
  
 
@@ -4634,7 +9266,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
+
+ 
+
+ 
 
  
 
@@ -4642,7 +9282,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4650,7 +9298,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     minHeight: 46,
+
+ 
+
+ 
 
  
 
@@ -4658,7 +9314,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderWidth: 1,
+
+ 
+
+ 
 
  
 
@@ -4666,7 +9330,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     backgroundColor: "#fffdf5",
+
+ 
+
+ 
 
  
 
@@ -4674,7 +9346,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.greenDark,
+
+ 
+
+ 
 
  
 
@@ -4682,11 +9362,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     outlineStyle: "none",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4694,7 +9386,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     minHeight: 86,
+
+ 
+
+ 
 
  
 
@@ -4702,7 +9402,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4710,7 +9418,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
+
+ 
+
+ 
 
  
 
@@ -4718,7 +9434,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4726,7 +9450,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flex: 1,
+
+ 
+
+ 
 
  
 
@@ -4734,7 +9466,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderRadius: 12,
+
+ 
+
+ 
 
  
 
@@ -4742,7 +9482,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderColor: "#cbd5e1",
+
+ 
+
+ 
 
  
 
@@ -4750,11 +9498,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     justifyContent: "center",
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4762,7 +9522,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4770,7 +9538,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#334155",
+
+ 
+
+ 
 
  
 
@@ -4778,11 +9554,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4790,7 +9578,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flex: 1,
+
+ 
+
+ 
 
  
 
@@ -4798,7 +9594,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     borderRadius: 12,
+
+ 
+
+ 
 
  
 
@@ -4806,7 +9610,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     flexDirection: "row",
+
+ 
+
+ 
 
  
 
@@ -4814,11 +9626,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     alignItems: "center",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4826,7 +9650,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#ffffff",
+
+ 
+
+ 
 
  
 
@@ -4834,7 +9666,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
+
+ 
+
+ 
 
  
 
@@ -4842,7 +9682,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4850,11 +9698,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     height: 50,
 
  
 
+ 
+
+ 
+
     backgroundColor: theme.green,
+
+ 
+
+ 
 
  
 
@@ -4862,11 +9722,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     justifyContent: "center",
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4874,11 +9746,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginBottom: 16,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4886,7 +9770,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#ffffff",
+
+ 
+
+ 
 
  
 
@@ -4894,7 +9786,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
+
+ 
+
+ 
 
  
 
@@ -4902,7 +9802,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4910,7 +9818,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     alignItems: "center",
+
+ 
+
+ 
 
  
 
@@ -4918,11 +9834,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     paddingVertical: 18,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4930,11 +9858,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: theme.muted,
 
  
 
+ 
+
+ 
+
     fontSize: 13,
+
+ 
+
+ 
 
  
 
@@ -4942,11 +9882,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "700",
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4954,11 +9906,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#b91c1c",
 
  
 
+ 
+
+ 
+
     fontSize: 13,
+
+ 
+
+ 
 
  
 
@@ -4966,11 +9930,23 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     marginBottom: 14,
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -4978,7 +9954,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     backgroundColor: theme.green,
+
+ 
+
+ 
 
  
 
@@ -4986,7 +9970,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     paddingVertical: 12,
+
+ 
+
+ 
 
  
 
@@ -4994,7 +9986,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
   },
+
+ 
+
+ 
 
  
 
@@ -5002,7 +10002,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     color: "#ffffff",
+
+ 
+
+ 
 
  
 
@@ -5010,7 +10018,15 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
     fontWeight: "900",
+
+ 
+
+ 
 
  
 
@@ -5018,4 +10034,9 @@ const styles = StyleSheet.create({
 
  
 
+ 
+
+ 
+
 });
+
