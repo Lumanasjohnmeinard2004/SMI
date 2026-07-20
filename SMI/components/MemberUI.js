@@ -14,8 +14,6 @@ import {
 
   TouchableOpacity,
 
-  SafeAreaView,
-
   StatusBar,
 
   ScrollView,
@@ -29,6 +27,8 @@ import {
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
+
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import SmiLogo from "./SmiLogo";
 
@@ -384,7 +384,7 @@ export function MemberScreen({
 
               onPress={() =>
 
-                router.replace({
+                router.navigate({
 
                   pathname: item.route,
 
@@ -452,7 +452,7 @@ export function MemberScreen({
 
     return (
 
-      <SafeAreaView style={styles.webSafe}>
+      <SafeAreaView style={styles.webSafe} edges={[]}>
 
         <View style={styles.webCenter}>
 
@@ -463,6 +463,8 @@ export function MemberScreen({
               barStyle="light-content"
 
               backgroundColor={theme.greenDark}
+
+              translucent={false}
 
             />
 
@@ -482,13 +484,21 @@ export function MemberScreen({
 
   return (
 
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView
+
+      style={styles.safe}
+
+      edges={["top"]}
+
+    >
 
       <StatusBar
 
         barStyle="light-content"
 
         backgroundColor={theme.greenDark}
+
+        translucent={false}
 
       />
 
@@ -788,7 +798,7 @@ const styles = StyleSheet.create({
 
     flex: 1,
 
-    backgroundColor: theme.bg,
+    backgroundColor: theme.greenDark,
 
   },
 
@@ -858,13 +868,13 @@ const styles = StyleSheet.create({
 
   header: {
 
-    height: 154,
+    height: 146,
 
     backgroundColor: theme.greenDark,
 
     paddingHorizontal: 22,
 
-    paddingTop: Platform.OS === "ios" ? 13 : 18,
+    paddingTop: Platform.OS === "ios" ? 7 : 9,
 
     borderBottomLeftRadius: 48,
 
@@ -1206,7 +1216,7 @@ const styles = StyleSheet.create({
 
     paddingTop: 72,
 
-    paddingBottom: 112,
+    paddingBottom: 118,
 
   },
 
@@ -1758,7 +1768,7 @@ const styles = StyleSheet.create({
 
     right: 12,
 
-    bottom: 9,
+    bottom: 13,
 
     height: 72,
 
@@ -1858,7 +1868,7 @@ const styles = StyleSheet.create({
 
     right: 18,
 
-    bottom: 100,
+    bottom: 106,
 
     width: 38,
 

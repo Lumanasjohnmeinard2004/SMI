@@ -1,8 +1,18 @@
-// app/member/_layout.js
+// app/member/_layout.tsx
 
  
 
+import React from "react";
+
 import { Stack } from "expo-router";
+
+import {
+
+  SafeAreaProvider,
+
+  initialWindowMetrics,
+
+} from "react-native-safe-area-context";
 
  
 
@@ -10,21 +20,33 @@ export default function MemberLayout() {
 
   return (
 
-    <Stack
+    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
 
-      screenOptions={{
+      <Stack
 
-        headerShown: false,
+        screenOptions={{
 
-        animation: "none",
+          headerShown: false,
 
-        animationDuration: 0,
+          animation: "none",
 
-        gestureEnabled: false,
+          animationDuration: 0,
 
-      }}
+          gestureEnabled: false,
 
-    />
+          freezeOnBlur: true,
+
+          contentStyle: {
+
+            backgroundColor: "#003f24",
+
+          },
+
+        }}
+
+      />
+
+    </SafeAreaProvider>
 
   );
 
