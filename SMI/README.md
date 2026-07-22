@@ -1,42 +1,29 @@
-# CoopConnect
+# SMI Coop
 
-CoopConnect is a mobile cooperative management system built with Expo React Native. It is designed for members and administrators of Savings Mutual Intercompany Multipurpose Co-op.
+**SMI Coop** is a mobile cooperative management system developed for **Savings Mutual Intercompany Multipurpose Cooperative**.
 
-The system allows members to view their savings, loans, dividends, and profile information. It also provides an admin portal where administrators can view cooperative records, manage members, check appointments, upload CSV files, and manually encode member financial data.
+The system is designed to help cooperative members conveniently access their financial information through a mobile application. It also provides administrators with tools for managing member accounts, savings, loans, dividends, transactions, requests, uploaded records, and cooperative data.
 
----
-
-## Features
-
-### Member Side
-
-- Member login page
-- Home dashboard
-- Savings overview
-- Share capital display
-- Loan records
-- Dividend records
-- Member profile page
-- Bottom and side navigation for member pages
-
-### Admin Side
-
-- Admin dashboard
-- Member records page
-- Appointments page
-- Admin profile page
-- CSV or Excel upload page
-- Manual data input page
-- Total loan balance calculation
-- Upload shortcut from admin navigation
+The project includes an **Expo React Native frontend**, a **Node.js and Express backend**, and a **PostgreSQL database**.
 
 ---
 
-## React Native + Expo
- 
-   React Native with Expo is a mobile app development framework used to build Android and iOS applications using JavaScript or TypeScript. React Native allows developers to create mobile interfaces using reusable components, while Expo provides tools and services that make development faster and easier. With Expo, developers can test apps quickly, access device features, and build mobile applications without needing complex native setup at the start.
+## Project Overview
 
-To run:
+SMI Coop provides two main portals:
 
-1. Install all react native + expo extensions
-2. run in terminal with "npx expo start -c"
+- **Member Portal** – Allows cooperative members to view their financial information, monitor account activity, submit requests, and manage their profile.
+- **Administrator Portal** – Allows authorized administrators to manage members, process financial records, review requests, import data, and monitor cooperative activity.
+
+The system aims to reduce manual record checking and provide members with easier access to their cooperative information.
+
+---
+
+## Project Structure
+
+```text
+SMI/
+├── smi-frontend/          # Expo React Native mobile frontend
+├── smi-backend/           # Node.js and Express backend API
+├── smi_coop_db.backup     # PostgreSQL database backup
+└── README.md              # Project documentation
